@@ -9,48 +9,48 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* ---- 동물 설정 (모델이 없으면 proc 설정의 임시 캐릭터가 나옴) ---- */
 const FRIENDS = [
   { key: 'fox', kr: '여우', emoji: '🦊',
-    local: 'models/Fox.glb',
+    local: './models/Fox.glb',
     url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb',
     proc: { body: 0xff8a3d, belly: 0xfff1e0 } 
   },
   { key: 'Alpaca', kr: '알파카', emoji: '🦙',
-    local: 'models/Alpaca.glb', url: null,
+    local: './models/Alpaca.glb', url: null,
     proc: { body: 0xe8b870, belly: 0xf5d9a0 } 
   },
   { key: 'Cow', kr: '소', emoji: '🐮',
-    local: 'models/Cow.glb', url: null,
+    local: './models/Cow.glb', url: null,
     proc: { body: 0xffb3d1, belly: 0xffe0ef } 
   },
   { key: 'Deer', kr: '사슴', emoji: '🦌',
-    local: 'models/Deer.glb', url: null,
+    local: './models/Deer.glb', url: null,
     proc: { body: 0xdce0ff, belly: 0xfff0f8 } 
   },
   { key: 'Shiba', kr: '시바견', emoji: '🐕',
-    local: 'models/Shiba.glb', url: null,
+    local: './models/Shiba.glb', url: null,
     proc: { body: 0xffb3d1, belly: 0xffe0ef } 
   },
   { key: 'Donkey', kr: '당나귀', emoji: '🫏',
-    local: 'models/Donkey.glb', url: null,
+    local: './models/Donkey.glb', url: null,
     proc: { body: 0xaaaaaa, belly: 0xcccccc } 
   },
   { key: 'Stag', kr: '수사슴', emoji: '🦌',
-    local: 'models/Stag.glb', url: null,
+    local: './models/Stag.glb', url: null,
     proc: { body: 0x8b4513, belly: 0xd2b48c } 
   },
   { key: 'Husky', kr: '허스키', emoji: '🐺',
-    local: 'models/Husky.glb', url: null,
+    local: './models/Husky.glb', url: null,
     proc: { body: 0x555555, belly: 0xffffff } 
   },
   { key: 'WhiteHorse', kr: '백마', emoji: '🐎',
-    local: 'models/WhiteHorse.glb', url: null,
+    local: './models/WhiteHorse.glb', url: null,
     proc: { body: 0xffffff, belly: 0xeeeeee } 
   },
   { key: 'Horse', kr: '말', emoji: '🐴',
-    local: 'models/Horse.glb', url: null,
+    local: './models/Horse.glb', url: null,
     proc: { body: 0x654321, belly: 0x8b4513 } 
   },
   { key: 'Wolf', kr: '늑대', emoji: '🐺',
-    local: 'models/Wolf.glb', url: null,
+    local: './models/Wolf.glb', url: null,
     proc: { body: 0x333333, belly: 0xeeeeee } 
   }
 ];
