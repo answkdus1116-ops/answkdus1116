@@ -62,7 +62,7 @@ let S = {
 
 // Three.js 코어 변수
 let scene, camera, renderer, controls;
-let clock = new THREE.Clock(); // Clock은 이렇게 밖에서 선언해야 합니다.
+let clock = new THREE.Clock(); 
 let currentPetGroup = new THREE.Group();
 let mixer = null;
 let animations = {}; 
@@ -72,7 +72,7 @@ const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown
 
 // 실행 순서
 init3D();
-buildSelector(); // 버튼 만드는 함수를 꼭 호출해야 합니다!
+buildSelector(); 
 bindUI();
 animate();
 
@@ -143,7 +143,6 @@ function loadPet(key) {
   const info = FRIENDS.find(f => f.key === key);
   const loader = new GLTFLoader();
 
-  // 로딩 화면 표시
   const loaderUI = document.getElementById('loading');
   if(loaderUI) loaderUI.style.display = 'flex';
 
