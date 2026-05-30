@@ -61,8 +61,9 @@ let S = {
 };
 
 // Three.js 코어 변수
+// Three.js 코어 변수 (이 부분이 정확해야 합니다!)
 let scene, camera, renderer, controls;
-let clock = new THREE.Clock(); 
+let clock = new THREE.Clock(); // 이 줄이 반드시 있어야 'clock' 에러가 안 납니다!
 let currentPetGroup = new THREE.Group();
 let mixer = null;
 let animations = {}; 
@@ -211,10 +212,13 @@ function playAnim(name) {
 /* ---- 메인 루프 ---- */
 function animate() {
   requestAnimationFrame(animate);
+  
+  // clock 변수를 사용하여 시간을 계산합니다.
   const dt = clock.getDelta();
 
   if (mixer) mixer.update(dt);
 
+  // 캐릭터 키보드 이동 로직
   let moveDir = new THREE.Vector3(0, 0, 0);
   if (keys.w || keys.arrowup) moveDir.z -= 1;
   if (keys.s || keys.arrowdown) moveDir.z += 1;
@@ -227,6 +231,7 @@ function animate() {
     moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngle);
     const targetRotation = Math.atan2(moveDir.x, moveDir.z);
     currentPetGroup.rotation.y = targetRotation;
+
     const speed = 4.0;
     currentPetGroup.position.addScaledVector(moveDir, speed * dt);
     playAnim('run');
