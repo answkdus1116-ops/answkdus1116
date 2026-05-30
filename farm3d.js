@@ -174,25 +174,39 @@ function animate() {
   if (mixer) mixer.update(dt);
 
   let moveDir = new THREE.Vector3(0, 0, 0);
+  
+  // 키보드 입력 체크
   if (keys.w || keys.arrowup) moveDir.z -= 1;
   if (keys.s || keys.arrowdown) moveDir.z += 1;
   if (keys.a || keys.arrowleft) moveDir.x -= 1;
   if (keys.d || keys.arrowright) moveDir.x += 1;
 
-  if (joystickVector.lengthSq() > 0.1) { moveDir.x = joystickVector.x; moveDir.z = joystickVector.y; }
+  // 조이스틱 입력 체크 (joystickVector가 있을 경우)
+  if (typeof joystickVector !== 'undefined' && joystickVector.lengthSq() > 0.1) {
+    moveDir.x = joystickVector.x;
+    moveDir.z = joystickVector.y;
+  }
 
-  if (moveDir.lengthSq() > 0.05 && S.action !== 'sleep') {
+  // [수정] moveDir.lengthSq() 기준값을 0.1 정도로 높게 잡아야 멈췄을 때 확실히 멈춥니다.
+  if (moveDir.lengthSq() > 0.1 && S.action !== 'sleep') {
     const camAngle = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
     moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
-    currentPetGroup.rotation.y = THREE.MathUtils.lerp(currentPetGroup.rotation.y, Math.atan2(moveDir.x, moveDir.z), 0.15);
+    
+    // 회전도 부드럽게 (lerp 사용)
+    const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+    currentPetGroup.rotation.y = THREE.MathUtils.lerp(currentPetGroup.rotation.y, targetAngle, 0.15);
+    
     currentPetGroup.position.addScaledVector(moveDir, 4.5 * dt);
-    playAnim('run');
+    playAnim('run'); // 이동 중일 때만 달리기
   } else {
+    // 확실히 멈췄을 때만 대기 모션
     if (!S.action) playAnim('idle');
   }
 
-  controls.target.lerp(currentPetGroup.position, 0.1);
-  controls.update();
+  if (controls) {
+    controls.target.lerp(currentPetGroup.position, 0.1);
+    controls.update();
+  }
   renderer.render(scene, camera);
 }
 
@@ -231,12 +245,25 @@ function setupModel(gltf) {
 
 function playAnim(n) {
   if (!mixer || !animations[n]) return;
+  
+  // [중요] 이미 해당 애니메이션이 실행 중이면 아무것도 하지 않음 (떨림 방지)
   if (currentAnimAction === animations[n]) return;
-  if (currentAnimAction) currentAnimAction.fadeOut(0.2);
-  animations[n].reset().fadeIn(0.2).play();
-  currentAnimAction = animations[n];
+  
+  // 이전 애니메이션 부드럽게 페이드 아웃
+  if (currentAnimAction) currentAnimAction.fadeOut(0.3);
+  
+  const action = animations[n];
+  action.reset().fadeIn(0.3).play();
+  
+  // idle(대기) 동작이 너무 방정맞다면 재생 속도를 0.6배로 늦춰서 차분하게 만듦
+  if (n === 'idle') {
+    action.timeScale = 0.6; 
+  } else {
+    action.timeScale = 1.0;
+  }
+  
+  currentAnimAction = action;
 }
-
 function buildSelector() {
   const sel = document.getElementById('petSelector');
   if(!sel) return;
