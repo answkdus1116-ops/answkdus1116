@@ -1,38 +1,35 @@
+/* =====================================================================
+   🌸 내 친구 동물 농장 3D - farm3d.js (최종 수정본)
+   ===================================================================== */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-/* ---- 1. 동물 데이터 설정 ---- */
+/* ---- 동물 설정 ---- */
 const FRIENDS = [
   { key: 'fox', kr: '여우', emoji: '🦊', local: './models/Fox.glb', url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb', proc: { body: 0xff8a3d, belly: 0xfff1e0 } },
   { key: 'Alpaca', kr: '알파카', emoji: '🦙', local: './models/Alpaca.glb', url: null, proc: { body: 0xe8b870, belly: 0xf5d9a0 } },
   { key: 'Cow', kr: '소', emoji: '🐮', local: './models/Cow.glb', url: null, proc: { body: 0xffb3d1, belly: 0xffe0ef } },
-  { key: 'Deer', kr: '사슴', emoji: '🦌', local: './models/Deer.glb', url: null, proc: { body: 0xdce0ff, belly: 0xfff0f8 } },
-  { key: 'Shiba', kr: '시바견', emoji: '🐕', local: './models/Shiba.glb', url: null, proc: { body: 0xffb3d1, belly: 0xffe0ef } },
-  { key: 'Donkey', kr: '당나귀', emoji: '🫏', local: './models/Donkey.glb', url: null, proc: { body: 0xaaaaaa, belly: 0xcccccc } },
-  { key: 'Stag', kr: '수사슴', emoji: '🦌', local: './models/Stag.glb', url: null, proc: { body: 0x8b4513, belly: 0xd2b48c } },
-  { key: 'Husky', kr: '허스키', emoji: '🐺', local: './models/Husky.glb', url: null, proc: { body: 0x555555, belly: 0xffffff } },
-  { key: 'WhiteHorse', kr: '백마', emoji: '🐎', local: './models/WhiteHorse.glb', url: null, proc: { body: 0xffffff, belly: 0xeeeeee } },
-  { key: 'Horse', kr: '말', emoji: '🐴', local: './models/Horse.glb', url: null, proc: { body: 0x654321, belly: 0x8b4513 } },
-  { key: 'Wolf', kr: '늑대', emoji: '🐺', local: './models/Wolf.glb', url: null, proc: { body: 0x333333, belly: 0xeeeeee } }
+  { key: 'Deer', kr: '사슴', emoji: '🦌', local: './models/Deer.glb', url: null, proc: { body: 0xdce0ff, belly: 0xfff0f8 } }
 ];
 
-/* ---- 2. 상태 및 전역 변수 (중복 선언 주의!) ---- */
 let S = { petKey: 'fox', petName: '모찌', action: null };
+
+// Three.js 코어 변수
 let scene, camera, renderer, controls;
-let clock = new THREE.Clock(); // 핵심: 여기서 딱 한 번만 선언해야 함
+let clock = new THREE.Clock(); // Timer 대신 안정적인 Clock 사용
 let currentPetGroup = new THREE.Group();
 let mixer = null;
 let animations = {}; 
 let currentAnimAction = null;
+
 const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
 
-/* ---- 3. 실행 함수들 ---- */
 init3D();
-buildSelector();
 bindUI();
 animate();
 
+/* ---- 3D 씬 초기화 ---- */
 function init3D() {
   const container = document.createElement('div');
   container.style.position = 'absolute'; container.style.inset = '0'; container.style.zIndex = '-1';
@@ -52,49 +49,57 @@ function init3D() {
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
+  controls.minDistance = 3;
+  controls.maxDistance = 15;
 
   scene.add(currentPetGroup);
+
+  // 조명
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
   dirLight.position.set(5, 10, 5);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
+  // 바닥
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x8cd977 }));
   plane.rotation.x = -Math.PI / 2;
   plane.receiveShadow = true;
   scene.add(plane);
 
+  // 이벤트 리스너
   window.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; });
   window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
   loadPet(S.petKey);
 }
 
+/* ---- 캐릭터 로드 ---- */
 function loadPet(key) {
   currentPetGroup.clear();
   mixer = null;
   animations = {};
   const info = FRIENDS.find(f => f.key === key);
   const loader = new GLTFLoader();
-  const loaderUI = document.getElementById('loading');
-  if(loaderUI) loaderUI.style.display = 'flex';
 
-  loader.load(info.local, 
-    (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; }, 
-    undefined, 
-    () => {
-      if (info.url) {
-        loader.load(info.url, (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; }, undefined, () => { createFallback(info.proc); if(loaderUI) loaderUI.style.display = 'none'; });
-      } else { createFallback(info.proc); if(loaderUI) loaderUI.style.display = 'none'; }
-    }
-  );
+  loader.load(info.local, setupModel, undefined, (err) => {
+    console.warn("로컬 실패, URL 시도...");
+    if (info.url) loader.load(info.url, setupModel, undefined, () => createFallback(info.proc));
+    else createFallback(info.proc);
+  });
 }
 
 function setupModel(gltf) {
   const model = gltf.scene;
   model.traverse(c => { if (c.isMesh) c.castShadow = true; });
   const box = new THREE.Box3().setFromObject(model);
-  const scale = 2.5 / box.getSize(new THREE.Vector3()).length(); 
+  const scale = 2.5 / box.getSize(new THREE.Vector3()).length();
   model.scale.set(scale, scale, scale);
   model.position.y = -box.min.y * scale;
   currentPetGroup.add(model);
@@ -102,32 +107,32 @@ function setupModel(gltf) {
   if (gltf.animations.length > 0) {
     mixer = new THREE.AnimationMixer(model);
     gltf.animations.forEach(clip => {
-      const n = clip.name.toLowerCase();
-      if (n.includes('idle')) animations.idle = mixer.clipAction(clip);
-      if (n.includes('run') || n.includes('walk')) animations.run = mixer.clipAction(clip);
-      if (n.includes('eat')) animations.eat = mixer.clipAction(clip);
+      const name = clip.name.toLowerCase();
+      if (name.includes('idle')) animations.idle = mixer.clipAction(clip);
+      if (name.includes('run') || name.includes('walk')) animations.run = mixer.clipAction(clip);
     });
     playAnim('idle');
   }
 }
 
-function createFallback(c) {
-  const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 0.5, 4, 8), new THREE.MeshStandardMaterial({ color: c.body }));
+function createFallback(colors) {
+  const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 0.5, 4, 8), new THREE.MeshStandardMaterial({ color: colors.body }));
   mesh.position.y = 0.75;
   currentPetGroup.add(mesh);
 }
 
-function playAnim(n) {
-  if (!mixer || !animations[n]) return;
-  if (currentAnimAction === animations[n]) return;
+function playAnim(name) {
+  if (!mixer || !animations[name]) return;
+  if (currentAnimAction === animations[name]) return;
   if (currentAnimAction) currentAnimAction.fadeOut(0.2);
-  animations[n].reset().fadeIn(0.2).play();
-  currentAnimAction = animations[n];
+  animations[name].reset().fadeIn(0.2).play();
+  currentAnimAction = animations[name];
 }
 
+/* ---- 메인 루프 (여기에 다 합쳤습니다) ---- */
 function animate() {
   requestAnimationFrame(animate);
-  const dt = clock.getDelta(); // 에러 발생 지점 해결 완료!
+  const dt = clock.getDelta();
   if (mixer) mixer.update(dt);
 
   let moveDir = new THREE.Vector3(0, 0, 0);
@@ -137,13 +142,13 @@ function animate() {
   if (keys.d || keys.arrowright) moveDir.x += 1;
 
   if (moveDir.lengthSq() > 0 && S.action !== 'sleep') {
-    const camA = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
-    moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camA);
+    const camAngle = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
+    moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
     currentPetGroup.rotation.y = Math.atan2(moveDir.x, moveDir.z);
     currentPetGroup.position.addScaledVector(moveDir, 4.0 * dt);
     playAnim('run');
-  } else if (!S.action) {
-    playAnim('idle');
+  } else {
+    if (!S.action) playAnim('idle');
   }
 
   controls.target.lerp(currentPetGroup.position, 0.1);
@@ -151,24 +156,11 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function buildSelector() {
-  const grid = document.getElementById('petGrid');
-  if(!grid) return;
-  grid.innerHTML = '';
-  FRIENDS.forEach(f => {
-    const btn = document.createElement('button');
-    btn.className = 'pet-btn' + (f.key === S.petKey ? ' active' : '');
-    btn.innerHTML = `<span class="pet-emoji">${f.emoji}</span><span class="pet-label">${f.kr}</span>`;
-    btn.onclick = (e) => { S.petKey = f.key; document.querySelectorAll('.pet-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); loadPet(f.key); };
-    grid.appendChild(btn);
-  });
-}
-
 function bindUI() {
   window.doAction = (act) => {
     S.action = act;
-    if (act === 'feed') playAnim('eat');
-    if (act === 'play') playAnim('run');
-    setTimeout(() => { S.action = null; }, 2500);
+    if (act === 'feed') playAnim('run'); // 임시
+    setTimeout(() => S.action = null, 2500);
   };
+  window.chPet = (key) => loadPet(key);
 }
