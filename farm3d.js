@@ -9,20 +9,20 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /* ---- 동물 설정 (모델이 없으면 proc 설정의 임시 캐릭터가 나옴) ---- */
 const FRIENDS = [
   { key: 'fox', kr: '여우', emoji: '🦊',
-    local: 'models/Fox.gltf',
+    local: 'models/Fox.glb',
     url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb',
     proc: { body: 0xff8a3d, belly: 0xfff1e0 } 
   },
   { key: 'Alpaca', kr: '알파카', emoji: '🦙',
-    local: 'models/Alpaca.gltf', url: null,
+    local: 'models/Alpaca.glb', url: null,
     proc: { body: 0xe8b870, belly: 0xf5d9a0 } 
   },
   { key: 'Cow', kr: '소', emoji: '🐮',
-    local: 'models/Cow.gltf', url: null,
+    local: 'models/Cow.glb', url: null,
     proc: { body: 0xffb3d1, belly: 0xffe0ef } 
   },
   { key: 'Deer', kr: '사슴', emoji: '🦌',
-    local: 'models/Deer.gltf', url: null,
+    local: 'models/Deer.glb', url: null,
     proc: { body: 0xdce0ff, belly: 0xfff0f8 } 
   }
 ];
@@ -71,7 +71,14 @@ function init3D() {
   controls.minDistance = 3;
   controls.maxDistance = 15;
 
-  clock = new THREE.Clock();
+ import { Timer } from 'three/addons/utils/Timer.js'; // 1. 상단에 추가 (없다면)
+const timer = new THREE.Timer(); // 2. clock 대신 생성
+
+function animate() {
+  timer.update(); // 3. 매 프레임마다 업데이트
+  const dt = timer.getDelta();
+  // ... 나머지 코드
+}
   scene.add(currentPetGroup);
 
   // 조명
