@@ -1,12 +1,11 @@
 /* =====================================================================
-   🌸 내 친구 동물 농장 3D - WASD 이동 추가 버전 (farm3d.js)
-   - W, A, S, D 키로 필드 이동 / Camera Follow
+   🌸 내 친구 동물 농장 3D - farm3d.js (최종 수정본)
    ===================================================================== */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-/* ---- 동물 설정 (모델이 없으면 proc 설정의 임시 캐릭터가 나옴) ---- */
+/* ---- 동물 설정 ---- */
 const FRIENDS = [
   { key: 'fox', kr: '여우', emoji: '🦊',
     local: './models/Fox.glb',
@@ -62,16 +61,18 @@ let S = {
 };
 
 // Three.js 코어 변수
-let scene, camera, renderer, controls, clock;
+let scene, camera, renderer, controls;
+let clock = new THREE.Clock(); // Clock은 이렇게 밖에서 선언해야 합니다.
 let currentPetGroup = new THREE.Group();
 let mixer = null;
-let animations = {}; // { idle: action, run: action, ... }
+let animations = {}; 
 let currentAnimAction = null;
 
-// 키보드 입력 상태
 const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
 
+// 실행 순서
 init3D();
+buildSelector(); // 버튼 만드는 함수를 꼭 호출해야 합니다!
 bindUI();
 animate();
 
@@ -95,21 +96,12 @@ function init3D() {
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.maxPolarAngle = Math.PI / 2 - 0.05; // 땅 아래로 내려가지 않게 제한
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
   controls.minDistance = 3;
   controls.maxDistance = 15;
 
- import { Timer } from 'three/addons/utils/Timer.js'; // 1. 상단에 추가 (없다면)
-const timer = new THREE.Timer(); // 2. clock 대신 생성
-
-function animate() {
-  timer.update(); // 3. 매 프레임마다 업데이트
-  const dt = timer.getDelta();
-  // ... 나머지 코드
-}
   scene.add(currentPetGroup);
 
-  // 조명
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
   scene.add(hemiLight);
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -117,7 +109,6 @@ function animate() {
   dirLight.castShadow = true;
   scene.add(dirLight);
 
-  // 잔디밭(바닥)
   const planeGeo = new THREE.PlaneGeometry(100, 100);
   const planeMat = new THREE.MeshStandardMaterial({ color: 0x8cd977 });
   const plane = new THREE.Mesh(planeGeo, planeMat);
@@ -125,7 +116,6 @@ function animate() {
   plane.receiveShadow = true;
   scene.add(plane);
 
-  // 키보드 이벤트 리스너 추가 (이동용)
   window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (keys.hasOwnProperty(key)) keys[key] = true;
@@ -145,24 +135,31 @@ function animate() {
 
 /* ---- 캐릭터 불러오기 ---- */
 function loadPet(key) {
-  currentPetGroup.clear(); // 기존 모델 제거
-  currentPetGroup.position.set(0, 0, 0); // 위치 초기화
+  currentPetGroup.clear();
+  currentPetGroup.position.set(0, 0, 0);
   mixer = null;
   animations = {};
 
   const info = FRIENDS.find(f => f.key === key);
   const loader = new GLTFLoader();
 
-  // 1. 로컬 파일 먼저 시도 -> 2. URL 시도 -> 3. 실패 시 Toon 모델
+  // 로딩 화면 표시
+  const loaderUI = document.getElementById('loading');
+  if(loaderUI) loaderUI.style.display = 'flex';
+
   loader.load(info.local, 
-    setupModel, 
+    (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; }, 
     undefined, 
     (err) => {
       console.warn(`로컬 모델(${info.local}) 로드 실패. 대체 URL 확인 중...`);
       if (info.url) {
-        loader.load(info.url, setupModel, undefined, () => createFallbackToon(info.proc));
+        loader.load(info.url, (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; }, undefined, () => {
+          createFallbackToon(info.proc);
+          if(loaderUI) loaderUI.style.display = 'none';
+        });
       } else {
         createFallbackToon(info.proc);
+        if(loaderUI) loaderUI.style.display = 'none';
       }
     }
   );
@@ -172,7 +169,6 @@ function setupModel(gltf) {
   const model = gltf.scene;
   model.traverse(child => { if (child.isMesh) child.castShadow = true; });
   
-  // 크기 정규화 (모델마다 크기가 다름을 방지)
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3()).length();
   const scale = 2.5 / size; 
@@ -181,24 +177,20 @@ function setupModel(gltf) {
   
   currentPetGroup.add(model);
 
-  // 애니메이션 매핑
   if (gltf.animations && gltf.animations.length > 0) {
     mixer = new THREE.AnimationMixer(model);
     gltf.animations.forEach(clip => {
       const name = clip.name.toLowerCase();
-      // Quaternius 모델 등의 이름 규칙 대응
       if (name.includes('idle')) animations.idle = mixer.clipAction(clip);
       if (name.includes('run') || name.includes('walk')) animations.run = mixer.clipAction(clip);
       if (name.includes('eat') || name.includes('bite')) animations.eat = mixer.clipAction(clip);
     });
-    // 기본 애니메이션은 첫 번째 것으로 할당
     if(!animations.idle) animations.idle = mixer.clipAction(gltf.animations[0]);
     if(!animations.run) animations.run = animations.idle;
     playAnim('idle');
   }
 }
 
-// 모델이 없을 때 임시로 그려지는 캐릭터
 function createFallbackToon(colors) {
   const geo = new THREE.CapsuleGeometry(0.5, 0.5, 4, 8);
   const mat = new THREE.MeshStandardMaterial({ color: colors.body });
@@ -208,25 +200,22 @@ function createFallbackToon(colors) {
   currentPetGroup.add(mesh);
 }
 
-/* ---- 애니메이션 플레이어 ---- */
 function playAnim(name) {
   if (!mixer || !animations[name]) return;
   const nextAction = animations[name];
   if (currentAnimAction === nextAction) return;
-  
   if (currentAnimAction) currentAnimAction.fadeOut(0.2);
   nextAction.reset().fadeIn(0.2).play();
   currentAnimAction = nextAction;
 }
 
-/* ---- 메인 루프 & 캐릭터 이동 ---- */
+/* ---- 메인 루프 ---- */
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
 
   if (mixer) mixer.update(dt);
 
-  // 캐릭터 키보드 이동 로직
   let moveDir = new THREE.Vector3(0, 0, 0);
   if (keys.w || keys.arrowup) moveDir.z -= 1;
   if (keys.s || keys.arrowdown) moveDir.z += 1;
@@ -234,41 +223,41 @@ function animate() {
   if (keys.d || keys.arrowright) moveDir.x += 1;
 
   if (moveDir.lengthSq() > 0 && S.action !== 'sleep') {
-    // 카메라가 바라보는 방향을 기준으로 이동 방향 계산
     const cameraAngle = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
-    
-    // 로컬 방향 벡터를 카메라 시점으로 변환
     moveDir.normalize();
     moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngle);
-
-    // 모델 회전 (이동하는 방향을 바라보게)
     const targetRotation = Math.atan2(moveDir.x, moveDir.z);
     currentPetGroup.rotation.y = targetRotation;
-
-    // 모델 이동
     const speed = 4.0;
     currentPetGroup.position.addScaledVector(moveDir, speed * dt);
-    
-    playAnim('run'); // 뛰는 애니메이션
+    playAnim('run');
   } else {
-    // 액션 중이 아닐 때만 idle
     if (!S.action) playAnim('idle'); 
   }
 
-  // 카메라가 부드럽게 캐릭터를 따라가도록 설정
   controls.target.lerp(currentPetGroup.position, 0.1);
   controls.update();
-
   renderer.render(scene, camera);
 }
 
-/* ---- UI 및 동작 연동 ---- */
+/* ---- UI 연동 ---- */
+function buildSelector() {
+  const grid = document.getElementById('petGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  FRIENDS.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'pet-btn' + (f.key === S.petKey ? ' active' : '');
+    btn.innerHTML = `<span class="pet-emoji">${f.emoji}</span><span class="pet-label">${f.kr}</span>`;
+    btn.onclick = (e) => chPet(f.key, e.currentTarget);
+    grid.appendChild(btn);
+  });
+}
+
 function doAction(act) {
   S.action = act;
   if (act === 'feed') { playAnim('eat'); S.hunger = Math.min(100, S.hunger + 20); }
   if (act === 'play') { playAnim('run'); S.happy = Math.min(100, S.happy + 20); }
-  
-  updateBars();
   setTimeout(() => { S.action = null; }, 2500);
 }
 
@@ -279,7 +268,6 @@ function chPet(key, btn) {
   loadPet(key);
 }
 
-function updateBars() { /* HTML 체력바 연동 (생략가능하나 에러 방지용) */ }
 function bindUI() {
   window.doAction = doAction;
   window.chPet = chPet;
