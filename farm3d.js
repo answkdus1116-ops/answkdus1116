@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// 1. 데이터 설정
+/* ---- 1. 데이터 설정 ---- */
 const FRIENDS = [
   { key: 'fox', kr: '여우', emoji: '🦊', local: './models/Fox.glb', url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb', proc: { body: 0xff8a3d } },
   { key: 'Alpaca', kr: '알파카', emoji: '🦙', local: './models/Alpaca.glb', url: null, proc: { body: 0xe8b870 } },
@@ -12,15 +12,14 @@ const FRIENDS = [
 
 let S = { petKey: 'fox', action: null };
 let scene, camera, renderer, controls, mixer;
-let clock = new THREE.Clock();
+let clock = new THREE.Clock(); // Timer 대신 더 범용적인 Clock 사용
 let currentPetGroup = new THREE.Group();
 let animations = {};
 let currentAnimAction = null;
 const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
 
-// 2. 초기화 실행
+/* ---- 2. 초기화 실행 ---- */
 init3D();
-buildSelector();
 bindUI();
 animate();
 
@@ -55,6 +54,7 @@ function init3D() {
   plane.receiveShadow = true;
   scene.add(plane);
 
+  // 이벤트 리스너
   window.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; });
   window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; });
   
@@ -67,16 +67,14 @@ function loadPet(key) {
   animations = {};
   const info = FRIENDS.find(f => f.key === key);
   const loader = new GLTFLoader();
-  const loaderUI = document.getElementById('loading');
-  if(loaderUI) loaderUI.style.display = 'flex';
 
   loader.load(info.local, 
-    (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; },
+    (gltf) => { setupModel(gltf); },
     undefined,
     () => {
-      if (info.url) {
-        loader.load(info.url, (gltf) => { setupModel(gltf); if(loaderUI) loaderUI.style.display = 'none'; }, undefined, () => { createFallback(info.proc); if(loaderUI) loaderUI.style.display = 'none'; });
-      } else { createFallback(info.proc); if(loaderUI) loaderUI.style.display = 'none'; }
+      // 로컬 파일 실패 시 URL 시도
+      if (info.url) loader.load(info.url, setupModel, undefined, () => createFallback(info.proc));
+      else createFallback(info.proc);
     }
   );
 }
@@ -128,8 +126,8 @@ function animate() {
   if (keys.d || keys.arrowright) moveDir.x += 1;
 
   if (moveDir.lengthSq() > 0) {
-    const camA = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
-    moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camA);
+    const camAngle = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
+    moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
     currentPetGroup.rotation.y = Math.atan2(moveDir.x, moveDir.z);
     currentPetGroup.position.addScaledVector(moveDir, 4.0 * dt);
     playAnim('run');
@@ -142,27 +140,10 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function buildSelector() {
-  const grid = document.getElementById('petGrid');
-  if(!grid) return;
-  grid.innerHTML = '';
-  FRIENDS.forEach(f => {
-    const btn = document.createElement('button');
-    btn.className = 'pet-btn' + (f.key === S.petKey ? ' active' : '');
-    btn.innerHTML = `<span class="pet-emoji">${f.emoji}</span>`;
-    btn.onclick = (e) => { 
-        S.petKey = f.key; 
-        document.querySelectorAll('.pet-btn').forEach(b => b.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        loadPet(f.key); 
-    };
-    grid.appendChild(btn);
-  });
-}
-
 function bindUI() {
   window.doAction = (act) => {
     if (act === 'feed') playAnim('run');
     setTimeout(() => playAnim('idle'), 2000);
   };
+  window.chPet = (key) => loadPet(key);
 }
