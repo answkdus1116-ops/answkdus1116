@@ -29,10 +29,6 @@ const FRIENDS = [
     local: 'models/Shiba.glb', url: null,
     proc: { body: 0xffb3d1, belly: 0xffe0ef } 
   },
-  { key: 'Bull', kr: '황소', emoji: '🐂',
-    local: 'models/Bull.glb', url: null,
-    proc: { body: 0x444444, belly: 0x222222 } 
-  },
   { key: 'Donkey', kr: '당나귀', emoji: '🫏',
     local: 'models/Donkey.glb', url: null,
     proc: { body: 0xaaaaaa, belly: 0xcccccc } 
