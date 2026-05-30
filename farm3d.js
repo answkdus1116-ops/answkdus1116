@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// 1. 상태 관리
+/* ---- 1. 데이터 및 설정 ---- */
 const FRIENDS = [
-  { key: 'fox', kr: '여우', emoji: '🦊', local: './models/Fox.glb', url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb', proc: { body: 0xff8a3d } }
+  { key: 'fox', kr: '여우', emoji: '🦊', local: './models/Fox.glb', url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb', proc: { body: 0xff8a3d } },
+  { key: 'Alpaca', kr: '알파카', emoji: '🦙', local: './models/Alpaca.glb', url: null, proc: { body: 0xe8b870 } }
 ];
 
 let S = { petKey: 'fox', action: null, isMoving: false };
@@ -14,18 +15,22 @@ let currentPetGroup = new THREE.Group();
 let animations = {};
 let currentAnimAction = null;
 
-// 조이스틱 및 입력 상태
-const keys = { w: false, a: false, s: false, d: false };
-let joystickVector = new THREE.Vector2();
+// 입력 관리
+const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
+let joystickVector = new THREE.Vector2(0, 0);
 
+/* ---- 2. 초기화 실행 ---- */
 init3D();
+buildSelector();
 bindUI();
+createJoystick(); // 태블릿 조이스틱 생성
 animate();
 
 function init3D() {
   const container = document.getElementById('stage');
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xbdf0ff);
+  scene.fog = new THREE.Fog(0xbdf0ff, 15, 45);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
   camera.position.set(0, 5, 10);
@@ -37,119 +42,133 @@ function init3D() {
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  controls.maxDistance = 20;
 
-  // --- 입체적 잔디밭 구현 (API/무료 텍스처 활용) ---
-  const texLoader = new THREE.TextureLoader();
-  // 퀄리티 높은 무료 잔디 텍스처 (Poly Haven 제공 API 경로 활용 가능)
-  const grassTex = texLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/terrain/grasslight-big.jpg');
+  // --- 🌿 입체적 잔디밭 (고퀄리티 텍스처 적용) ---
+  const loader = new THREE.TextureLoader();
+  // Three.js 공식 예제 텍스처 활용 (입체감 있는 잔디)
+  const grassTex = loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/terrain/grasslight-big.jpg');
   grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-  grassTex.repeat.set(20, 20);
+  grassTex.repeat.set(25, 25); // 텍스처 반복으로 디테일 증가
 
-  const planeGeo = new THREE.PlaneGeometry(100, 100, 10, 10);
-  const planeMat = new THREE.MeshStandardMaterial({ 
-    map: grassTex,
-    normalScale: new THREE.Vector2(0.8, 0.8)
-  });
+  const planeGeo = new THREE.PlaneGeometry(100, 100);
+  const planeMat = new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.8 });
   const plane = new THREE.Mesh(planeGeo, planeMat);
   plane.rotation.x = -Math.PI / 2;
   plane.receiveShadow = true;
   scene.add(plane);
 
-  // 조명 설정
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.8));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  // 조명
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.0));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
   dirLight.position.set(5, 10, 5);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
   scene.add(currentPetGroup);
+  
+  // 키보드 이벤트
+  window.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; });
+  window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; });
+  
   loadPet(S.petKey);
-
-  // 태블릿용 조이스틱 레이어 추가
-  createJoystick();
 }
 
-// 2. 태블릿 이동을 위한 가상 조이스틱 (UI 레이어)
+/* ---- 3. 태블릿 조이스틱 시스템 ---- */
 function createJoystick() {
-  const il = document.getElementById('il');
-  const joyStick = document.createElement('div');
-  joyStick.style = "position:absolute; bottom:40px; left:40px; width:100px; height:100px; background:rgba(255,255,255,0.3); border-radius:50%; touch-action:none;";
-  il.appendChild(joyStick);
+  const joyZone = document.createElement('div');
+  joyZone.id = 'joystick-zone';
+  joyZone.style = "position:absolute; bottom:40px; left:40px; width:120px; height:120px; background:rgba(255,255,255,0.2); border-radius:50%; z-index:1000; touch-action:none; display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.3);";
+  document.body.appendChild(joyZone);
 
   const stick = document.createElement('div');
-  stick.style = "position:absolute; top:30px; left:30px; width:40px; height:40px; background:#fff; border-radius:50%; transition: 0.1s;";
-  joyStick.appendChild(stick);
+  stick.style = "width:50px; height:50px; background:#fff; border-radius:50%; box-shadow:0 4px 10px rgba(0,0,0,0.2); transition: transform 0.1s;";
+  joyZone.appendChild(stick);
 
-  joyStick.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    const rect = joyStick.getBoundingClientRect();
-    const x = (touch.clientX - rect.left - 50) / 50;
-    const y = (touch.clientY - rect.top - 50) / 50;
+  const handleMove = (e) => {
+    e.preventDefault();
+    const touch = e.touches ? e.touches[0] : e;
+    const rect = joyZone.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const x = (touch.clientX - centerX) / (rect.width / 2);
+    const y = (touch.clientY - centerY) / (rect.height / 2);
+    
     joystickVector.set(x, y).clampLength(0, 1);
-    stick.style.transform = `translate(${joystickVector.x * 30}px, ${joystickVector.y * 30}px)`;
-    S.isMoving = true;
-  });
+    stick.style.transform = `translate(${joystickVector.x * 35}px, ${joystickVector.y * 35}px)`;
+  };
 
-  joyStick.addEventListener('touchend', () => {
+  const handleEnd = () => {
     joystickVector.set(0, 0);
     stick.style.transform = `translate(0, 0)`;
-    S.isMoving = false;
-  });
+  };
+
+  joyZone.addEventListener('touchstart', handleMove);
+  joyZone.addEventListener('touchmove', handleMove);
+  joyZone.addEventListener('touchend', handleEnd);
 }
 
-// 3. 아이템 출현 기능 (상점 연동)
-window.buyItem = (id, emoji) => {
-  const itemGeo = new THREE.SphereGeometry(0.3, 16, 16);
-  const itemMat = new THREE.MeshStandardMaterial({ color: id === 'fish' ? 0x3399ff : 0xffcc00 });
-  const item = new THREE.Mesh(itemGeo, itemMat);
+/* ---- 4. 아이템 소환 시스템 (물고기, 케이크 등) ---- */
+function spawnItem(type) {
+  const colors = { fish: 0x3399ff, cake: 0xff66cc, toy: 0xffff00, vitamin: 0x00ff99 };
+  const geo = new THREE.IcosahedronGeometry(0.3, 0);
+  const mat = new THREE.MeshStandardMaterial({ color: colors[type] || 0xffffff, emissive: colors[type], emissiveIntensity: 0.5 });
+  const item = new THREE.Mesh(geo, mat);
+
+  // 캐릭터 앞 위치 계산
+  const angle = currentPetGroup.rotation.y;
+  item.position.set(
+    currentPetGroup.position.x + Math.sin(angle) * 1.5,
+    0.3,
+    currentPetGroup.position.z + Math.cos(angle) * 1.5
+  );
   
-  // 캐릭터 앞에 아이템 소환
-  const offset = new THREE.Vector3(0, 0, 1).applyQuaternion(currentPetGroup.quaternion);
-  item.position.copy(currentPetGroup.position).add(offset).add(new THREE.Vector3(0, 0.5, 0));
   scene.add(item);
-
-  // 3초 후 삭제
-  setTimeout(() => scene.remove(item), 3000);
-  showNotif(`${emoji} 아이템이 나타났어요!`);
-};
-
-function showNotif(msg) {
-  const nl = document.getElementById('notifLayer');
-  const div = document.createElement('div');
-  div.className = 'notif-popup';
-  div.innerText = msg;
-  nl.appendChild(div);
-  setTimeout(() => div.remove(), 2000);
+  
+  // 3초 뒤 사라지는 효과
+  setTimeout(() => {
+    const fadeOut = setInterval(() => {
+      item.scale.multiplyScalar(0.9);
+      if(item.scale.x < 0.1) {
+        scene.remove(item);
+        clearInterval(fadeOut);
+      }
+    }, 50);
+  }, 2500);
 }
 
+/* ---- 5. 메인 루프 (방정맞은 이동 수정) ---- */
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
   if (mixer) mixer.update(dt);
 
   let moveDir = new THREE.Vector3(0, 0, 0);
-  
-  // PC 키보드 입력
-  if (keys.w) moveDir.z -= 1;
-  if (keys.s) moveDir.z += 1;
-  if (keys.a) moveDir.x -= 1;
-  if (keys.d) moveDir.x += 1;
+  if (keys.w || keys.arrowup) moveDir.z -= 1;
+  if (keys.s || keys.arrowdown) moveDir.z += 1;
+  if (keys.a || keys.arrowleft) moveDir.x -= 1;
+  if (keys.d || keys.arrowright) moveDir.x += 1;
 
-  // 태블릿 조이스틱 입력 합산
-  if (joystickVector.lengthSq() > 0) {
+  // 조이스틱 입력 합산
+  if (joystickVector.lengthSq() > 0.1) {
     moveDir.x = joystickVector.x;
     moveDir.z = joystickVector.y;
   }
 
-  // 움직임 체크 및 애니메이션 전환 (방정맞음 방지)
-  if (moveDir.lengthSq() > 0.01) {
+  // 방정맞음 방지: 일정 강도 이상의 입력이 있을 때만 이동
+  if (moveDir.lengthSq() > 0.05 && S.action !== 'sleep') {
     const camAngle = Math.atan2(camera.position.x - currentPetGroup.position.x, camera.position.z - currentPetGroup.position.z);
     moveDir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), camAngle);
-    currentPetGroup.rotation.y = THREE.MathUtils.lerp(currentPetGroup.rotation.y, Math.atan2(moveDir.x, moveDir.z), 0.1);
-    currentPetGroup.position.addScaledVector(moveDir, 5 * dt);
+    
+    // 부드러운 회전
+    const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+    currentPetGroup.rotation.y = THREE.MathUtils.lerp(currentPetGroup.rotation.y, targetAngle, 0.15);
+    
+    currentPetGroup.position.addScaledVector(moveDir, 4.0 * dt);
     playAnim('run');
   } else {
-    playAnim('idle'); // 움직임이 없을 때만 대기 애니메이션
+    // 멈춰있을 때만 idle 실행
+    if (!S.action) playAnim('idle');
   }
 
   controls.target.lerp(currentPetGroup.position, 0.1);
@@ -157,17 +176,85 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+/* ---- 6. UI 및 상호작용 ---- */
 function bindUI() {
   window.doAction = (act) => {
+    if (S.action === act) return;
     S.action = act;
-    // 특정 동작 수행 시 애니메이션 강제 실행 로직 추가 가능
-    showNotif(`${act} 동작을 시작합니다!`);
-    setTimeout(() => S.action = null, 2000);
+    
+    // 동작별 애니메이션 및 아이템 연결
+    if (act === 'feed') { playAnim('run'); spawnItem('fish'); }
+    else if (act === 'play') { playAnim('run'); spawnItem('toy'); }
+    else if (act === 'sleep') { playAnim('idle'); }
+    else if (act === 'wash') { playAnim('idle'); }
+
+    // 2초 후 기본 상태로 복구
+    setTimeout(() => { S.action = null; }, 2000);
   };
-  
-  // HTML에서 사용하는 나머지 기능들(에러 방지용 빈 함수)
-  window.renamePet = () => { const n = prompt('새 이름을 지어주세요!'); if(n) document.getElementById('petNameDisplay').innerText = n; };
-  window.buyItem = (id, emoji) => alert(emoji + '를 구매했습니다!');
-  window.toggleSound = (btn) => btn.innerText = btn.innerText === '🔊' ? '🔇' : '🔊';
-  window.sendChat = () => { const i = document.getElementById('ci'); if(i.value) { i.value=''; alert('나중에 대화 기능이 업데이트될 예정이에요!'); } };
+
+  window.buyItem = (id, emoji) => {
+    spawnItem(id);
+    const notif = document.createElement('div');
+    notif.className = 'notif-popup';
+    notif.innerText = `${emoji} 아이템을 사용했습니다!`;
+    document.getElementById('notifLayer').appendChild(notif);
+    setTimeout(() => notif.remove(), 2000);
+  };
+}
+
+// loadPet, setupModel, buildSelector 등 기존 보조 함수 유지...
+function loadPet(key) {
+  const loaderUI = document.getElementById('loading');
+  if(loaderUI) loaderUI.style.display = 'flex';
+  currentPetGroup.clear();
+  mixer = null;
+  animations = {};
+  const info = FRIENDS.find(f => f.key === key);
+  const loader = new GLTFLoader();
+  loader.load(info.local, (gltf) => { 
+    setupModel(gltf); 
+    if(loaderUI) loaderUI.style.display = 'none';
+  }, undefined, () => {
+     if(info.url) loader.load(info.url, (g) => { setupModel(g); loaderUI.style.display='none'; });
+  });
+}
+
+function setupModel(gltf) {
+  const model = gltf.scene;
+  model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3()).length();
+  const scale = 2.5 / size;
+  model.scale.set(scale, scale, scale);
+  model.position.y = -box.min.y * scale;
+  currentPetGroup.add(model);
+  if (gltf.animations.length > 0) {
+    mixer = new THREE.AnimationMixer(model);
+    gltf.animations.forEach(clip => {
+      const n = clip.name.toLowerCase();
+      if (n.includes('idle')) animations.idle = mixer.clipAction(clip);
+      if (n.includes('run') || n.includes('walk')) animations.run = mixer.clipAction(clip);
+    });
+    playAnim('idle');
+  }
+}
+
+function playAnim(n) {
+  if (!mixer || !animations[n]) return;
+  if (currentAnimAction === animations[n]) return;
+  if (currentAnimAction) currentAnimAction.fadeOut(0.2);
+  animations[n].reset().fadeIn(0.2).play();
+  currentAnimAction = animations[n];
+}
+
+function buildSelector() {
+  const sel = document.getElementById('petSelector');
+  if(!sel) return;
+  FRIENDS.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'pet-btn';
+    btn.innerHTML = `<span>${f.emoji}</span>`;
+    btn.onclick = () => loadPet(f.key);
+    sel.appendChild(btn);
+  });
 }
