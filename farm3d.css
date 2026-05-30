@@ -1,3 +1,16 @@
+/* 폰트 설계도 추가 */
+@font-face {
+  font-family: 'KoPubDotumBold'; 
+  src: url('./fonts/KoPub Dotum Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* 적용할 폰트 이름 변경 */
+:root {
+  --font-main: 'KoPubDotumBold', 'Gaegu', sans-serif;
+  --font-display: 'KoPubDotumBold', 'Jua', sans-serif;
+}
 /* ============================================================
    🌸 내 친구 동물 농장 3D - farm3d.css
    ============================================================ */
