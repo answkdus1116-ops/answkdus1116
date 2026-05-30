@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>자연쌤의 웹 앱 공작소 ✨</title>
     <style>
+        <style>
+    /* 1. 폰트 설계도 추가 */
+    @font-face {
+        font-family: 'KoPubDotumBold';
+        src: url('./fonts/KoPub Dotum Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    /* 2. 기존 body 설정에서 font-family 부분 수정 */
+    body {
+        background-color: #fff9f0;
+        font-family: 'KoPubDotumBold', 'Gaegu', cursive; /* 여기를 수정 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 20px;
+    }
+    
+    /* 3. 제목(h1)이나 카드 제목 등 강조하고 싶은 곳도 변경 */
+    h1, .app-title {
+        font-family: 'KoPubDotumBold', sans-serif;
+    }
+
         @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
 
         body {
@@ -131,7 +156,22 @@ button {
    </style>
 </head>
 <body>
-
+<div id="lock-screen">
+    <h2>🔒 비밀번호를 입력하세요</h2>
+    <input type="password" id="pw-input">
+    <button onclick="checkPassword()">입장하기</button>
+</div>
+<script>
+    function checkPassword() {
+        const correctPassword = "03jayeon"; // 사용할 비밀번호
+        const input = document.getElementById('pw-input').value;
+        
+        if (input === correctPassword) {
+            document.getElementById('lock-screen').style.display = 'none';
+        } else {
+            alert("비밀번호가 틀렸습니다!");
+        }
+    }
 </script>
     <h1>✨ 자연쌤의 웹 앱 공작소 ✨</h1>
 
