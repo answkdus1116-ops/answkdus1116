@@ -12,13 +12,13 @@ const FRIENDS = [
 
 let S = { petKey: 'fox', action: null };
 let scene, camera, renderer, controls, mixer;
-let clock = new THREE.Clock(); // Timer 대신 더 범용적인 Clock 사용
+let clock = new THREE.Clock(); // Timer 대신 안정적인 Clock 사용
 let currentPetGroup = new THREE.Group();
 let animations = {};
 let currentAnimAction = null;
 const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
 
-/* ---- 2. 초기화 실행 ---- */
+/* ---- 2. 실행 루틴 ---- */
 init3D();
 bindUI();
 animate();
@@ -54,10 +54,15 @@ function init3D() {
   plane.receiveShadow = true;
   scene.add(plane);
 
-  // 이벤트 리스너
+  // 이벤트 리스너 (WASD 이동용)
   window.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; });
   window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; });
-  
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
   loadPet(S.petKey);
 }
 
@@ -72,7 +77,6 @@ function loadPet(key) {
     (gltf) => { setupModel(gltf); },
     undefined,
     () => {
-      // 로컬 파일 실패 시 URL 시도
       if (info.url) loader.load(info.url, setupModel, undefined, () => createFallback(info.proc));
       else createFallback(info.proc);
     }
@@ -83,8 +87,7 @@ function setupModel(gltf) {
   const model = gltf.scene;
   model.traverse(c => { if (c.isMesh) c.castShadow = true; });
   const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3()).length();
-  const scale = 2.5 / size;
+  const scale = 2.5 / box.getSize(new THREE.Vector3()).length();
   model.scale.set(scale, scale, scale);
   model.position.y = -box.min.y * scale;
   currentPetGroup.add(model);
@@ -116,7 +119,7 @@ function playAnim(n) {
 
 function animate() {
   requestAnimationFrame(animate);
-  const dt = clock.getDelta();
+  const dt = clock.getDelta(); // Clock을 사용하여 일관된 프레임 계산
   if (mixer) mixer.update(dt);
 
   let moveDir = new THREE.Vector3(0, 0, 0);
