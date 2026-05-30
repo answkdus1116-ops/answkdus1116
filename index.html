@@ -131,22 +131,7 @@ button {
    </style>
 </head>
 <body>
-<div id="lock-screen">
-    <h2>🔒 비밀번호를 입력하세요</h2>
-    <input type="password" id="pw-input">
-    <button onclick="checkPassword()">입장하기</button>
-</div>
-<script>
-    function checkPassword() {
-        const correctPassword = "03jayeon"; // 사용할 비밀번호
-        const input = document.getElementById('pw-input').value;
-        
-        if (input === correctPassword) {
-            document.getElementById('lock-screen').style.display = 'none';
-        } else {
-            alert("비밀번호가 틀렸습니다!");
-        }
-    }
+
 </script>
     <h1>✨ 자연쌤의 웹 앱 공작소 ✨</h1>
 
