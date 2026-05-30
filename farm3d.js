@@ -24,6 +24,38 @@ const FRIENDS = [
   { key: 'Deer', kr: '사슴', emoji: '🦌',
     local: 'models/Deer.glb', url: null,
     proc: { body: 0xdce0ff, belly: 0xfff0f8 } 
+  }, // <-- 여기 쉼표가 빠졌던 곳입니다!
+  { key: 'Shiba', kr: '시바견', emoji: '🐕',
+    local: 'models/Shiba.glb', url: null,
+    proc: { body: 0xffb3d1, belly: 0xffe0ef } 
+  },
+  { key: 'Bull', kr: '황소', emoji: '🐂',
+    local: 'models/Bull.glb', url: null,
+    proc: { body: 0x444444, belly: 0x222222 } 
+  },
+  { key: 'Donkey', kr: '당나귀', emoji: '🫏',
+    local: 'models/Donkey.glb', url: null,
+    proc: { body: 0xaaaaaa, belly: 0xcccccc } 
+  },
+  { key: 'Stag', kr: '수사슴', emoji: '🦌',
+    local: 'models/Stag.glb', url: null,
+    proc: { body: 0x8b4513, belly: 0xd2b48c } 
+  },
+  { key: 'Husky', kr: '허스키', emoji: '🐺',
+    local: 'models/Husky.glb', url: null,
+    proc: { body: 0x555555, belly: 0xffffff } 
+  },
+  { key: 'WhiteHorse', kr: '백마', emoji: '🐎',
+    local: 'models/WhiteHorse.glb', url: null,
+    proc: { body: 0xffffff, belly: 0xeeeeee } 
+  },
+  { key: 'Horse', kr: '말', emoji: '🐴',
+    local: 'models/Horse.glb', url: null,
+    proc: { body: 0x654321, belly: 0x8b4513 } 
+  },
+  { key: 'Wolf', kr: '늑대', emoji: '🐺',
+    local: 'models/Wolf.glb', url: null,
+    proc: { body: 0x333333, belly: 0xeeeeee } 
   }
 ];
 
