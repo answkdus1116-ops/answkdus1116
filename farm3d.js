@@ -11,6 +11,19 @@ const FRIENDS = [
 ];
 
 let S = { petKey: 'fox', action: null, isMoving: false };
+let stats = {
+  hunger: 80,
+  happiness: 60,
+  health: 90,
+  clean: 70
+};
+
+// 고퀄리티 모델 주소 (Kenney 무료 에셋)
+const ASSETS = {
+  food: 'https://raw.githubusercontent.com/Pmndrs/market-assets/master/contents/meat/meat.gltf',
+  ball: 'https://raw.githubusercontent.com/Pmndrs/market-assets/master/contents/beach-ball/beach-ball.gltf',
+  bed: 'https://raw.githubusercontent.com/Pmndrs/market-assets/master/contents/bed-single/bed-single.gltf'
+};
 let scene, camera, renderer, controls, mixer;
 let clock = new THREE.Clock();
 let currentPetGroup = new THREE.Group();
@@ -222,6 +235,80 @@ function buildSelector() {
     sel.appendChild(btn);
   });
 }
+/* ---- [추가] UI 업데이트 및 액션 함수 ---- */
+
+// 1. 화면의 게이지 바를 움직이는 함수
+function updateUI() {
+  if(!document.getElementById('stat-hunger')) return; // 요소가 없을 때 에러 방지
+  document.getElementById('stat-hunger').style.width = `${stats.hunger}%`;
+  document.getElementById('stat-happiness').style.width = `${stats.happiness}%`;
+  document.getElementById('stat-health').style.width = `${stats.health}%`;
+  document.getElementById('stat-clean').style.width = `${stats.clean}%`;
+}
+
+// 2. 버튼 클릭 시 실행되는 핵심 함수 (이게 없어서 작동 안 했던 거예요!)
+window.doAction = function(type) {
+  const loader = new GLTFLoader();
+  
+  if (type === 'feed') {
+    stats.hunger = Math.min(100, stats.hunger + 20);
+    loader.load(ASSETS.food, (gltf) => {
+      const item = gltf.scene;
+      item.position.set(currentPetGroup.position.x + 0.5, 0, currentPetGroup.position.z + 0.5);
+      item.scale.set(1.5, 1.5, 1.5);
+      scene.add(item);
+      setTimeout(() => scene.remove(item), 3000);
+    });
+    if(typeof playAnim === 'function') playAnim('eat'); 
+    showNotif("🍖 맛있는 고기를 먹었습니다!");
+
+  } else if (type === 'play') {
+    stats.happiness = Math.min(100, stats.happiness + 15);
+    stats.hunger = Math.max(0, stats.hunger - 10);
+    loader.load(ASSETS.ball, (gltf) => {
+      const item = gltf.scene;
+      item.position.set(currentPetGroup.position.x, 1, currentPetGroup.position.z + 1.5);
+      scene.add(item);
+      setTimeout(() => scene.remove(item), 5000);
+    });
+    if(typeof playAnim === 'function') playAnim('jump');
+    showNotif("⚽ 신나게 공놀이를 합니다!");
+
+  } else if (type === 'sleep') {
+    stats.health = Math.min(100, stats.health + 25);
+    loader.load(ASSETS.bed, (gltf) => {
+      const item = gltf.scene;
+      item.position.copy(currentPetGroup.position);
+      item.rotation.y = Math.PI;
+      scene.add(item);
+      currentPetGroup.visible = false;
+      setTimeout(() => { scene.remove(item); currentPetGroup.visible = true; }, 4000);
+    });
+    showNotif("💤 푹 자고 일어나서 기운이 나요!");
+
+  } else if (type === 'wash') {
+    stats.clean = Math.min(100, stats.clean + 30);
+    createBubbles(); 
+    showNotif("🛁 깨끗하게 씻어서 개운해요!");
+  }
+
+  updateUI(); // 수치 변경 후 UI 갱신
+};
+
+// 비눗방울 효과 함수
+function createBubbles() {
+  const geo = new THREE.SphereGeometry(0.1, 8, 8);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+  for(let i=0; i<15; i++) {
+    const b = new THREE.Mesh(geo, mat);
+    b.position.set(currentPetGroup.position.x+(Math.random()-0.5), 1+Math.random(), currentPetGroup.position.z+(Math.random()-0.5));
+    scene.add(b);
+    setTimeout(() => scene.remove(b), 2000);
+  }
+}
+
+// 처음 실행 시 UI 한 번 그려주기
+setTimeout(updateUI, 500);
 
 function createJoystick() {
   const zone = document.createElement('div');
