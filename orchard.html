@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>싱그러운 햇살 과수원</title>
+    <link rel="stylesheet" href="orchard.css">
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.browser.min.js"></script>
+</head>
+<body>
+    <div id="entryOverlay">
+        <div class="entry-content">
+            <div class="entry-icon">🍎🌿🧺</div> 
+            <h1>자연쌤의 과수원</h1>
+            <button onclick="startOrchard()" class="btn-start">과수원 입장하기</button>
+        </div>
+    </div>
+
+    <img src="orchard_background.png" id="bgImage" alt="배경">
+
+    <div id="orchard-container">
+        <canvas id="orchardCanvas"></canvas>
+        
+        <div class="ui-panel" id="uiPanel">
+            <div class="ui-header">🍎 열매 놀이터</div>
+            <div class="btn-group">
+                <button onclick="openCamera()" class="btn-main camera-btn">📸 바로 촬영하기</button>
+                <button onclick="document.getElementById('fileInput').click()" class="btn-main upload-btn">📁 사진 가져오기</button>
+                
+                <div class="btn-row">
+                    <button onclick="toggleAudio()" id="audioBtn" class="btn-circle">🔇 소리 끔</button>
+                    <button onclick="clearOrchard()" class="btn-circle">🧹 청소하기</button>
+                    <button onclick="toggleFullScreen()" class="btn-circle">🖥️ 크게보기</button>
+                </div>
+            </div>
+            <button onclick="location.href='index.html'" class="btn-exit">🏠 메인으로</button>
+        </div>
+
+        <div id="cameraModal" class="camera-modal">
+            <div class="camera-content">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="captureCanvas" style="display:none;"></canvas>
+                <div class="camera-ui">
+                    <button onclick="takeSnapshot()" class="btn-capture"></button>
+                    <button onclick="closeCamera()" class="btn-close-cam">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="customAlert" class="custom-alert">
+            <div class="loader">🍎</div>
+            <p id="alertMessage">열매가 열리는 중...</p>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+        
+        <audio id="bgm" loop src="orchard.mp3"></audio>
+    </div>
+
+    <script src="orchard.js"></script>
+</body>
+</html>

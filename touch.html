@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>팡팡 터치 배틀</title>
+    <link rel="stylesheet" href="touch.css">
+</head>
+<body>
+    <div id="setup-overlay">
+        <h1 style="color:white; font-size: 2.2rem; margin-bottom: 20px;">캐릭터와 음악을 골라보세요!</h1>
+        <div class="setup-container">
+            <div class="setup-box">
+                <input type="text" id="p1-name-input" placeholder="학생 1 이름" maxlength="5">
+                <div class="char-selector" id="p1-chars">
+                    <img src="p1_1.png" class="char-img selected" data-img="p1_1.png">
+                    <img src="p1_2.png" class="char-img" data-img="p1_2.png">
+                    <img src="p1_3.png" class="char-img" data-img="p1_3.png">
+                    <img src="p1_4.png" class="char-img" data-img="p1_4.png">
+                </div>
+            </div>
+            <div class="setup-box">
+                <input type="text" id="p2-name-input" placeholder="학생 2 이름" maxlength="5">
+                <div class="char-selector" id="p2-chars">
+                    <img src="p2_1.png" class="char-img selected" data-img="p2_1.png">
+                    <img src="p2_2.png" class="char-img" data-img="p2_2.png">
+                    <img src="p2_3.png" class="char-img" data-img="p2_3.png">
+                    <img src="p2_4.png" class="char-img" data-img="p2_4.png">
+                </div>
+            </div>
+        </div>
+        
+        <div class="options-area" style="color:white; text-align:center; margin-bottom:20px;">
+            <label style="font-size:1.5rem; cursor:pointer;">
+                <input type="checkbox" id="bomb-toggle" style="width:22px; height:22px;"> 💣 폭탄 모드 (나오면 -5점!)
+            </label>
+            <div style="margin-top:10px; font-size:1.2rem;">
+                🎵 음악: 
+                <label><input type="radio" name="bgm-type" value="system" checked> 시스템</label>
+                <label><input type="radio" name="bgm-type" value="mp3"> 배경음악</label>
+            </div>
+        </div>
+
+        <button id="game-start-btn">게임 시작! 🚀</button>
+    </div>
+
+    <div id="timer-display">
+        <span><a href="index.html" style="text-decoration:none; color:inherit;">🏠</a> <b id="time-text">남은 시간: 60</b></span>
+    </div>
+
+    <div class="game-container">
+        <div id="p1-zone" class="player-zone">
+            <div class="score-label" id="p1-display-name">학생 1</div>
+            <div class="score" id="p1-score">0</div>
+        </div>
+        <div id="p2-zone" class="player-zone">
+            <div class="score-label" id="p2-display-name">학생 2</div>
+            <div class="score" id="p2-score">0</div>
+        </div>
+    </div>
+
+    <div id="result-overlay" class="hidden">
+        <div class="result-content">
+            <h1 id="winner-text">승자는?</h1>
+            <button onclick="location.reload()" style="padding:15px 40px; border-radius:20px; font-size:1.5rem; cursor:pointer; border:none;">다시 하기</button>
+        </div>
+    </div>
+
+    <audio id="bgm-audio" src="bgm_custom.mp3" loop preload="auto"></audio>
+    <script src="touch.js"></script>
+</body>
+</html>

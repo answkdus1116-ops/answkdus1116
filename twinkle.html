@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>트윙클 아트</title>
+    <link rel="stylesheet" href="twinkle.css">
+</head>
+<body>
+    <div id="ui-layer">
+        <div id="instruction">화면을 터치해보세요! ✨</div>
+        <div class="color-picker">
+            <div class="color-btn rainbow active" onclick="changeTheme('rainbow', this)">🌈</div>
+            <div class="color-btn blue" onclick="changeTheme('blue', this)">🔹</div>
+            <div class="color-btn pink" onclick="changeTheme('pink', this)">🌸</div>
+            <div class="color-btn green" onclick="changeTheme('green', this)">🌿</div>
+        </div>
+    </div>
+    <canvas id="twinkleCanvas"></canvas>
+    
+    <script src="twinkle.js"></script>
+</body>
+</html>

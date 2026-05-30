@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>훨훨 날아라! 숲속 놀이터</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.browser.min.js"></script>    
+    <link rel="stylesheet" href="bird.css">
+</head>
+<body>
+    <div id="entryOverlay">
+        <div class="entry-content">
+            <div class="entry-icon">🌳🐦✨🍃</div> 
+            <h1>자연쌤의 숲속 놀이터</h1>
+            <button onclick="startAviary()" class="btn-start">숲속 입장하기</button>
+        </div>
+    </div>
+
+    <div id="aviary-container">
+        <canvas id="birdCanvas"></canvas>
+        
+        <div class="ui-panel" id="uiPanel">
+            <div class="ui-header">🐦 숲속 놀이터</div>
+            <div class="btn-group-horizontal">
+                <button onclick="openCamera()" class="btn-main-sm camera-btn">📸 바로 촬영하기</button>
+                <button onclick="document.getElementById('fileInput').click()" class="btn-main-sm upload-btn">📁 사진 가져오기</button>
+                
+                <div class="btn-row-sm">
+                    <button onclick="toggleAudio()" id="audioBtn" class="btn-circle-sm">🔇 소리 끔</button>
+                    <button onclick="clearAviary()" class="btn-circle-sm">🧹 청소하기</button>
+                    <button onclick="toggleFullScreen()" class="btn-circle-sm">🖥️ 크게보기</button>
+                </div>
+                <button onclick="location.href='index.html'" class="btn-exit-sm">🏠 메인으로</button>
+            </div>
+        </div>
+
+        <div id="cameraModal" class="camera-modal">
+            <div class="camera-content">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="captureCanvas" style="display:none;"></canvas>
+                <div class="camera-ui">
+                    <button onclick="takeSnapshot()" class="btn-capture"></button>
+                    <button onclick="closeCamera()" class="btn-close-cam">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="customAlert" class="custom-alert">
+            <div class="loader">🍃</div>
+            <p id="alertMessage">새가 날아오는 중...</p>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+        <audio id="bgm" loop src="bird.mp3"></audio>    
+    </div>
+
+    <script src="bird.js"></script>
+</body>
+</html>

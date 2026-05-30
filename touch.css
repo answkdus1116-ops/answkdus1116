@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+
+* { box-sizing: border-box; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Gaegu', cursive; touch-action: none; background-color: #333; }
+
+#setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.setup-container { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+.setup-box { background: white; padding: 15px; border-radius: 25px; border: 5px solid #ffc2d1; display: flex; flex-direction: column; align-items: center; min-width: 260px; }
+.setup-box input { font-family: 'Gaegu'; font-size: 1.5rem; width: 100%; text-align: center; border: 3px solid #ddd; border-radius: 10px; margin-bottom: 10px; }
+
+.char-selector { display: flex; flex-wrap: wrap; justify-content: center; max-width: 250px; }
+.char-img { width: 50px; height: 50px; margin: 4px; cursor: pointer; border: 3px solid transparent; border-radius: 10px; }
+.char-img.selected { border-color: #ff85a2; background: #fff0f3; transform: scale(1.1); }
+
+#game-start-btn { padding: 15px 40px; border-radius: 30px; border: none; background: #ff85a2; color: white; font-size: 1.6rem; cursor: pointer; box-shadow: 0 5px 0 #d46a85; }
+
+#timer-display { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 100; color: white; font-size: 1.8rem; pointer-events: none; }
+#timer-display span { pointer-events: auto; background: rgba(0,0,0,0.6); padding: 5px 20px; border-radius: 30px; }
+
+.game-container { display: flex; width: 100vw; height: 100vh; }
+.player-zone { flex: 1; position: relative; overflow: hidden; }
+#p1-zone { background-color: #FFF5F7; border-right: 2px solid #ddd; }
+#p2-zone { background-color: #F7FBFF; }
+
+.score-label { font-size: 1.8rem; margin-top: 70px; text-align: center; background: white; width: fit-content; margin-left: auto; margin-right: auto; padding: 5px 20px; border-radius: 20px; border: 3px solid #ddd; }
+.score { font-size: 6rem; text-align: center; font-weight: bold; color: #ff6b81; margin-top: 10px; }
+#p2-score { color: #54a0ff; }
+
+.target { position: absolute; width: 120px; height: 120px; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; z-index: 10; transition: transform 0.1s; }
+
+#result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 500; color: white; text-align: center; }
+.hidden { display: none !important; }

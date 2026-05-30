@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Jua', sans-serif;
+    background-color: #f0faff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh; /* 화면 높이 100% 고정 */
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* 상단 UI 패널: 높이를 최소화하여 빙판장 공간 확보 */
+.ui-panel {
+    text-align: center;
+    background: white;
+    padding: 10px;
+    width: 100%;
+    max-height: 200px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+h1 { margin: 5px 0; font-size: 1.2rem; color: #0277bd; }
+
+.score-board { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 5px 0; }
+.score-box { padding: 5px 15px; border-radius: 10px; color: white; min-width: 70px; }
+.score-box.p1 { background-color: #448aff; }
+.score-box.p2 { background-color: #ff5252; }
+.score { font-size: 20px; font-weight: bold; }
+
+/* 🧊 빙판장: 남은 세로 공간을 100% 활용 (중요) */
+#rink {
+    position: relative;
+    flex: 1; /* 남은 공간을 모두 차지함 */
+    width: 95vw;
+    max-width: 450px;
+    background: linear-gradient(to bottom, #e1f5fe 0%, #ffffff 100%);
+    border: 8px solid #b3e5fc;
+    border-radius: 30px 30px 0 0;
+    margin: 5px auto 0 auto;
+    overflow: hidden;
+}
+
+/* 과녁 위치: 상단에서 15% 지점에 배치 */
+#target {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ff5252 15%, white 15.1%, white 30%, #448aff 30.1%, #448aff 45%, white 45.1%, white 100%);
+}
+
+/* 🥌 컬링 스톤: 둥근 디자인 및 입체감 복구 */
+#stone {
+    position: absolute;
+    bottom: 30px; /* 아래쪽 여유 공간 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 65px;
+    height: 65px;
+    border-radius: 50% !important; /* 강제로 동그랗게 설정 */
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    cursor: grab;
+    /* 부드러운 슬라이딩을 위한 설정 */
+    transition: bottom 2.5s cubic-bezier(0.2, 0.6, 0.35, 1);
+}
+
+#stone.p1-turn { background: radial-gradient(circle at 30% 30%, #64b5f6, #1976d2); }
+#stone.p2-turn { background: radial-gradient(circle at 30% 30%, #ff8a80, #d32f2f); }
+#stone::after { content: ''; width: 26px; height: 12px; background: #ffeb3b; border-radius: 6px; }
+
+/* 오버레이 디자인 */
+.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 20; }
+.overlay-content { background: white; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 350px; }
+.hidden { display: none; }
+
+button {
+    font-family: 'Jua', sans-serif; font-size: 18px; padding: 12px 24px; border: none; border-radius: 30px;
+    cursor: pointer; box-shadow: 0 4px 0 #bbb; margin-top: 10px;
+}
+#start-turn-btn { background: #4caf50; color: white; box-shadow: 0 4px 0 #2e7d32; }
+
+/* 타이머 스타일 */
+#timer-display {
+    font-size: 2.2rem; background: white; padding: 5px 25px;
+    border-radius: 30px; border: 4px solid #81d4fa; color: #0288d1;
+}
+
+/* 결과창 스타일 */
+#result-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); z-index: 500;
+    display: flex; justify-content: center; align-items: center;
+}
+.hidden { display: none !important; }
+
+.result-card {
+    background: white; padding: 50px; border-radius: 50px;
+    border: 10px solid #ffd6a5; text-align: center;
+}
+.result-card h2 { font-size: 4rem; color: #ff85a2; margin: 0; }
+.final-score { font-size: 2.5rem; margin: 30px 0; color: #333; }
+.result-card button {
+    padding: 15px 40px; font-size: 2rem; font-family: 'Gaegu';
+    background: #caffbf; border: none; border-radius: 30px;
+    cursor: pointer; box-shadow: 0 6px 0 #95d5a2;
+}
