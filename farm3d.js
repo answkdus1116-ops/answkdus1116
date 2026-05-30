@@ -8,7 +8,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ---- 동물 설정 (모델이 없으면 proc 설정의 임시 캐릭터가 나옴) ---- */
 const FRIENDS = [
- { key: 'Alpaca', kr: '알파카', emoji: '🦙',
+  { key: 'fox', kr: '여우', emoji: '🦊',
+    local: 'models/Fox.glb',
+    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/Fox/glTF-Binary/Fox.glb',
+    proc: { body: 0xff8a3d, belly: 0xfff1e0 } 
+  },
+  { key: 'Alpaca', kr: '알파카', emoji: '🦙',
     local: 'models/Alpaca.glb', url: null,
     proc: { body: 0xe8b870, belly: 0xf5d9a0 } 
   },
@@ -19,7 +24,7 @@ const FRIENDS = [
   { key: 'Deer', kr: '사슴', emoji: '🦌',
     local: 'models/Deer.glb', url: null,
     proc: { body: 0xdce0ff, belly: 0xfff0f8 } 
-  }, // <-- 74번 줄: 여기에 쉼표가 꼭 있어야 합니다!
+  },
   { key: 'Shiba', kr: '시바견', emoji: '🐕',
     local: 'models/Shiba.glb', url: null,
     proc: { body: 0xffb3d1, belly: 0xffe0ef } 
@@ -48,7 +53,7 @@ const FRIENDS = [
     local: 'models/Wolf.glb', url: null,
     proc: { body: 0x333333, belly: 0xeeeeee } 
   }
-]; // <-- 마지막은 대괄호와 세미콜론으로 닫습니다.
+];
 
 let S = {
   petKey: 'fox', petName: '모찌',
