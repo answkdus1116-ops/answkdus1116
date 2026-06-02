@@ -60,7 +60,7 @@ function drawUser(tCtx, x, y, width, height) {
         offCtx.globalCompositeOperation = 'source-over';
         tCtx.drawImage(offscreenCanvas, 0, 0, width, height);
     } else {
-        tCtx.drawImage(video, sX, sY, srcH, srcW, 0, 0, width, height);
+        tCtx.drawImage(video, sX, sY, sW, sH, 0, 0, width, height);
     }
     tCtx.restore();
 }
