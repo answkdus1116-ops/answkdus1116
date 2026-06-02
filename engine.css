@@ -1,0 +1,168 @@
+/* =========================================================================
+   자연쌤 놀이터 공통 스타일 (engine.css)
+   색상은 각 HTML <head> 의 :root 변수(--accent 등)로 테마별 지정
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
+
+:root{
+  --accent:#ff85a2;
+  --accent-dark:#d6336c;
+  --accent-soft:#ffd9e2;
+  --ink:#3a2e35;
+  --paper:rgba(255,255,255,0.78);
+  --shadow:0 18px 40px rgba(0,0,0,.18);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{
+  margin:0; padding:0; width:100%; height:100%;
+  overflow:hidden; font-family:'Gaegu',cursive; background:#000;
+  -webkit-user-select:none; user-select:none;
+}
+h1,h2,h3,.display{ font-family:'Jua',sans-serif; }
+
+/* 배경 레이어 */
+#bgLayer{
+  position:fixed; inset:0; width:100vw; height:100vh; z-index:1;
+  background-size:cover; background-position:center;
+}
+#bgLayer::after{ /* 은은한 비네팅으로 깊이감 */
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(120% 120% at 50% 30%, transparent 55%, rgba(0,0,0,.22) 100%);
+  pointer-events:none;
+}
+#mainCanvas{ position:fixed; inset:0; z-index:2; width:100%; height:100%; }
+
+/* ===================== 입장 화면 ===================== */
+#entryOverlay{
+  position:fixed; inset:0; z-index:9999; overflow:hidden;
+  display:flex; justify-content:center; align-items:center;
+  background:var(--entry-bg, radial-gradient(circle at 50% 35%, #6dd5ed 0%, #2193b0 100%));
+}
+#entryOverlay::before, #entryOverlay::after{ /* 떠다니는 큰 원 장식 */
+  content:''; position:absolute; border-radius:50%;
+  background:rgba(255,255,255,.12); filter:blur(2px);
+  animation:floaty 9s ease-in-out infinite;
+}
+#entryOverlay::before{ width:220px; height:220px; top:-60px; left:-40px; }
+#entryOverlay::after{ width:300px; height:300px; bottom:-100px; right:-60px; animation-delay:-3s; }
+
+.entry-content{
+  position:relative; z-index:2; text-align:center;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(12px);
+  padding:46px 60px; border-radius:36px;
+  border:5px solid var(--accent);
+  box-shadow:var(--shadow);
+  animation:pop .55s cubic-bezier(.2,.9,.3,1.4);
+}
+.entry-icon{ font-size:58px; margin-bottom:6px; animation:bounce 2.4s infinite; letter-spacing:4px; }
+.entry-content h1{ font-size:2.8rem; color:var(--accent-dark); margin:6px 0 26px; }
+
+.btn-start{
+  padding:16px 44px; font-size:1.9rem; font-family:'Jua',sans-serif;
+  background:var(--accent); color:#fff; border:none; border-radius:50px;
+  cursor:pointer; box-shadow:0 8px 0 var(--accent-dark); transition:.08s;
+}
+.btn-start:active{ transform:translateY(5px); box-shadow:0 3px 0 var(--accent-dark); }
+
+/* ===================== 상단 UI 바 ===================== */
+.ui-panel{
+  position:fixed; top:14px; left:50%; transform:translateX(-50%);
+  z-index:100; width:min(960px, calc(100% - 24px));
+  background:var(--paper); backdrop-filter:blur(14px);
+  padding:12px 16px; border-radius:22px;
+  border:1px solid rgba(255,255,255,.6);
+  box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  transition:opacity .45s ease; flex-wrap:wrap;
+}
+.ui-header{
+  font-family:'Jua',sans-serif; font-size:1.35rem; color:var(--accent-dark);
+  display:flex; align-items:center; gap:6px; white-space:nowrap;
+}
+.btn-cluster{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 16px; font-size:1.05rem; font-family:'Gaegu',cursive; font-weight:700;
+  border:none; border-radius:14px; cursor:pointer; color:var(--ink);
+  background:#fff; box-shadow:0 3px 0 rgba(0,0,0,.08); transition:.12s;
+}
+.btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.08); }
+.btn-primary{ background:var(--accent); color:#fff; box-shadow:0 4px 0 var(--accent-dark); }
+.btn-accent2{ background:var(--accent-2,#a2d2ff); box-shadow:0 4px 0 var(--accent-2-dark,#70a1ff); }
+.btn-ghost{ background:rgba(255,255,255,.85); }
+.btn-exit{ background:var(--accent); color:#fff; box-shadow:0 4px 0 var(--accent-dark); }
+.btn .ico{ font-size:1.15rem; }
+@media (max-width:560px){
+  .btn span{ display:none; }      /* 좁은 화면에선 아이콘만 */
+  .ui-header{ font-size:1.1rem; }
+}
+
+/* ===================== 공통 모달 ===================== */
+.modal{
+  position:fixed; inset:0; z-index:2000; display:none;
+  justify-content:center; align-items:center; background:rgba(20,20,30,.72);
+  backdrop-filter:blur(4px); padding:16px;
+}
+.modal.show{ display:flex; animation:fade .25s ease; }
+
+/* 카메라 */
+.camera-content{ position:relative; width:min(560px,100%); border:6px solid #fff; border-radius:26px; overflow:hidden; box-shadow:var(--shadow); }
+#video{ width:100%; height:auto; display:block; background:#000; }
+.camera-ui{ position:absolute; bottom:18px; width:100%; display:flex; justify-content:center; align-items:center; gap:28px; }
+.btn-capture{ width:66px; height:66px; background:#fff; border:5px solid var(--accent); border-radius:50%; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.4); }
+.btn-capture:active{ transform:scale(.92); }
+.btn-close-cam{ background:rgba(255,255,255,.9); border:none; padding:10px 16px; border-radius:12px; font-family:'Gaegu'; font-weight:700; cursor:pointer; }
+
+/* 미리보기 */
+.preview-content{
+  width:min(460px,100%); background:#fff; border-radius:28px;
+  border:5px solid var(--accent); box-shadow:var(--shadow);
+  padding:22px; text-align:center;
+}
+.preview-content h2{ color:var(--accent-dark); margin:0 0 14px; font-size:1.7rem; }
+#previewCanvasWrap{
+  position:relative; width:100%; height:240px; border-radius:18px;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  background-color:#eef1f5;
+  background-image:
+    linear-gradient(45deg,#dfe4ea 25%,transparent 25%),
+    linear-gradient(-45deg,#dfe4ea 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#dfe4ea 75%),
+    linear-gradient(-45deg,transparent 75%,#dfe4ea 75%);
+  background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0;
+}
+.pv-result{ max-width:96%; max-height:96%; filter:drop-shadow(0 6px 10px rgba(0,0,0,.2)); }
+#previewSpinner{
+  position:absolute; inset:0; background:rgba(255,255,255,.75);
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+}
+.pv-spin-emoji{ font-size:38px; animation:spin 1.4s linear infinite; }
+.pv-spin-msg{ color:var(--accent-dark); font-weight:700; }
+
+.pv-controls{ margin-top:16px; text-align:left; }
+.pv-row{ display:flex; align-items:center; gap:10px; margin:10px 2px; }
+.pv-row label{ flex:0 0 84px; font-weight:700; color:var(--ink); font-size:1.05rem; }
+.pv-row input[type=range]{ flex:1; accent-color:var(--accent); height:6px; }
+.pv-ai{ display:flex; align-items:center; gap:8px; margin:6px 2px 2px; color:var(--ink); font-weight:700; }
+.pv-ai input{ width:18px; height:18px; accent-color:var(--accent); }
+.pv-hint{ font-size:.9rem; color:#8a8a8a; margin:2px 0 0; font-weight:400; }
+.pv-actions{ display:flex; gap:10px; margin-top:18px; }
+.pv-actions .btn{ flex:1; justify-content:center; padding:13px; font-size:1.15rem; }
+
+/* 알림(로딩) */
+.custom-alert{
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:#fff; padding:24px 28px; border-radius:24px; border:4px solid var(--accent);
+  display:none; flex-direction:column; align-items:center; gap:8px; z-index:3000; box-shadow:var(--shadow);
+}
+.custom-alert.show{ display:flex; }
+.loader{ font-size:36px; animation:bounce 1.2s infinite; }
+
+/* ===================== 애니메이션 ===================== */
+@keyframes bounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-14px); } }
+@keyframes pop{ from{ opacity:0; transform:scale(.85) translateY(20px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+@keyframes fade{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes floaty{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(24px); } }
+@keyframes spin{ to{ transform:rotate(360deg); } }

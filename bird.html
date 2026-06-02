@@ -1,60 +1,96 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>훨훨 날아라! 숲속 놀이터</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.browser.min.js"></script>    
-    <link rel="stylesheet" href="bird.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>훨훨 날아라! 숲속 놀이터</title>
+  <link rel="stylesheet" href="engine.css">
+  <style>
+    :root{
+      --accent:#5fa83f; --accent-dark:#3c7a1f; --accent-soft:#dcefc6;
+      --accent-2:#ffcf4d; --accent-2-dark:#e0a82f; --ink:#2c3d1a;
+      --entry-bg: radial-gradient(circle at 50% 30%, #a8e063 0%, #56ab2f 70%, #357a1a 100%);
+    }
+    #bgLayer{ background-color:#87ceeb; background-image:url('bird.png'); }
+  </style>
+  <!-- AI 정밀 모드(선택): 없어도 스마트 배경제거로 동작합니다 -->
+  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.browser.min.js"></script>
 </head>
 <body>
-    <div id="entryOverlay">
-        <div class="entry-content">
-            <div class="entry-icon">🌳🐦✨🍃</div> 
-            <h1>자연쌤의 숲속 놀이터</h1>
-            <button onclick="startAviary()" class="btn-start">숲속 입장하기</button>
-        </div>
+  <div id="bgLayer"></div>
+  <canvas id="mainCanvas"></canvas>
+
+  <!-- 입장 화면 -->
+  <div id="entryOverlay">
+    <div class="entry-content">
+      <div class="entry-icon" id="entryIcon">🌳🐦✨🍃</div>
+      <h1 id="entryTitle">자연쌤의 숲속 놀이터</h1>
+      <button class="btn-start" id="entryButton" onclick="Playground.startApp()">숲속 입장하기</button>
     </div>
+  </div>
 
-    <div id="aviary-container">
-        <canvas id="birdCanvas"></canvas>
-        
-        <div class="ui-panel" id="uiPanel">
-            <div class="ui-header">🐦 숲속 놀이터</div>
-            <div class="btn-group-horizontal">
-                <button onclick="openCamera()" class="btn-main-sm camera-btn">📸 바로 촬영하기</button>
-                <button onclick="document.getElementById('fileInput').click()" class="btn-main-sm upload-btn">📁 사진 가져오기</button>
-                
-                <div class="btn-row-sm">
-                    <button onclick="toggleAudio()" id="audioBtn" class="btn-circle-sm">🔇 소리 끔</button>
-                    <button onclick="clearAviary()" class="btn-circle-sm">🧹 청소하기</button>
-                    <button onclick="toggleFullScreen()" class="btn-circle-sm">🖥️ 크게보기</button>
-                </div>
-                <button onclick="location.href='index.html'" class="btn-exit-sm">🏠 메인으로</button>
-            </div>
-        </div>
-
-        <div id="cameraModal" class="camera-modal">
-            <div class="camera-content">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="captureCanvas" style="display:none;"></canvas>
-                <div class="camera-ui">
-                    <button onclick="takeSnapshot()" class="btn-capture"></button>
-                    <button onclick="closeCamera()" class="btn-close-cam">닫기</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="customAlert" class="custom-alert">
-            <div class="loader">🍃</div>
-            <p id="alertMessage">새가 날아오는 중...</p>
-        </div>
-
-        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
-        <audio id="bgm" loop src="bird.mp3"></audio>    
+  <!-- 상단 UI -->
+  <div class="ui-panel" id="uiPanel">
+    <div class="ui-header" id="headerTitle">🐦 숲속 놀이터</div>
+    <div class="btn-cluster">
+      <button class="btn btn-primary" onclick="Playground.openCamera()"><span class="ico">📸</span><span>촬영</span></button>
+      <button class="btn btn-accent2" onclick="document.getElementById('fileInput').click()"><span class="ico">📁</span><span>사진</span></button>
+      <button class="btn btn-ghost" onclick="Playground.saveScene()"><span class="ico">💾</span><span>저장</span></button>
+      <button class="btn btn-ghost" id="audioBtn" onclick="Playground.toggleAudio()">🔇 <span>소리 끔</span></button>
+      <button class="btn btn-ghost" onclick="Playground.clearStage()"><span class="ico">🧹</span><span>청소</span></button>
+      <button class="btn btn-ghost" onclick="Playground.toggleFullScreen()"><span class="ico">🖥️</span><span>크게</span></button>
+      <button class="btn btn-exit" onclick="location.href='index.html'"><span class="ico">🏠</span><span>메인</span></button>
     </div>
+  </div>
 
-    <script src="bird.js"></script>
+  <!-- 카메라 모달 -->
+  <div id="cameraModal" class="modal">
+    <div class="camera-content">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="captureCanvas" style="display:none;"></canvas>
+      <div class="camera-ui">
+        <button class="btn-capture" onclick="Playground.takeSnapshotFromCamera()"></button>
+        <button class="btn-close-cam" onclick="Playground.closeCamera()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 미리보기 모달 -->
+  <div id="previewModal" class="modal">
+    <div class="preview-content">
+      <h2>이렇게 오려졌어요! ✂️</h2>
+      <div id="previewCanvasWrap">
+        <div id="previewSpinner">
+          <div class="pv-spin-emoji">🍃</div>
+          <div class="pv-spin-msg">오려내는 중...</div>
+        </div>
+      </div>
+      <div class="pv-controls">
+        <div class="pv-row">
+          <label>지우기 세기</label>
+          <input type="range" min="12" max="90" value="40" oninput="Playground.setTolerance(this.value)">
+        </div>
+        <div class="pv-row">
+          <label>흰 테두리</label>
+          <input type="range" min="0" max="22" value="10" oninput="Playground.setBorder(this.value)">
+        </div>
+        <label class="pv-ai">
+          <input type="checkbox" id="pvAiToggle" onchange="Playground.setAi(this.checked)">
+          AI 정밀 오려내기 (조금 느려요)
+        </label>
+        <p class="pv-hint">배경이 너무 많이/적게 지워지면 ‘지우기 세기’를 조절해 보세요.</p>
+      </div>
+      <div class="pv-actions">
+        <button class="btn btn-ghost" onclick="Playground.closePreview()">취소</button>
+        <button class="btn btn-primary" onclick="Playground.confirmPreview()">🐦 날리기!</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="Playground.handleFileUpload(event)">
+  <audio id="bgm" loop src="bird.mp3"></audio>
+
+  <script src="engine.js"></script>
+  <script src="bird.theme.js"></script>
 </body>
 </html>

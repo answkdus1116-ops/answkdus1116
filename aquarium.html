@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>싱그러운 햇살 과수원</title>
+  <title>반짝반짝 바닷속 놀이터</title>
   <link rel="stylesheet" href="engine.css">
   <style>
     :root{
-      --accent:#e8503a; --accent-dark:#b3361f; --accent-soft:#ffd8cf;
-      --accent-2:#ffd23f; --accent-2-dark:#e0a82f; --ink:#5a2218;
-      --entry-bg: linear-gradient(to bottom, #a8e063 0%, #56ab2f 100%);
+      --accent:#22a6c3; --accent-dark:#127a91; --accent-soft:#cdeef5;
+      --accent-2:#ffd166; --accent-2-dark:#e0a83a; --ink:#0d3b4a;
+      --entry-bg: radial-gradient(circle at 50% 30%, #6dd5ed 0%, #2193b0 70%, #156a86 100%);
     }
-    #bgLayer{ background-color:#bfe39a; background-image:url('orchard_background.png'); }
+    #bgLayer{ background-color:#1e5799; background-image:url('aquarium_background.png'); }
   </style>
   <!-- AI 정밀 모드(선택): 없어도 스마트 배경제거로 동작합니다 -->
   <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.browser.min.js"></script>
@@ -23,15 +23,15 @@
   <!-- 입장 화면 -->
   <div id="entryOverlay">
     <div class="entry-content">
-      <div class="entry-icon" id="entryIcon">🍎🌿🧺</div>
-      <h1 id="entryTitle">자연쌤의 과수원</h1>
-      <button class="btn-start" id="entryButton" onclick="Playground.startApp()">과수원 입장하기</button>
+      <div class="entry-icon" id="entryIcon">🫧⭐🌿🐚</div>
+      <h1 id="entryTitle">자연쌤의 수족관</h1>
+      <button class="btn-start" id="entryButton" onclick="Playground.startApp()">수족관 입장하기</button>
     </div>
   </div>
 
   <!-- 상단 UI -->
   <div class="ui-panel" id="uiPanel">
-    <div class="ui-header" id="headerTitle">🍎 열매 놀이터</div>
+    <div class="ui-header" id="headerTitle">🐠 바닷속 놀이터</div>
     <div class="btn-cluster">
       <button class="btn btn-primary" onclick="Playground.openCamera()"><span class="ico">📸</span><span>촬영</span></button>
       <button class="btn btn-accent2" onclick="document.getElementById('fileInput').click()"><span class="ico">📁</span><span>사진</span></button>
@@ -61,7 +61,7 @@
       <h2>이렇게 오려졌어요! ✂️</h2>
       <div id="previewCanvasWrap">
         <div id="previewSpinner">
-          <div class="pv-spin-emoji">🍎</div>
+          <div class="pv-spin-emoji">🫧</div>
           <div class="pv-spin-msg">오려내는 중...</div>
         </div>
       </div>
@@ -82,15 +82,15 @@
       </div>
       <div class="pv-actions">
         <button class="btn btn-ghost" onclick="Playground.closePreview()">취소</button>
-        <button class="btn btn-primary" onclick="Playground.confirmPreview()">🍎 열기!</button>
+        <button class="btn btn-primary" onclick="Playground.confirmPreview()">🐠 넣기!</button>
       </div>
     </div>
   </div>
 
   <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="Playground.handleFileUpload(event)">
-  <audio id="bgm" loop src="orchard.mp3"></audio>
+  <audio id="bgm" loop src="aquarium.mp3"></audio>
 
   <script src="engine.js"></script>
-  <script src="orchard.theme.js"></script>
+  <script src="aquarium.theme.js"></script>
 </body>
 </html>
