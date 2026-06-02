@@ -1,45 +1,59 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>알록달록 풍선 팝팝</title>
-    <link rel="stylesheet" href="balloon.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>알록달록 풍선 팝팝</title>
+  <link rel="stylesheet" href="balloon.css">
 </head>
 <body>
-    <div id="setup-screen">
-        <div class="setup-card">
-            <h1>🎈 풍선 팝팝</h1>
-            <div class="setting-item">
-                <label>풍선이 올라오는 속도</label>
-                <input type="range" id="speed-slider" min="1" max="5" value="2">
-                <div class="speed-labels"><span>천천히</span><span>빠르게</span></div>
-            </div>
-            <button id="start-btn">시작! ▶</button>
-        </div>
-    </div>
+  <!-- 설정 화면 -->
+  <div id="setup-screen">
+    <div class="setup-card">
+      <h1>🎈 풍선 팝팝</h1>
+      <p class="subtitle">풍선을 톡! 황금풍선은 보너스, 폭탄은 조심!</p>
 
-    <div id="game-area">
-        <div id="status-bar">
-            <a href="index.html" class="home-btn">🏠</a>
-            <div class="info-item timer-box">
-                ⏱️ <span id="time-left">60</span>
-            </div>
-            <div class="info-item score-box">
-                🎈 <span id="score">0</span>
-            </div>
+      <div class="setting-item">
+        <label>놀이 시간</label>
+        <div class="chip-row" id="time-chips">
+          <button class="chip" data-time="30">30초</button>
+          <button class="chip active" data-time="60">60초</button>
+          <button class="chip" data-time="90">90초</button>
         </div>
-        <canvas id="particleCanvas"></canvas>
-    </div>
+      </div>
 
-    <div id="result-overlay" class="hidden">
-        <div class="result-card">
-            <h2>🎉 대단해요! 🎉</h2>
-            <div class="final-score">총 <span id="final-score-val">0</span>개의 풍선을 터뜨렸어요!</div>
-            <button onclick="location.reload()">다시 하기 🔄</button>
-        </div>
-    </div>
+      <div class="setting-item">
+        <label>풍선 속도</label>
+        <input type="range" id="speed-slider" min="1" max="5" value="2">
+        <div class="speed-labels"><span>천천히</span><span>빠르게</span></div>
+      </div>
 
-    <script src="balloon.js"></script>
+      <button id="start-btn">시작! ▶</button>
+    </div>
+  </div>
+
+  <!-- 게임 -->
+  <div id="game-area">
+    <div id="status-bar">
+      <a href="index.html" class="home-btn">🏠</a>
+      <div class="info-item timer-box">⏱️ <span id="time-left">60</span></div>
+      <div class="info-item score-box">🎈 <span id="score">0</span></div>
+      <div class="info-item best-box">🏆 <span id="best">0</span></div>
+    </div>
+    <div id="combo-banner"></div>
+    <canvas id="particleCanvas"></canvas>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-overlay" class="hidden">
+    <div class="result-card">
+      <h2>🎉 대단해요! 🎉</h2>
+      <div class="final-score">총 <span id="final-score-val">0</span>점!</div>
+      <div class="final-best">🏆 최고기록 <span id="final-best-val">0</span>점</div>
+      <button onclick="location.reload()">다시 하기 🔄</button>
+    </div>
+  </div>
+
+  <script src="balloon.js"></script>
 </body>
 </html>

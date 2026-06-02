@@ -1,120 +1,84 @@
-@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&display=swap');
 
-* { box-sizing: border-box; }
-
-body {
-    font-family: 'Jua', sans-serif;
-    background-color: #f0faff;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100vh; /* 화면 높이 100% 고정 */
-    overflow: hidden;
-    touch-action: none;
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{
+  font-family:'Jua',sans-serif; margin:0; padding:0; height:100vh; overflow:hidden;
+  touch-action:none; user-select:none;
+  display:flex; flex-direction:column; align-items:center;
+  background:linear-gradient(180deg,#eaf7ff 0%,#f4fbff 100%);
 }
 
-/* 상단 UI 패널: 높이를 최소화하여 빙판장 공간 확보 */
-.ui-panel {
-    text-align: center;
-    background: white;
-    padding: 10px;
-    width: 100%;
-    max-height: 200px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    z-index: 10;
+/* 상단 패널 */
+.ui-panel{
+  text-align:center; background:#fff; padding:10px 14px; width:100%;
+  box-shadow:0 4px 14px rgba(0,0,0,.08); z-index:10;
+}
+h1{ margin:2px 0; font-size:clamp(1.1rem,3.5vw,1.5rem); color:#0277bd; }
+
+.score-board{ display:flex; justify-content:center; align-items:center; gap:14px; margin:6px 0; }
+.score-box{ padding:6px 16px; border-radius:14px; color:#fff; min-width:90px;
+  display:flex; flex-direction:column; box-shadow:0 4px 0 rgba(0,0,0,.12); transition:transform .2s; }
+.score-box.active{ transform:scale(1.08); outline:3px solid #ffd23f; }
+.score-box.p1{ background:linear-gradient(135deg,#5c9dff,#1565d8); }
+.score-box.p2{ background:linear-gradient(135deg,#ff7a7a,#d32f2f); }
+.player-name{ font-size:.95rem; opacity:.9; }
+.score{ font-size:1.7rem; }
+.vs{ font-size:1.3rem; color:#888; }
+
+.controls{ display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.controls select, .controls button{ font-family:'Gaegu'; font-size:1rem; font-weight:700;
+  border-radius:14px; border:2px solid #cfe8f5; padding:7px 12px; cursor:pointer; background:#fff; }
+#play-btn{ background:#caffbf; border-color:#95d5a2; box-shadow:0 3px 0 #7cc47f; }
+#reset-btn{ background:#fff0c2; border-color:#ffd23f; box-shadow:0 3px 0 #e0b400; }
+#message{ margin:6px 0 2px; font-size:1.05rem; color:#555; }
+
+/* 빙판 */
+#rink{
+  position:relative; flex:1; width:96vw; max-width:460px;
+  background:
+    repeating-linear-gradient(180deg, rgba(180,220,245,.18) 0 2px, transparent 2px 26px),
+    linear-gradient(to bottom,#dff2ff 0%,#ffffff 70%);
+  border:8px solid #bfe6f7; border-top:none; border-radius:0 0 26px 26px;
+  margin:6px auto 0; overflow:hidden; box-shadow:inset 0 6px 16px rgba(0,120,180,.12);
 }
 
-h1 { margin: 5px 0; font-size: 1.2rem; color: #0277bd; }
-
-.score-board { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 5px 0; }
-.score-box { padding: 5px 15px; border-radius: 10px; color: white; min-width: 70px; }
-.score-box.p1 { background-color: #448aff; }
-.score-box.p2 { background-color: #ff5252; }
-.score { font-size: 20px; font-weight: bold; }
-
-/* 🧊 빙판장: 남은 세로 공간을 100% 활용 (중요) */
-#rink {
-    position: relative;
-    flex: 1; /* 남은 공간을 모두 차지함 */
-    width: 95vw;
-    max-width: 450px;
-    background: linear-gradient(to bottom, #e1f5fe 0%, #ffffff 100%);
-    border: 8px solid #b3e5fc;
-    border-radius: 30px 30px 0 0;
-    margin: 5px auto 0 auto;
-    overflow: hidden;
+/* 과녁(하우스) */
+#target{ position:absolute; top:14%; left:50%; transform:translateX(-50%);
+  width:210px; height:210px; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle,
+    #ff5252 0 14%, #fff 14% 30%, #4a90ff 30% 46%, #fff 46% 62%, #d6effa 62% 100%);
+  box-shadow:0 0 0 2px rgba(0,0,0,.05);
 }
+#target::after{ content:""; position:absolute; inset:0; border-radius:50%;
+  box-shadow:0 8px 18px rgba(0,80,160,.12); }
 
-/* 과녁 위치: 상단에서 15% 지점에 배치 */
-#target {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #ff5252 15%, white 15.1%, white 30%, #448aff 30.1%, #448aff 45%, white 45.1%, white 100%);
-}
+/* 조준 캔버스 */
+#aimCanvas{ position:absolute; inset:0; pointer-events:none; z-index:6; }
 
-/* 🥌 컬링 스톤: 둥근 디자인 및 입체감 복구 */
-#stone {
-    position: absolute;
-    bottom: 30px; /* 아래쪽 여유 공간 */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 65px;
-    height: 65px;
-    border-radius: 50% !important; /* 강제로 동그랗게 설정 */
-    z-index: 5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    cursor: grab;
-    /* 부드러운 슬라이딩을 위한 설정 */
-    transition: bottom 2.5s cubic-bezier(0.2, 0.6, 0.35, 1);
-}
+/* 스톤 */
+.stone{ position:absolute; width:64px; height:64px; border-radius:50%; z-index:5;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 12px rgba(0,0,0,.3); will-change:transform; }
+.stone::after{ content:''; width:26px; height:12px; border-radius:6px;
+  background:#ffe04a; box-shadow:inset 0 -2px 0 rgba(0,0,0,.15); }
+.stone.p1{ background:radial-gradient(circle at 32% 30%,#7fc0ff,#1565d8); }
+.stone.p2{ background:radial-gradient(circle at 32% 30%,#ffa0a0,#d32f2f); }
+.stone.live{ cursor:grab; }
+.stone.placed{ opacity:.92; }
 
-#stone.p1-turn { background: radial-gradient(circle at 30% 30%, #64b5f6, #1976d2); }
-#stone.p2-turn { background: radial-gradient(circle at 30% 30%, #ff8a80, #d32f2f); }
-#stone::after { content: ''; width: 26px; height: 12px; background: #ffeb3b; border-radius: 6px; }
+/* 오버레이 */
+.overlay{ position:absolute; inset:0; background:rgba(10,20,40,.72); backdrop-filter:blur(3px);
+  display:flex; align-items:center; justify-content:center; z-index:20; }
+.overlay-content{ background:#fff; padding:30px 34px; border-radius:30px; text-align:center;
+  width:88%; max-width:360px; box-shadow:0 16px 36px rgba(0,0,0,.3); animation:pop .45s cubic-bezier(.2,.9,.3,1.4); }
+.overlay-content h2{ margin:0 0 6px; color:#0277bd; }
+.hint{ color:#888; font-size:1rem; margin:8px 0 16px; }
+button.big{ font-family:'Jua'; font-size:1.2rem; padding:13px 26px; border:none; border-radius:24px;
+  cursor:pointer; color:#fff; background:#4caf50; box-shadow:0 5px 0 #2e7d32; }
+button.big:active{ transform:translateY(3px); box-shadow:0 2px 0 #2e7d32; }
 
-/* 오버레이 디자인 */
-.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 20; }
-.overlay-content { background: white; padding: 30px; border-radius: 30px; text-align: center; width: 85%; max-width: 350px; }
-.hidden { display: none; }
+.hidden{ display:none !important; }
+#result-overlay .overlay-content h1{ font-size:2rem; color:#ff6f91; }
+#final-score-text{ font-size:1.4rem; margin:16px 0; color:#333; }
 
-button {
-    font-family: 'Jua', sans-serif; font-size: 18px; padding: 12px 24px; border: none; border-radius: 30px;
-    cursor: pointer; box-shadow: 0 4px 0 #bbb; margin-top: 10px;
-}
-#start-turn-btn { background: #4caf50; color: white; box-shadow: 0 4px 0 #2e7d32; }
-
-/* 타이머 스타일 */
-#timer-display {
-    font-size: 2.2rem; background: white; padding: 5px 25px;
-    border-radius: 30px; border: 4px solid #81d4fa; color: #0288d1;
-}
-
-/* 결과창 스타일 */
-#result-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); z-index: 500;
-    display: flex; justify-content: center; align-items: center;
-}
-.hidden { display: none !important; }
-
-.result-card {
-    background: white; padding: 50px; border-radius: 50px;
-    border: 10px solid #ffd6a5; text-align: center;
-}
-.result-card h2 { font-size: 4rem; color: #ff85a2; margin: 0; }
-.final-score { font-size: 2.5rem; margin: 30px 0; color: #333; }
-.result-card button {
-    padding: 15px 40px; font-size: 2rem; font-family: 'Gaegu';
-    background: #caffbf; border: none; border-radius: 30px;
-    cursor: pointer; box-shadow: 0 6px 0 #95d5a2;
-}
+@keyframes pop{ from{opacity:0; transform:scale(.85);} to{opacity:1; transform:scale(1);} }

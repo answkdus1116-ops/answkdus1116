@@ -1,192 +1,207 @@
+/* 🎈 풍선 팝팝 — 콤보 · 황금/폭탄 풍선 · 최고기록 · 내장 효과음 */
 const gameArea = document.getElementById('game-area');
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
+const comboBanner = document.getElementById('combo-banner');
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// --- 1. 오디오 객체 생성 ---
-const popSound = new Audio('pop.mp3'); 
-popSound.preload = 'auto';
+// 선택 배경음악(있으면 재생, 없어도 무방)
+const bgm = new Audio('balloon.mp3'); bgm.loop = true; bgm.volume = 0.4;
 
-const bgm = new Audio('balloon.mp3');
-bgm.loop = true;      // 무한 반복 설정
-bgm.volume = 0.4;    // 배경음악 볼륨 (0.0 ~ 1.0)
-// -----------------------
+let score = 0, timeLeft = 60, gameDuration = 60, gameSpeed = 2;
+let combo = 0, lastPop = 0, running = false;
+let balloons = [], particles = [];
+let spawnTimer = null, timerInterval = null;
+const BEST_KEY = 'balloon_best';
+let best = +(localStorage.getItem(BEST_KEY) || 0);
+document.getElementById('best').innerText = best;
 
-let score = 0;
-let timeLeft = 60; 
-let gameSpeed = 2;
-let particles = [];
-let gameRunning = false;
-let spawnTimer = null;
-let timerInterval = null;
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+addEventListener('resize', resize); resize();
+makeClouds();
 
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
+/* 시간 선택 칩 */
+document.getElementById('time-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#time-chips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  gameDuration = +chip.dataset.time;
+});
 
-// 2. 게임 시작 버튼 클릭
+/* 시작 */
 document.getElementById('start-btn').onclick = () => {
-    gameSpeed = parseInt(document.getElementById('speed-slider').value);
-    document.getElementById('setup-screen').style.display = 'none';
-    
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    
-    // --- 배경음악 재생 시작 ---
-    bgm.currentTime = 0; // 처음부터 재생
-    bgm.play().catch(e => console.log("BGM 재생 실패:", e));
-    // -----------------------
-
-    gameRunning = true;
-    score = 0;
-    timeLeft = 60;
-    document.getElementById('score').innerText = score;
-    document.getElementById('time-left').innerText = timeLeft;
-    
-    startSpawning();
-    startTimer();
+  gameSpeed = +document.getElementById('speed-slider').value;
+  document.getElementById('setup-screen').style.display = 'none';
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  bgm.currentTime = 0; bgm.play().catch(() => {});
+  running = true; score = 0; combo = 0; timeLeft = gameDuration;
+  document.getElementById('score').innerText = 0;
+  document.getElementById('time-left').innerText = timeLeft;
+  startSpawning(); startTimer();
 };
 
-function startTimer() {
-    const timerElement = document.getElementById('time-left');
-    timerInterval = setInterval(() => {
-        if (!gameRunning) return;
-        timeLeft--;
-        timerElement.innerText = timeLeft;
-
-        if (timeLeft <= 0) {
-            endGame();
-        }
-    }, 1000);
+function startTimer(){
+  timerInterval = setInterval(() => {
+    if (!running) return;
+    timeLeft--;
+    document.getElementById('time-left').innerText = Math.max(0, timeLeft);
+    if (timeLeft <= 0) endGame();
+  }, 1000);
 }
 
-function startSpawning() {
-    if (!gameRunning) return;
-    spawnBalloon();
-    setTimeout(spawnBalloon, 500);
-    const interval = 1200 / (gameSpeed * 0.5);
-    spawnTimer = setInterval(() => {
-        if (gameRunning) spawnBalloon();
-    }, interval);
+function startSpawning(){
+  spawnBalloon();
+  const interval = 1100 / (gameSpeed * 0.55);
+  spawnTimer = setInterval(() => { if (running) spawnBalloon(); }, interval);
 }
 
-function spawnBalloon() {
-    const balloon = document.createElement('div');
-    balloon.className = 'balloon';
-    const colors = ['#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF'];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const size = 100 + Math.random() * 60;
-    balloon.style.width = size + 'px';
-    balloon.style.height = (size * 1.3) + 'px';
-    balloon.style.backgroundColor = color;
-    balloon.style.left = Math.random() * (window.innerWidth - size) + 'px';
-    balloon.style.top = window.innerHeight + 'px';
-    balloon.style.zIndex = "10";
-    balloon.style.pointerEvents = "auto";
-    gameArea.appendChild(balloon);
+const COLORS = ['#FF9AA2','#FFB7B2','#FFDAC1','#E2F0CB','#B5EAD7','#9BD7FF','#C7CEFF','#FFC6FF'];
+function spawnBalloon(){
+  const el = document.createElement('div');
+  el.className = 'balloon';
+  const roll = Math.random();
+  let type = 'normal', color;
+  if (roll < 0.12) { type = 'gold'; el.classList.add('gold'); color = '#ffd23f'; }
+  else if (roll < 0.24) { type = 'bomb'; el.classList.add('bomb'); color = '#5b6470'; }
+  else { color = COLORS[(Math.random() * COLORS.length) | 0]; }
 
-    let posY = window.innerHeight;
-    let drift = (Math.random() - 0.5) * 2;
-    const animate = () => {
-        if (!balloon.parentElement || !gameRunning) return;
-        posY -= (gameSpeed * 0.7 + Math.random());
-        const currentLeft = parseFloat(balloon.style.left);
-        balloon.style.left = (currentLeft + drift) + 'px';
-        balloon.style.top = posY + 'px';
-        if (posY < -250) { balloon.remove(); } else { requestAnimationFrame(animate); }
-    };
-    requestAnimationFrame(animate);
+  const size = (type === 'gold' ? 80 : 100) + Math.random() * 50;
+  el.style.width = size + 'px';
+  el.style.height = (size * 1.3) + 'px';
+  el.style.backgroundColor = color;
+  const x = Math.random() * (innerWidth - size);
+  el.style.left = x + 'px';
+  el.style.top = innerHeight + 'px';
+  gameArea.appendChild(el);
 
-    const handlePop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        playPopSound();
-        createParticles(parseFloat(balloon.style.left) + size/2, posY + size/2, color);
-        score++;
-        document.getElementById('score').innerText = score;
-        balloon.remove();
-    };
-    balloon.addEventListener('mousedown', handlePop);
-    balloon.addEventListener('touchstart', handlePop, { passive: false });
+  const b = {
+    el, x, y: innerHeight, size, color, type,
+    vy: gameSpeed * 0.7 + Math.random() * 0.8 + (type === 'gold' ? 1.2 : 0),
+    drift: (Math.random() - 0.5) * 1.2, sway: Math.random() * Math.PI * 2,
+  };
+  el.addEventListener('pointerdown', ev => { ev.preventDefault(); pop(b); }, { passive: false });
+  balloons.push(b);
 }
 
-// 3. 게임 종료 처리
-function endGame() {
-    gameRunning = false;
-    clearInterval(timerInterval);
-    clearInterval(spawnTimer);
+function pop(b){
+  if (!b.alive && b.popped) return;
+  b.popped = true;
+  const cx = b.x + b.size / 2, cy = b.y + b.size * 0.65;
 
-    // --- 배경음악 정지 ---
-    bgm.pause();
-    // -----------------------
+  if (b.type === 'bomb') {
+    combo = 0;
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 350);
+    playBomb();
+    burst(cx, cy, '#888', 14);
+    floatText(cx, cy, '펑!', '#ff5252');
+    removeBalloon(b);
+    return;
+  }
 
-    const balloons = document.querySelectorAll('.balloon');
-    balloons.forEach(b => b.remove());
-    document.getElementById('final-score-val').innerText = score;
-    document.getElementById('result-overlay').classList.remove('hidden');
+  // 콤보 계산
+  const now = performance.now();
+  combo = (now - lastPop < 1500) ? combo + 1 : 1;
+  lastPop = now;
+  const mult = 1 + Math.floor((combo - 1) / 3);   // 3연속마다 배수 증가
+  const base = b.type === 'gold' ? 5 : 1;
+  const gained = base * mult;
+  score += gained;
+  document.getElementById('score').innerText = score;
 
-    playWinSound();
-    const winEffect = setInterval(() => {
-        if (document.getElementById('result-overlay').classList.contains('hidden')) {
-            clearInterval(winEffect);
-            return;
-        }
-        createParticles(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 
-                        `hsl(${Math.random() * 360}, 80%, 60%)`);
-    }, 300);
+  playPop(b.type === 'gold');
+  burst(cx, cy, b.color, b.type === 'gold' ? 28 : 18);
+  floatText(cx, cy, '+' + gained, b.type === 'gold' ? '#e0a800' : b.color);
+  if (combo >= 3) showCombo(combo);
+  removeBalloon(b);
 }
 
-function playPopSound() {
-    const soundClone = popSound.cloneNode(); 
-    soundClone.volume = 0.5;
-    soundClone.play().catch(e => console.log("효과음 재생 실패:", e));
+function removeBalloon(b){ b.el.remove(); balloons = balloons.filter(x => x !== b); }
+
+function showCombo(c){
+  comboBanner.textContent = c + ' 콤보! 🔥';
+  comboBanner.classList.remove('show'); void comboBanner.offsetWidth;
+  comboBanner.classList.add('show');
 }
 
-function playWinSound() {
-    const notes = [523.25, 659.25, 783.99, 1046.50];
-    notes.forEach((freq, i) => {
-        setTimeout(() => {
-            const osc = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            g.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-            osc.connect(g); g.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
-        }, i * 150);
-    });
+function floatText(x, y, txt, color){
+  const t = document.createElement('div');
+  t.className = 'pop-text'; t.textContent = txt; t.style.color = color;
+  t.style.left = x + 'px'; t.style.top = y + 'px';
+  gameArea.appendChild(t);
+  t.addEventListener('animationend', () => t.remove());
 }
 
-function createParticles(x, y, color) {
-    for (let i = 0; i < 20; i++) {
-        particles.push({
-            x: x, y: y,
-            size: Math.random() * 8 + 4,
-            color: color,
-            speedX: (Math.random() - 0.5) * 15,
-            speedY: (Math.random() - 0.5) * 15,
-            opacity: 1
-        });
-    }
+/* 끝 */
+function endGame(){
+  running = false;
+  clearInterval(timerInterval); clearInterval(spawnTimer);
+  bgm.pause();
+  balloons.forEach(b => b.el.remove()); balloons = [];
+  if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); }
+  document.getElementById('best').innerText = best;
+  document.getElementById('final-score-val').innerText = score;
+  document.getElementById('final-best-val').innerText = best;
+  document.getElementById('result-overlay').classList.remove('hidden');
+  playWin();
+  const fx = setInterval(() => {
+    if (document.getElementById('result-overlay').classList.contains('hidden')) return clearInterval(fx);
+    burst(Math.random() * innerWidth, Math.random() * innerHeight * 0.6, `hsl(${Math.random()*360},85%,62%)`, 16);
+  }, 280);
 }
 
-function updateParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.speedX; p.y += p.speedY;
-        p.speedY += 0.2; p.opacity -= 0.015;
-        if (p.opacity <= 0) { particles.splice(i, 1); i--; continue; }
-        ctx.globalAlpha = p.opacity;
-        ctx.fillStyle = p.color;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.opacity * Math.PI);
-        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-        ctx.restore();
-    }
-    requestAnimationFrame(updateParticles);
+/* ===== 내장 효과음 (파일 없이 동작) ===== */
+function tone(freq, dur, type = 'sine', vol = 0.25, slideTo){
+  const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, audioCtx.currentTime + dur);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
-updateParticles();
+function playPop(gold){ tone(gold ? 880 : 660, 0.12, 'triangle', 0.3, gold ? 1500 : 320); }
+function playBomb(){ tone(140, 0.25, 'sawtooth', 0.3, 50); }
+function playWin(){ [523,659,784,1046].forEach((f,i) => setTimeout(() => tone(f,0.5,'sine',0.2), i*140)); }
+
+/* ===== 파티클 ===== */
+function burst(x, y, color, n){
+  for (let i = 0; i < n; i++) particles.push({
+    x, y, size: Math.random()*8+4, color,
+    vx:(Math.random()-0.5)*14, vy:(Math.random()-0.5)*14, op:1, rot:Math.random()*6,
+  });
+}
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // 풍선 이동
+  for (const b of balloons){
+    b.sway += 0.03;
+    b.y -= b.vy; b.x += b.drift + Math.sin(b.sway)*0.6;
+    b.el.style.top = b.y + 'px'; b.el.style.left = b.x + 'px';
+    if (b.y < -260) removeBalloon(b);
+  }
+  // 파티클
+  for (let i = particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.op -= 0.016; p.rot += 0.2;
+    if (p.op <= 0){ particles.splice(i,1); continue; }
+    ctx.globalAlpha = p.op; ctx.fillStyle = p.color;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+    ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(loop);
+}
+loop();
+
+function makeClouds(){
+  for (let i=0;i<5;i++){
+    const c = document.createElement('div'); c.className='cloud';
+    const s = 80+Math.random()*120;
+    c.style.width=s+'px'; c.style.height=s*0.6+'px';
+    c.style.top=(Math.random()*60)+'%';
+    c.style.animationDuration=(24+Math.random()*26)+'s';
+    c.style.animationDelay=(-Math.random()*30)+'s';
+    document.body.appendChild(c);
+  }
+}

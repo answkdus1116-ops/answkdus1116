@@ -1,24 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>반짝반짝 별 잡기</title>
-    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="rhythm.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>반짝반짝 별 잡기</title>
+  <link rel="stylesheet" href="rhythm.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <div id="game-container">
-        <div id="ui">
-            <h1 id="title">🌟 별을 잡아봐요! 🌟</h1>
-            <div id="score-board">점수: <span id="score">0</span></div>
-            <button id="start-btn">노래 시작하기</button>
-        </div>
-        <div id="judgment-line"></div>
-        <div id="note-zone"></div>
-        <div id="feedback">최고예요!</div>
+  <div id="game-container">
+    <a href="index.html" class="home-btn">🏠</a>
+
+    <div id="ui">
+      <h1 id="title">🌟 별을 잡아봐요! 🌟</h1>
+      <div class="hud">
+        <div class="pill" id="score-board">점수 <span id="score">0</span></div>
+        <div class="pill" id="combo-board">콤보 <span id="combo">0</span></div>
+        <div class="pill" id="best-board">🏆 <span id="best">0</span></div>
+      </div>
     </div>
-    <script src="rhythm.js"></script>
+
+    <div id="judgment-line"></div>
+    <div id="note-zone"></div>
+    <div id="feedback"></div>
+
+    <!-- 설정 -->
+    <div id="setup">
+      <div class="setup-card">
+        <h2>🌟 별 잡기</h2>
+        <p>판정선 근처에서 별을 톡! 연속으로 잡으면 콤보!</p>
+        <div class="diff-row" id="diff-row">
+          <button class="diff" data-d="slow">천천히</button>
+          <button class="diff active" data-d="normal">보통</button>
+          <button class="diff" data-d="fast">빠르게</button>
+        </div>
+        <button id="start-btn">노래 시작하기 ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="rhythm.js"></script>
 </body>
 </html>

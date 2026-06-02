@@ -1,228 +1,109 @@
-/* 구글 폰트에서 귀여운 '개구' 폰트 가져오기 */
-@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
 
-* {
-    box-sizing: border-box;
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body,html{
+  margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+  font-family:'Gaegu',cursive; touch-action:none; user-select:none;
+  background:linear-gradient(180deg,#bdeaff 0%,#dff4ff 45%,#fff5e8 100%);
 }
 
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: #fff9f0; /* 따뜻하고 편안한 아이보리색 배경 */
-    font-family: 'Gaegu', cursive;
-    touch-action: none; /* 브라우저 기본 제스처 방지 */
-}
+/* 둥실둥실 구름 배경 */
+.cloud{ position:fixed; border-radius:50%; background:rgba(255,255,255,.75);
+  filter:blur(2px); z-index:1; animation:drift linear infinite; }
+@keyframes drift{ from{ transform:translateX(-20vw);} to{ transform:translateX(120vw);} }
 
-/* 설정 화면 (시작 전 화면) */
-#setup-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* 배경을 어둡게 처리하여 집중에 도움 */
-    z-index: 300;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* ===== 설정 화면 ===== */
+#setup-screen{
+  position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.25),rgba(60,90,120,.55)); padding:16px;
 }
+.setup-card{
+  text-align:center; background:#fff; padding:32px 36px; border-radius:36px;
+  border:6px solid #ffc2d1; box-shadow:0 14px 0 #ffc2d1,0 26px 40px rgba(0,0,0,.18);
+  max-width:440px; width:100%; animation:pop .5s cubic-bezier(.2,.9,.3,1.4);
+}
+h1{ color:#ff6f91; font-family:'Jua',sans-serif; font-size:clamp(2.2rem,6vw,3.2rem); margin:0 0 6px; }
+.subtitle{ color:#9aa; margin:0 0 22px; font-size:1.2rem; }
+.setting-item{ margin-bottom:22px; }
+label{ display:block; font-size:1.45rem; color:#555; margin-bottom:12px; font-weight:700; }
 
-.setup-card {
-    text-align: center;
-    background: white;
-    padding: 40px;
-    border-radius: 40px;
-    border: 8px solid #ffc2d1;
-    box-shadow: 0 10px 0 #ffc2d1;
-    max-width: 90%;
-}
+.chip-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.chip{ padding:10px 22px; font-size:1.35rem; font-family:'Gaegu'; font-weight:700; border:3px solid #ffd6e0;
+  background:#fff; color:#ff6f91; border-radius:18px; cursor:pointer; transition:.15s; }
+.chip.active{ background:#ff85a2; color:#fff; border-color:#ff85a2; box-shadow:0 4px 0 #d6336c; }
 
-h1 {
-    color: #ff85a2;
-    font-size: 3.5rem;
-    margin: 0 0 20px 0;
-}
+input[type="range"]{ width:100%; max-width:300px; height:14px; cursor:pointer; accent-color:#ff85a2; }
+.speed-labels{ display:flex; justify-content:space-between; max-width:300px; margin:6px auto 0; color:#aaa; font-size:1.1rem; }
 
-.setting-item {
-    margin-bottom: 30px;
+#start-btn{
+  margin-top:6px; padding:14px 54px; border:none; border-radius:50px;
+  background:#ff85a2; color:#fff; font-size:2.1rem; font-family:'Jua'; cursor:pointer;
+  box-shadow:0 7px 0 #d6336c; transition:transform .08s;
 }
+#start-btn:active{ transform:translateY(4px); box-shadow:0 3px 0 #d6336c; }
 
-label {
-    display: block;
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 15px;
-}
+/* ===== 게임 영역 ===== */
+#game-area{ position:relative; width:100%; height:100%; z-index:5; }
 
-/* 속도 조절 슬라이더 스타일 */
-input[type="range"] {
-    width: 100%;
-    max-width: 300px;
-    height: 15px;
-    cursor: pointer;
+#status-bar{
+  position:absolute; top:14px; left:0; width:100%;
+  display:flex; justify-content:center; align-items:center; gap:10px; padding:0 12px;
+  z-index:100; pointer-events:none; flex-wrap:wrap;
 }
+.home-btn{ text-decoration:none; font-size:1.5rem; background:#fff; width:50px; height:50px;
+  display:flex; align-items:center; justify-content:center; border-radius:16px; border:3px solid #eee;
+  pointer-events:auto; flex-shrink:0; box-shadow:0 4px 0 rgba(0,0,0,.06); }
+.info-item{ background:#fff; padding:7px 16px; border-radius:24px; font-size:1.5rem; font-weight:700;
+  display:flex; align-items:center; gap:6px; white-space:nowrap; box-shadow:0 4px 0 rgba(0,0,0,.06); }
+.timer-box{ border:3px solid #81d4fa; color:#0288d1; }
+.score-box{ border:3px solid #ffc2d1; color:#ff6f91; }
+.best-box{ border:3px solid #ffe08a; color:#e0a800; }
 
-.speed-labels {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 300px;
-    margin: 5px auto;
-    color: #888;
-    font-size: 1.2rem;
+/* 콤보 배너 */
+#combo-banner{
+  position:absolute; top:35%; left:50%; transform:translate(-50%,-50%) scale(0);
+  font-family:'Jua'; font-size:3.4rem; color:#fff; pointer-events:none; z-index:120;
+  text-shadow:0 0 18px #ff85a2,0 3px 0 #d6336c; opacity:0;
 }
+#combo-banner.show{ animation:comboPop .6s ease; }
+@keyframes comboPop{ 0%{ transform:translate(-50%,-50%) scale(0); opacity:0; }
+  40%{ transform:translate(-50%,-50%) scale(1.15); opacity:1; }
+  100%{ transform:translate(-50%,-60%) scale(1); opacity:0; } }
 
-/* 시작 버튼 */
-#start-btn {
-    padding: 15px 50px;
-    border-radius: 50px;
-    border: none;
-    background: #ff85a2;
-    color: white;
-    font-size: 2.5rem;
-    font-family: 'Gaegu';
-    cursor: pointer;
-    box-shadow: 0 6px 0 #d46a85;
-    transition: transform 0.1s;
-}
+/* 풍선 */
+.balloon{ position:absolute; cursor:pointer; z-index:50; pointer-events:auto;
+  border-radius:50% 50% 50% 50% / 45% 45% 55% 55%; box-shadow:inset -8px -10px rgba(0,0,0,.12); }
+.balloon::before{ content:""; position:absolute; top:14%; left:22%; width:26%; height:30%;
+  background:rgba(255,255,255,.55); border-radius:50%; filter:blur(1px); }
+.balloon::after{ content:"▲"; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+  font-size:14px; color:inherit; filter:brightness(.85); }
+.balloon.gold{ box-shadow:inset -8px -10px rgba(120,80,0,.2),0 0 22px rgba(255,210,60,.9); }
+.balloon.bomb::after{ content:"💣"; font-size:20px; bottom:-4px; }
 
-#start-btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #d46a85;
-}
+/* 점수 팝업 */
+.pop-text{ position:absolute; font-family:'Jua'; font-weight:700; font-size:2rem; z-index:80;
+  pointer-events:none; animation:floatUp .9s ease-out forwards; }
+@keyframes floatUp{ from{ transform:translateY(0) scale(.7); opacity:0; }
+  20%{ opacity:1; transform:translateY(-10px) scale(1.1);} to{ transform:translateY(-80px) scale(1); opacity:0; } }
 
-/* 게임 플레이 영역 */
-#game-area {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
+#particleCanvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:40; }
 
-/* 상단 점수 표시 바 */
-/* 상단 바 전체 컨테이너 수정 */
-#status-bar {
-    position: absolute;
-    top: 15px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center; /* 가운데로 모으기 */
-    align-items: center;
-    gap: 10px;               /* 요소 사이 간격 */
-    padding: 0 10px;
-    z-index: 100;
-    pointer-events: none;    /* 빈 공간 클릭 통과 */
-}
+/* 흔들림 */
+.shake{ animation:shake .35s; }
+@keyframes shake{ 0%,100%{transform:translate(0);} 25%{transform:translate(-8px,4px);}
+  50%{transform:translate(8px,-4px);} 75%{transform:translate(-5px,2px);} }
 
-/* 홈 버튼: 크기를 고정하여 찌그러짐 방지 */
-.home-btn { 
-    text-decoration: none;
-    font-size: 1.5rem;
-    background: white; 
-    width: 50px; 
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    border: 3px solid #ddd;
-    pointer-events: auto;
-    flex-shrink: 0;          /* 크기 고정 */
-}
+/* ===== 결과 ===== */
+#result-overlay{ position:fixed; inset:0; background:rgba(30,30,50,.82); z-index:500;
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.hidden{ display:none !important; }
+.result-card{ background:#fff; padding:42px 48px; border-radius:42px; border:8px solid #ffd6a5;
+  text-align:center; box-shadow:0 18px 40px rgba(0,0,0,.3); animation:pop .5s cubic-bezier(.2,.9,.3,1.4); }
+.result-card h2{ font-family:'Jua'; font-size:clamp(2.4rem,7vw,3.6rem); color:#ff6f91; margin:0; }
+.final-score{ font-size:1.9rem; margin:22px 0 8px; color:#444; }
+.final-best{ font-size:1.3rem; color:#e0a800; margin-bottom:24px; }
+.result-card button{ padding:14px 40px; font-size:1.8rem; font-family:'Jua'; background:#caffbf;
+  border:none; border-radius:30px; cursor:pointer; box-shadow:0 6px 0 #7cc47f; }
+.result-card button:active{ transform:translateY(3px); box-shadow:0 3px 0 #7cc47f; }
 
-/* 정보 박스 공통: 화면 크기에 따라 유연하게 조절 */
-.info-item {
-    background: white;
-    padding: 5px 15px;
-    border-radius: 25px;
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;     /* 글자 줄바꿈 방지 */
-    box-shadow: 0 4px 0 rgba(0,0,0,0.05);
-}
-
-.timer-box { border: 4px solid #81d4fa; color: #0288d1; }
-.score-box { border: 4px solid #ffc2d1; color: #ff85a2; }
-
-/* 📱 모바일 화면을 위한 작은 폰트 설정 */
-@media (max-width: 450px) {
-    .info-item { font-size: 1.2rem; padding: 5px 10px; }
-    .home-btn { width: 45px; height: 45px; font-size: 1.2rem; }
-    #status-bar { gap: 5px; }
-}
-
-/* 타이머 테두리 색상 (파랑) */
-#timer-display {
-    border: 4px solid #81d4fa;
-    color: #0288d1;
-}
-
-/* 점수판 테두리 색상 (분홍) */
-#score-display {
-    border: 4px solid #ffc2d1;
-    color: #ff85a2;
-}
-
-/* 풍선 기본 디자인 */
-.balloon {
-    position: absolute;
-    cursor: pointer;
-    border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
-    box-shadow: inset -10px -10px rgba(0,0,0,0.1); /* 입체감 */
-    z-index: 50; /* 캔버스보다 위 */
-    pointer-events: auto;
-}
-
-/* 아래쪽 풍선 꼬리(매듭) 표현 */
-.balloon::after {
-    content: "▲";
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 15px;
-    color: inherit;
-    filter: brightness(0.9);
-}
-
-/* 꽃가루 효과용 캔버스 */
-#particleCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* 풍선 클릭을 방해하지 않음 */
-    z-index: 40; /* 풍선보다는 아래 */
-}
-
-/* 타이머 스타일 */
-#timer-display {
-    font-size: 2.2rem; background: white; padding: 5px 25px;
-    border-radius: 30px; border: 4px solid #81d4fa; color: #0288d1;
-}
-
-/* 결과창 스타일 */
-#result-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); z-index: 500;
-    display: flex; justify-content: center; align-items: center;
-}
-.hidden { display: none !important; }
-
-.result-card {
-    background: white; padding: 50px; border-radius: 50px;
-    border: 10px solid #ffd6a5; text-align: center;
-}
-.result-card h2 { font-size: 4rem; color: #ff85a2; margin: 0; }
-.final-score { font-size: 2.5rem; margin: 30px 0; color: #333; }
-.result-card button {
-    padding: 15px 40px; font-size: 2rem; font-family: 'Gaegu';
-    background: #caffbf; border: none; border-radius: 30px;
-    cursor: pointer; box-shadow: 0 6px 0 #95d5a2;
-}
+@keyframes pop{ from{opacity:0; transform:scale(.85) translateY(20px);} to{opacity:1; transform:scale(1) translateY(0);} }
