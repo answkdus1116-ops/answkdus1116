@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
+
+/* ===== 기본 ===== */
+:root{
+  --sky-1:#aee3ff; --sky-2:#7ec8f0;
+  --red:#cd2e3a; --blue:#0047a0; --gold:#ffcf4d; --gold-dark:#e0a82f;
+  --grass:#6bbf3f; --ink:#2c3d1a;
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body,html{
+  margin:0; padding:0; width:100%; height:100%;
+  overflow:hidden; font-family:'Gaegu',cursive;
+  background:#aee3ff; user-select:none;
+}
+
+#mainCanvas{ position:fixed; inset:0; width:100vw; height:100vh; display:block; z-index:1; }
+
+/* ===== 입장 화면 ===== */
+#entryOverlay{
+  position:fixed; inset:0; z-index:9999;
+  display:flex; justify-content:center; align-items:center;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.5), transparent 45%),
+    linear-gradient(180deg,#bfeaff 0%, #7ec8f0 60%, #6bbf3f 60.5%, #4f9e2d 100%);
+}
+.entry-content{
+  background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+  padding:42px 54px; border-radius:36px; border:6px solid var(--gold);
+  text-align:center; box-shadow:0 18px 40px rgba(0,40,90,.25);
+  animation:pop .6s ease-out; max-width:90vw;
+}
+.entry-icon{ font-size:58px; animation:bob 2.4s ease-in-out infinite; }
+.entry-content h1{
+  font-family:'Jua',sans-serif; font-size:2.6rem; color:var(--blue);
+  margin:8px 0 6px; text-shadow:2px 2px 0 #fff;
+}
+.entry-sub{ color:#456; font-size:1.4rem; margin:0 0 26px; }
+.btn-start{
+  padding:14px 40px; font-size:2rem; font-family:'Jua',sans-serif;
+  background:var(--gold); color:#7a4b00; border:none; border-radius:50px;
+  cursor:pointer; box-shadow:0 7px 0 var(--gold-dark); transition:.1s;
+}
+.btn-start:active{ transform:translateY(5px); box-shadow:0 2px 0 var(--gold-dark); }
+
+/* ===== 상단 UI ===== */
+.ui-panel{
+  position:fixed; top:0; left:0; width:100%; z-index:100;
+  background:rgba(255,255,255,.88); backdrop-filter:blur(6px);
+  padding:12px 10px 10px; border-radius:0 0 26px 26px;
+  border-bottom:3px solid var(--gold); box-shadow:0 8px 22px rgba(0,40,90,.12);
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  transition:opacity .4s, transform .4s; opacity:0; transform:translateY(-110%); pointer-events:none;
+}
+.ui-panel.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+.ui-header{ font-family:'Jua',sans-serif; font-size:1.6rem; color:var(--blue); }
+.btn-cluster{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.btn{
+  display:flex; flex-direction:column; align-items:center; line-height:1.05;
+  padding:8px 12px; min-width:60px; font-family:'Gaegu'; font-weight:700; font-size:1rem;
+  border:none; border-radius:14px; cursor:pointer; transition:.12s; color:#333;
+}
+.btn .ico{ font-size:1.3rem; }
+.btn:active{ transform:translateY(3px); }
+.btn-primary{ background:var(--blue); color:#fff; box-shadow:0 4px 0 #00316e; }
+.btn-accent{ background:var(--red); color:#fff; box-shadow:0 4px 0 #9c1f29; }
+.btn-ghost{ background:#fff; box-shadow:0 4px 0 #d7e3ee; border:1px solid #e2ecf5; }
+.hint-line{ font-size:1rem; color:#5a6b7a; }
+
+/* ===== 모달 공통 ===== */
+.modal{
+  position:fixed; inset:0; z-index:2000; display:none;
+  justify-content:center; align-items:center; background:rgba(10,25,45,.82);
+  padding:14px;
+}
+.modal.show{ display:flex; }
+
+/* 카메라 */
+.camera-content{ position:relative; width:100%; max-width:520px; border:6px solid #fff; border-radius:24px; overflow:hidden; }
+#video{ width:100%; height:auto; display:block; background:#000; }
+.camera-ui{ position:absolute; bottom:18px; width:100%; display:flex; justify-content:center; align-items:center; gap:28px; }
+.btn-capture{ width:66px; height:66px; background:#fff; border:5px solid var(--gold); border-radius:50%; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.4); }
+.btn-capture:active{ transform:scale(.92); }
+.btn-close-cam{ padding:10px 18px; background:rgba(255,255,255,.9); border:none; border-radius:14px; font-family:'Gaegu'; font-weight:700; font-size:1.1rem; cursor:pointer; }
+
+/* 자르기 */
+.crop-content{
+  background:#fff; border-radius:26px; border:5px solid var(--blue);
+  padding:18px 18px 16px; max-width:560px; width:100%; max-height:92vh; overflow:auto; text-align:center;
+}
+.crop-content h2{ font-family:'Jua',sans-serif; color:var(--blue); margin:2px 0 12px; font-size:1.6rem; }
+#cropStage{ position:relative; display:inline-block; line-height:0; touch-action:none; max-width:100%; }
+#cropImg{ max-width:100%; max-height:60vh; border-radius:12px; display:block; }
+#cropSvg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.handle{
+  position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px;
+  border:4px solid #fff; background:rgba(107,191,63,.55);
+  border-radius:50%; box-shadow:0 0 0 2px var(--grass),0 3px 8px rgba(0,0,0,.4);
+  cursor:grab; touch-action:none; z-index:3;
+}
+.handle:active{ cursor:grabbing; background:rgba(205,46,58,.6); box-shadow:0 0 0 2px var(--red),0 3px 8px rgba(0,0,0,.4); }
+.crop-hint{ color:#566; font-size:1.15rem; margin:12px 4px 14px; }
+.crop-actions{ display:flex; justify-content:center; gap:12px; }
+.crop-actions .btn{ flex-direction:row; gap:4px; padding:12px 22px; font-size:1.2rem; border-radius:16px; }
+
+/* 토스트 */
+.toast{
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.9);
+  z-index:3000; background:#fff; padding:20px 28px; border-radius:22px;
+  border:4px solid var(--blue); box-shadow:0 12px 30px rgba(0,40,90,.3);
+  display:flex; align-items:center; gap:12px; font-size:1.4rem; color:var(--ink);
+  opacity:0; pointer-events:none; transition:.25s;
+}
+.toast.show{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+.toast-emoji{ font-size:2rem; animation:spin 1.4s linear infinite; display:inline-block; }
+
+@keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes pop{ from{opacity:0; transform:scale(.85) translateY(18px)} to{opacity:1; transform:scale(1)} }
+@keyframes spin{ to{transform:rotate(360deg)} }

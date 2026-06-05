@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>휘날려라! 태극기 놀이터</title>
+  <link rel="stylesheet" href="flag.css">
+</head>
+<body>
+  <!-- 하늘 + 깃발이 그려지는 메인 캔버스 -->
+  <canvas id="mainCanvas"></canvas>
+
+  <!-- 입장 화면 -->
+  <div id="entryOverlay">
+    <div class="entry-content">
+      <div class="entry-icon">🇰🇷🎏✨</div>
+      <h1>대한민국 태극기 놀이터</h1>
+      <p class="entry-sub">색칠한 태극기를 찍으면 깃대에서 휘날려요!</p>
+      <button class="btn-start" onclick="Flag.startApp()">🚩 입장하기</button>
+    </div>
+  </div>
+
+  <!-- 상단 UI -->
+  <div class="ui-panel" id="uiPanel">
+    <div class="ui-header">🎏 태극기 놀이터</div>
+    <div class="btn-cluster">
+      <button class="btn btn-primary" onclick="Flag.openCamera()"><span class="ico">📸</span><span>촬영</span></button>
+      <button class="btn btn-accent" onclick="document.getElementById('fileInput').click()"><span class="ico">📁</span><span>사진</span></button>
+      <button class="btn btn-ghost" onclick="Flag.saveScene()"><span class="ico">💾</span><span>저장</span></button>
+      <button class="btn btn-ghost" id="audioBtn" onclick="Flag.toggleWind()"><span class="ico">🔇</span><span>바람소리</span></button>
+      <button class="btn btn-ghost" onclick="Flag.clearStage()"><span class="ico">🧹</span><span>청소</span></button>
+      <button class="btn btn-ghost" onclick="Flag.toggleFullScreen()"><span class="ico">🖥️</span><span>크게</span></button>
+    </div>
+    <div class="hint-line">💡 화면을 톡 누르면 바람이 한 번 “휘이익~” 불어요</div>
+  </div>
+
+  <!-- 카메라 모달 -->
+  <div id="cameraModal" class="modal">
+    <div class="camera-content">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="captureCanvas" style="display:none;"></canvas>
+      <div class="camera-ui">
+        <button class="btn-capture" onclick="Flag.takeSnapshot()"></button>
+        <button class="btn-close-cam" onclick="Flag.closeCamera()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 자르기(원근 보정) 모달 -->
+  <div id="cropModal" class="modal">
+    <div class="crop-content">
+      <h2>국기의 네 모서리를 맞춰요 ✂️</h2>
+      <div id="cropStage">
+        <img id="cropImg" alt="국기 사진">
+        <svg id="cropSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="handle" data-i="0"></div>
+        <div class="handle" data-i="1"></div>
+        <div class="handle" data-i="2"></div>
+        <div class="handle" data-i="3"></div>
+      </div>
+      <p class="crop-hint">초록 동그라미 4개를 사진 속 태극기의 <b>네 꼭짓점</b>에 콕콕 맞춰 주세요.</p>
+      <div class="crop-actions">
+        <button class="btn btn-ghost" onclick="Flag.cancelCrop()">취소</button>
+        <button class="btn btn-primary" onclick="Flag.confirmCrop()">🎏 깃대에 달기!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 로딩 토스트 -->
+  <div id="toast" class="toast"><span class="toast-emoji">🎏</span><span id="toastMsg">준비 중...</span></div>
+
+  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="Flag.handleFileUpload(event)">
+
+  <script src="flag.js"></script>
+</body>
+</html>
