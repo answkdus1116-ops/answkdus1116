@@ -24,26 +24,92 @@ const BEST_KEY = 'rhythm_best';
 let best = +(localStorage.getItem(BEST_KEY) || 0);
 bestEl.innerText = best;
 
+// 추가 상태 / 엘리먼트
+let mode = 'endless', paused = false, sfxOn = true;
+let timeLeft = 60, gameTimer = null;
+const controls   = document.getElementById('controls');
+const pauseBtn   = document.getElementById('pause-btn');
+const restartBtn = document.getElementById('restart-btn');
+const sfxBtn     = document.getElementById('sfx-btn');
+const timeBoard  = document.getElementById('time-board');
+const timeEl     = document.getElementById('time');
+const resultBox  = document.getElementById('result');
+
 const lineY = () => innerHeight - 130;     // 판정선 y
 
 document.getElementById('diff-row').addEventListener('click', e => {
   const b = e.target.closest('.diff'); if (!b) return;
-  document.querySelectorAll('.diff').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('#diff-row .diff').forEach(d => d.classList.remove('active'));
   b.classList.add('active'); diff = b.dataset.d;
 });
 
-startBtn.addEventListener('click', () => {
+document.getElementById('mode-row').addEventListener('click', e => {
+  const b = e.target.closest('.diff'); if (!b) return;
+  document.querySelectorAll('#mode-row .diff').forEach(d => d.classList.remove('active'));
+  b.classList.add('active'); mode = b.dataset.m;
+});
+
+startBtn.addEventListener('click', beginGame);
+restartBtn.addEventListener('click', beginGame);
+document.getElementById('retry-btn').addEventListener('click', beginGame);
+
+function beginGame(){
   if (audioCtx.state === 'suspended') audioCtx.resume();
   document.getElementById('setup').style.display = 'none';
+  resultBox.classList.add('hidden');
+  controls.classList.remove('hidden');
+  paused = false; pauseBtn.textContent = '⏸️';
   score = 0; combo = 0; updateHud();
   notes.forEach(n => n.el.remove()); notes = [];
   spawnAcc = 0; lastTime = performance.now(); playing = true;
   bgm.currentTime = 0; bgm.play().catch(() => {});  // 없어도 무방
+
+  // 타이머(60초 모드)
+  if (gameTimer){ clearInterval(gameTimer); gameTimer = null; }
+  if (mode === 'timed'){
+    timeLeft = 60; timeEl.innerText = timeLeft; timeBoard.classList.remove('hidden');
+    gameTimer = setInterval(() => {
+      if (paused) return;
+      timeLeft--; timeEl.innerText = timeLeft;
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  } else {
+    timeBoard.classList.add('hidden');
+  }
   requestAnimationFrame(update);
+}
+
+// 일시정지 / 효과음 토글
+pauseBtn.addEventListener('click', () => {
+  if (!playing) return;
+  paused = !paused;
+  pauseBtn.textContent = paused ? '▶️' : '⏸️';
+  if (!paused){ lastTime = performance.now(); requestAnimationFrame(update); }
 });
+sfxBtn.addEventListener('click', () => {
+  sfxOn = !sfxOn;
+  sfxBtn.textContent = sfxOn ? '🔊' : '🔇';
+  sfxBtn.title = sfxOn ? '효과음 끄기' : '효과음 켜기';
+});
+
+function endGame(){
+  playing = false;
+  if (gameTimer){ clearInterval(gameTimer); gameTimer = null; }
+  bgm.pause();
+  notes.forEach(n => n.el.remove()); notes = [];
+  controls.classList.add('hidden');
+  document.getElementById('final-score').innerText = score;
+  document.getElementById('final-best').innerText = best;
+  resultBox.classList.remove('hidden');
+  if (window.confetti){
+    confetti({ particleCount: 160, spread: 100, origin: { y: 0.4 },
+      colors: ['#ffffff','#ffeb3b','#00ffcc','#ff79c6','#ffd6a5'] });
+  }
+}
 
 function update(now){
   if (!playing) return;
+  if (paused){ lastTime = now; return; }   // 멈춤(루프는 해제 시 재개)
   const dt = Math.min(now - lastTime, 50); lastTime = now;
 
   // 별 생성 (음악 유무와 무관하게 타이머로 동작)
@@ -109,8 +175,10 @@ function rand(n){ return (Math.random() * n) | 0; }
 
 // 빈 곳을 눌러도 판정선 근처의 가장 가까운 별을 잡아줌(태블릿 친화)
 addEventListener('pointerdown', e => {
-  if (!playing) return;
-  if (e.target.closest('.note') || e.target.closest('#setup') || e.target.closest('.home-btn')) return;
+  if (!playing || paused) return;
+  if (e.target.closest('.note') || e.target.closest('#setup') ||
+      e.target.closest('.home-btn') || e.target.closest('#controls') ||
+      e.target.closest('#result')) return;
   let bestN = null, bestD = 1e9;
   for (const n of notes){
     const d = Math.abs((n.y + 40) - lineY());
@@ -130,6 +198,7 @@ function showFeedback(txt, color){
 
 /* 효과음 */
 function playHit(perfect){
+  if (!sfxOn) return;
   const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.setValueAtTime(perfect ? 1046 : 784, audioCtx.currentTime);

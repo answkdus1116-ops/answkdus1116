@@ -1,5 +1,6 @@
 let p1Name, p2Name, p1Img = "p1_1.png", p2Img = "p2_1.png";
 let gameActive = false, bombMode = false, p1Score = 0, p2Score = 0, timeLeft = 60, bgmType = "system";
+let goldenMode = true, gameDuration = 60;
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const bgmAudio = document.getElementById('bgm-audio');
@@ -19,19 +20,38 @@ document.getElementById('game-start-btn').onclick = function() {
     p1Name = document.getElementById('p1-name-input').value || "학생 1";
     p2Name = document.getElementById('p2-name-input').value || "학생 2";
     bombMode = document.getElementById('bomb-toggle').checked;
+    goldenMode = document.getElementById('golden-toggle').checked;
     bgmType = document.querySelector('input[name="bgm-type"]:checked').value;
+    gameDuration = +document.querySelector('input[name="game-time"]:checked').value;
 
     document.getElementById('p1-display-name').innerText = p1Name;
     document.getElementById('p2-display-name').innerText = p2Name;
     
     if (audioCtx.state === 'suspended') audioCtx.resume();
     document.getElementById('setup-overlay').classList.add('hidden');
-    startGame();
+    runCountdown(startGame);
 };
+
+// 3 · 2 · 1 · 시작! 카운트다운
+function runCountdown(done) {
+    const ov = document.getElementById('countdown-overlay');
+    const num = document.getElementById('countdown-num');
+    ov.classList.remove('hidden');
+    let n = 3;
+    const flash = (txt) => { num.textContent = txt; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = ''; };
+    flash(n); playPopSound(660);
+    const iv = setInterval(() => {
+        n--;
+        if (n > 0) { flash(n); playPopSound(660); }
+        else if (n === 0) { flash('시작!'); playPopSound(990); }
+        else { clearInterval(iv); ov.classList.add('hidden'); done(); }
+    }, 800);
+}
 
 function startGame() {
     gameActive = true;
-    p1Score = 0; p2Score = 0; timeLeft = 60;
+    p1Score = 0; p2Score = 0; timeLeft = gameDuration;
+    document.getElementById('time-text').innerText = `남은 시간: ${timeLeft}`;
     if (bgmType === 'mp3') bgmAudio.play().catch(() => {});
     
     // 버튼이 2개씩 생기도록 각각 두 번 호출!
@@ -50,6 +70,7 @@ function createTarget(zone, player) {
     target.className = 'target';
     
     const isBomb = bombMode && Math.random() < 0.25; // 폭탄 확률을 살짝 높였어요(25%)
+    const isGolden = !isBomb && goldenMode && Math.random() < 0.12; // 황금별 12%
     
     if (isBomb) {
         target.innerText = "💣";
@@ -59,6 +80,15 @@ function createTarget(zone, player) {
         target.style.justifyContent = "center";
         target.style.alignItems = "center";
         target.dataset.type = "bomb";
+    } else if (isGolden) {
+        target.innerText = "⭐";
+        target.style.backgroundImage = "none";
+        target.style.fontSize = "92px";
+        target.style.display = "flex";
+        target.style.justifyContent = "center";
+        target.style.alignItems = "center";
+        target.classList.add("golden");
+        target.dataset.type = "golden";
     } else {
         target.style.backgroundImage = `url(${player === 1 ? p1Img : p2Img})`;
         target.innerText = "";
@@ -75,6 +105,9 @@ function createTarget(zone, player) {
             playExplosionSound(); // 폭탄 전용 폭발음!
             if (player === 1) p1Score = Math.max(0, p1Score - 5);
             else p2Score = Math.max(0, p2Score - 5);
+        } else if (target.dataset.type === "golden") {
+            playGoldenSound(); // 황금별 반짝 사운드
+            if (player === 1) p1Score += 3; else p2Score += 3;
         } else {
             playPopSound(player === 1 ? 500 : 700);
             if (player === 1) p1Score++; else p2Score++;
@@ -89,10 +122,11 @@ function createTarget(zone, player) {
     target.addEventListener('mousedown', handleAction);
     zone.appendChild(target);
 
-    // 폭탄은 더 빨리 사라지게 해서 난이도를 조절했습니다.
+    // 폭탄·황금별은 더 빨리 사라지게 해서 난이도를 조절했습니다.
+    const life = isBomb ? 1000 : (isGolden ? 1300 : 1800);
     setTimeout(() => { 
         if (target.parentNode) { target.remove(); createTarget(zone, player); }
-    }, isBomb ? 1000 : 1800);
+    }, life);
 }
 
 // 일반 터치음 (뾱)
@@ -100,9 +134,27 @@ function playPopSound(freq) {
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.3, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
     osc.connect(g); g.connect(audioCtx.destination);
     osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+}
+
+// 황금별 사운드 (반짝 상승음)
+function playGoldenSound() {
+    const notes = [784, 988, 1318];
+    notes.forEach((f, i) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = f;
+        const t = audioCtx.currentTime + i * 0.07;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.2);
+    });
 }
 
 // 폭탄 폭발음 (콰광!)
@@ -138,4 +190,5 @@ function endGame() {
     bgmAudio.pause();
     document.getElementById('result-overlay').classList.remove('hidden');
     document.getElementById('winner-text').innerText = p1Score > p2Score ? `${p1Name} 승리! 🏆` : (p2Score > p1Score ? `${p2Name} 승리! 🏆` : "무승부! 🤝");
+    document.getElementById('result-scores').innerText = `${p1Name} ${p1Score}점  ·  ${p2Name} ${p2Score}점`;
 }

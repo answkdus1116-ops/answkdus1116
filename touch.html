@@ -39,6 +39,15 @@
                 <label><input type="radio" name="bgm-type" value="system" checked> 시스템</label>
                 <label><input type="radio" name="bgm-type" value="mp3"> 배경음악</label>
             </div>
+            <div style="margin-top:10px; font-size:1.2rem;">
+                ⏱️ 시간:
+                <label><input type="radio" name="game-time" value="30"> 30초</label>
+                <label><input type="radio" name="game-time" value="60" checked> 60초</label>
+                <label><input type="radio" name="game-time" value="90"> 90초</label>
+            </div>
+            <div style="margin-top:10px; font-size:1.2rem;">
+                <label style="cursor:pointer;"><input type="checkbox" id="golden-toggle" checked style="width:20px; height:20px;"> ⭐ 황금별 보너스 (+3점!)</label>
+            </div>
         </div>
 
         <button id="game-start-btn">게임 시작! 🚀</button>
@@ -59,10 +68,16 @@
         </div>
     </div>
 
+    <div id="countdown-overlay" class="hidden">
+        <div id="countdown-num">3</div>
+    </div>
+
     <div id="result-overlay" class="hidden">
         <div class="result-content">
             <h1 id="winner-text">승자는?</h1>
-            <button onclick="location.reload()" style="padding:15px 40px; border-radius:20px; font-size:1.5rem; cursor:pointer; border:none;">다시 하기</button>
+            <div id="result-scores"></div>
+            <button onclick="location.reload()" style="padding:15px 40px; border-radius:20px; font-size:1.5rem; cursor:pointer; border:none; margin-top:18px;">다시 하기</button>
+            <div style="margin-top:14px;"><a href="index.html" style="color:#ccc; font-size:1.1rem;">🏠 홈으로</a></div>
         </div>
     </div>
 

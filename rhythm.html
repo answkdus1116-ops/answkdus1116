@@ -11,12 +11,20 @@
   <div id="game-container">
     <a href="index.html" class="home-btn">🏠</a>
 
+    <!-- 게임 중 상단 컨트롤 -->
+    <div id="controls" class="hidden">
+      <button class="ctrl-btn" id="pause-btn" title="일시정지">⏸️</button>
+      <button class="ctrl-btn" id="restart-btn" title="다시하기">🔄</button>
+      <button class="ctrl-btn" id="sfx-btn" title="효과음 끄기">🔊</button>
+    </div>
+
     <div id="ui">
       <h1 id="title">🌟 별을 잡아봐요! 🌟</h1>
       <div class="hud">
         <div class="pill" id="score-board">점수 <span id="score">0</span></div>
         <div class="pill" id="combo-board">콤보 <span id="combo">0</span></div>
         <div class="pill" id="best-board">🏆 <span id="best">0</span></div>
+        <div class="pill hidden" id="time-board">⏱️ <span id="time">60</span></div>
       </div>
     </div>
 
@@ -34,7 +42,22 @@
           <button class="diff active" data-d="normal">보통</button>
           <button class="diff" data-d="fast">빠르게</button>
         </div>
+        <div class="diff-row" id="mode-row">
+          <button class="diff active" data-m="endless">무한 모드</button>
+          <button class="diff" data-m="timed">60초 도전</button>
+        </div>
         <button id="start-btn">노래 시작하기 ▶</button>
+      </div>
+    </div>
+
+    <!-- 결과 화면(60초 모드) -->
+    <div id="result" class="hidden">
+      <div class="result-card">
+        <h2>⏱️ 시간 종료!</h2>
+        <div class="result-score">최종 점수 <b id="final-score">0</b></div>
+        <div class="result-best">🏆 최고 기록 <b id="final-best">0</b></div>
+        <button id="retry-btn">한 번 더! 🔁</button>
+        <a href="index.html" class="result-home">홈으로</a>
       </div>
     </div>
   </div>

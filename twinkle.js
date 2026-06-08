@@ -75,43 +75,40 @@ function playSoftTone() {
 
 // ... (기존 Particle 클래스 및 playSoftTone 함수는 동일) ...
 
-// 4. 이벤트 핸들러 수정
-function handleInteraction(e) {
-    // 마우스나 터치 위치 계산
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // 입자 생성 개수를 살짝 늘려(6개) 더 풍성하게 만듭니다.
+// 4. 이벤트 핸들러 — 멀티터치(여러 명 동시) + 드래그 지원
+//    Pointer Events는 손가락/마우스마다 고유 pointerId로 들어오므로
+//    여러 접점을 동시에 추적하면 2인 이상이 함께 그릴 수 있습니다.
+const activePointers = new Set();
+
+function spawnAt(x, y) {
+    // 접점 하나당 입자 6개로 풍성하게
     for (let i = 0; i < 6; i++) {
         particles.push(new Particle(x, y));
     }
-    
-    // 소리는 너무 자주 나면 시끄러울 수 있으니 적절히 조절됩니다.
-    if (Math.random() > 0.8) playSoftTone(); 
+    // 소리는 너무 자주 나면 시끄러우니 가끔만
+    if (Math.random() > 0.8) playSoftTone();
 }
 
-// [중요] 마우스 드래그 지원
-canvas.addEventListener('mousedown', (e) => {
-    handleInteraction(e);
-    // 마우스를 누른 상태에서 움직일 때만 handleInteraction 실행
-    const onMouseMove = (moveEvent) => handleInteraction(moveEvent);
-    
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', () => {
-        window.removeEventListener('mousemove', onMouseMove);
-    }, { once: true });
-});
-
-// [중요] 터치 드래그(문지르기) 지원
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // 스크롤 방지
-    handleInteraction(e);
+canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    activePointers.add(e.pointerId);
+    spawnAt(e.clientX, e.clientY);
 }, { passive: false });
 
-canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault(); // 스크롤 및 화면 흔들림 방지
-    handleInteraction(e);
+canvas.addEventListener('pointermove', (e) => {
+    if (!activePointers.has(e.pointerId)) return;  // 누르고 있는 접점만 그림
+    e.preventDefault();
+    // 빠르게 문질러도 끊기지 않도록 중간 좌표까지 보간 처리
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs) spawnAt(ev.clientX, ev.clientY);
 }, { passive: false });
+
+function releasePointer(e) { activePointers.delete(e.pointerId); }
+canvas.addEventListener('pointerup', releasePointer);
+canvas.addEventListener('pointercancel', releasePointer);
+// 캔버스 밖에서 손을 떼도 정리되도록 window에도 등록
+window.addEventListener('pointerup', releasePointer);
+window.addEventListener('pointercancel', releasePointer);
 
 // 5. 애니메이션 루프 (이전과 동일)
 function animate() {

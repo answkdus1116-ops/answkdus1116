@@ -170,8 +170,8 @@ const Flag = (() => {
     const sw = off.width, sh = off.height;
     const strips = 64;
     const stripSrc = sw / strips;
-    const amp = f.dispH * 0.20;                 // 펄럭임 진폭
-    const speed = (1.6 + f.windSpeed) * (1 + gust * 0.7);
+    const amp = f.dispH * 0.11;                 // 펄럭임 진폭(차분하게)
+    const speed = (0.9 + f.windSpeed * 0.8) * (1 + gust * 0.4);
     const baseX = f.poleX + poleW;
     const baseY = f.poleTop + f.dispH * 0.18;
     let x = baseX;
@@ -179,10 +179,10 @@ const Flag = (() => {
     for (let i = 0; i < strips; i++) {
       const sx = i * stripSrc;
       const t = i / (strips - 1);                       // 0=깃대, 1=자유단
-      const phase = i * 0.42 - time * 0.05 * speed + f.phase;
-      const depth = Math.cos(phase) * 0.5 * t;          // 천이 접히는 깊이감(-.5~.5)
-      const stripW = stripSrc * f.scale * (1 - depth * 0.55);
-      const yOff = Math.sin(phase) * (amp + gust * amp * 0.9) * t;
+      const phase = i * 0.26 - time * 0.04 * speed + f.phase;  // 물결 개수↓ 속도↓
+      const depth = Math.cos(phase) * 0.42 * t;         // 천이 접히는 깊이감
+      const stripW = stripSrc * f.scale * (1 - depth * 0.45);
+      const yOff = Math.sin(phase) * (amp + gust * amp * 0.5) * t;
       const vScale = 1 - Math.abs(depth) * 0.16;        // 깊이에 따른 세로 눌림
       const h = f.dispH * vScale;
       const y = baseY + yOff + (f.dispH - h) / 2;
@@ -216,7 +216,7 @@ const Flag = (() => {
 
   // 화면 톡 → 돌풍 + 바람소리 살짝
   function onStagePointer() {
-    gust = Math.min(1.4, gust + 0.9);
+    gust = Math.min(1.0, gust + 0.5);
     if (windOn && windGain) {
       const now = audioCtx.currentTime;
       windGain.gain.cancelScheduledValues(now);
@@ -423,11 +423,11 @@ const Flag = (() => {
   function addFlag(flatCanvas) {
     flags.push({
       canvas: flatCanvas,
-      windSpeed: 0.5 + Math.random() * 0.7,
+      windSpeed: 0.2 + Math.random() * 0.3,
       phase: Math.random() * Math.PI * 2
     });
     layoutPoles();
-    gust = Math.min(1.4, gust + 0.6);   // 새 깃발 등장 시 바람 한 번
+    gust = Math.min(1.0, gust + 0.35);   // 새 깃발 등장 시 바람 한 번(살짝)
   }
   function clearStage() { flags = []; }
 
