@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>선생님께 고운 말 하기</title>
+<title>선생님께 고운 말 드리기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cream:#FFF6EC; --coral:#8CCABF; --coral-deep:#3FA89C;   /* 선생님 버전: 차분한 청록 강조 */
+    --cream:#FFF6EC; --coral:#8CCABF; --coral-deep:#3FA89C;
     --mint:#A8D5BA; --mint-deep:#7FC4A0; --sky:#A9D6E5;
     --sun:#FFD97D; --pink:#FF8FA3; --ink:#5C4A3A; --ink-soft:#8A7A6A;
   }
@@ -43,73 +43,143 @@
   .scan-toggle.active .dot{background:#fff;}
 
   .mascot-wrap{text-align:center; margin:4px 0 10px;}
-  .mascot{width:150px; height:150px; display:inline-block;}
+  .mascot{width:120px; height:120px; display:inline-block;}
   .mascot.happy{animation:bounce .6s ease;}
-  @keyframes bounce{0%,100%{transform:translateY(0) scale(1);} 30%{transform:translateY(-24px) scale(1.08);} 60%{transform:translateY(0) scale(.97);}}
+  @keyframes bounce{0%,100%{transform:translateY(0) scale(1);} 30%{transform:translateY(-22px) scale(1.08);} 60%{transform:translateY(0) scale(.97);}}
   .mascot .eye-closed{display:none;}
   .mascot.happy .eye-open{display:none;}
   .mascot.happy .eye-closed{display:block;}
 
-  .bubble{background:#fff; border:5px solid var(--coral); border-radius:30px; padding:18px 22px 22px;
-    margin:0 auto 22px; max-width:600px; text-align:center; position:relative; box-shadow:0 8px 0 rgba(63,168,156,.18);}
-  .bubble:after{content:""; position:absolute; top:-22px; left:50%; transform:translateX(-50%);
-    border:14px solid transparent; border-bottom-color:var(--coral);}
-  .bubble .prompt{font-family:'Jua'; font-size:1.6rem; line-height:1.5; white-space:pre-line;}
-  .bubble .stage{display:flex; flex-direction:column; align-items:center; gap:4px; min-height:1.2em;}
-  .bubble .stage-pic{width:120px; height:120px; object-fit:contain; display:none; margin-top:6px;}
-  .bubble .said{font-family:'Jua'; font-size:2.5rem; color:var(--coral-deep);}
+  /* ---------- 홈: 선생님 고르기 ---------- */
+  .home-title{text-align:center; font-size:2.5rem; margin:2px 0 2px;}
+  .home-sub{text-align:center; font-size:1.35rem; color:var(--ink-soft); margin:0 0 18px;}
+  .teacher-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .t-card{position:relative; border:none; cursor:pointer; background:#fff; border-radius:28px; padding:16px 12px 18px;
+    display:flex; flex-direction:column; align-items:center; gap:10px; box-shadow:0 7px 0 rgba(0,0,0,.10);
+    transition:transform .12s; font-family:'Jua';}
+  .t-card:active{transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.10);}
+  .t-photo{width:118px; height:118px; border-radius:50%; overflow:hidden; border:6px solid var(--coral);
+    background:#EAF6F2; display:flex; align-items:center; justify-content:center;}
+  .t-photo img{width:100%; height:100%; object-fit:cover;}
+  .t-photo svg{width:100%; height:100%;}
+  .t-name{font-size:1.6rem; color:var(--ink);}
+  .t-add{border:5px dashed var(--coral); background:#FBFFFE; color:var(--coral-deep);}
+  .t-add .plus{font-size:3.4rem; line-height:1;}
+  .t-add .t-name{color:var(--coral-deep);}
+  .t-del{position:absolute; top:-8px; right:-8px; width:38px; height:38px; border-radius:50%; border:none;
+    background:var(--pink); color:#fff; font-family:'Jua'; font-size:1.3rem; cursor:pointer; display:none;
+    box-shadow:0 3px 0 rgba(0,0,0,.15);}
+  body.edit .t-del{display:block;}
+  body.edit .t-card.is-add .t-del{display:none;}
 
-  .home-title{text-align:center; font-size:2.6rem; margin:2px 0 2px;}
-  .home-sub{text-align:center; font-size:1.4rem; color:var(--ink-soft); margin:0 0 18px;}
-  .situations{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
-  .sit-card{border:none; cursor:pointer; border-radius:28px; padding:22px 12px; display:flex; flex-direction:column;
-    align-items:center; gap:8px; box-shadow:0 7px 0 rgba(0,0,0,.10); transition:transform .12s; font-family:'Jua';}
-  .sit-card:active{transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.10);}
-  .sit-card .emoji{font-size:3.6rem; line-height:1;}
-  .sit-card .name{font-size:1.7rem; color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.12);}
+  .home-tools{display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:18px;}
+  .tool-btn{border:4px solid var(--mint-deep); background:#fff; color:var(--ink); font-family:'Jua'; font-size:1.2rem;
+    border-radius:999px; padding:8px 22px; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.06);}
+  .tool-btn.sky{border-color:var(--sky);}
+  .tool-btn.coral{border-color:var(--coral-deep);}
+  body.edit #editBtn{background:var(--mint-deep); color:#fff;}
 
-  .choices{display:flex; flex-direction:column; gap:18px; margin-top:6px;}
-  .choice{border:6px solid #fff; cursor:pointer; border-radius:30px; padding:18px 20px; display:flex; align-items:center;
-    gap:20px; background:#fff; box-shadow:0 7px 0 rgba(0,0,0,.10); transition:transform .12s, border-color .15s;
-    font-family:'Jua'; text-align:left; width:100%;}
-  .choice:active{transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.10);}
-  .choice .pic-box{flex:0 0 auto; width:92px; height:92px; border-radius:24px; display:flex; align-items:center;
-    justify-content:center; overflow:hidden;}
-  .choice .pic-box .emoji{font-size:3.2rem; line-height:1;}
-  .choice .pic-box img{width:100%; height:100%; object-fit:contain; display:none;}
-  .choice .text{font-size:2.2rem; color:var(--ink); line-height:1.2;}
-  body.scan .choice.scan-on{border-color:var(--coral-deep); transform:scale(1.03);
+  /* ---------- 말하기 화면 ---------- */
+  .play-top{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+  .name-tag{font-family:'Jua'; font-size:1.5rem; color:var(--coral-deep); background:#fff; border:4px solid var(--coral);
+    border-radius:999px; padding:6px 18px; box-shadow:0 4px 0 rgba(63,168,156,.18);}
+
+  .stage-wrap{display:flex; flex-direction:column; align-items:center; position:relative; margin:4px 0 14px;}
+  .reply-bubble{background:#fff; border:5px solid var(--sun); border-radius:26px; padding:14px 22px; max-width:420px;
+    text-align:center; font-family:'Jua'; font-size:1.7rem; color:#C98A18; position:relative; margin-bottom:14px;
+    box-shadow:0 7px 0 rgba(0,0,0,.07); opacity:0; transform:translateY(10px) scale(.9); transition:.3s;}
+  .reply-bubble.show{opacity:1; transform:none;}
+  .reply-bubble:after{content:""; position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
+    border:13px solid transparent; border-top-color:var(--sun);}
+
+  .drop-zone{position:relative; width:230px; height:230px; border-radius:50%; overflow:hidden;
+    border:9px solid var(--coral); background:#EAF6F2; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 0 rgba(63,168,156,.18); transition:transform .18s, box-shadow .18s, border-color .18s;}
+  .drop-zone img{width:100%; height:100%; object-fit:cover;}
+  .drop-zone svg{width:100%; height:100%;}
+  .drop-zone.hover{border-color:var(--sun); transform:scale(1.06);
+    box-shadow:0 0 0 10px rgba(255,217,125,.45), 0 10px 0 rgba(63,168,156,.18);}
+  .drop-zone.happy{animation:teacherNod .7s ease;}
+  @keyframes teacherNod{0%,100%{transform:scale(1);} 25%{transform:scale(1.1) rotate(-3deg);} 55%{transform:scale(.97) rotate(3deg);}}
+  .drop-hint{margin-top:12px; font-family:'Jua'; font-size:1.25rem; color:var(--ink-soft);}
+  .said-tag{margin-top:10px; min-height:1.4em; font-family:'Jua'; font-size:1.8rem; color:var(--coral-deep);
+    opacity:0; transform:translateY(-6px); transition:.25s;}
+  .said-tag.show{opacity:1; transform:none;}
+
+  .tabs{display:flex; gap:10px; overflow-x:auto; padding:4px 2px 8px; margin-top:4px;}
+  .tab{flex:0 0 auto; border:4px solid #fff; background:#fff; color:var(--ink); font-family:'Jua'; font-size:1.25rem;
+    border-radius:999px; padding:8px 18px; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.07); white-space:nowrap;}
+  .tab.active{border-color:var(--coral-deep); color:var(--coral-deep); background:#EAF6F2;}
+
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:6px;}
+  .phrase{position:relative; border:6px solid #fff; cursor:grab; border-radius:26px; padding:14px 8px 12px; background:#fff;
+    box-shadow:0 7px 0 rgba(0,0,0,.10); display:flex; flex-direction:column; align-items:center; gap:8px;
+    font-family:'Jua'; touch-action:none; transition:transform .12s, border-color .15s;}
+  .phrase:active{cursor:grabbing;}
+  .phrase .pic-box{width:74px; height:74px; border-radius:20px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .phrase .pic-box .emoji{font-size:2.7rem; line-height:1;}
+  .phrase .pic-box img{width:100%; height:100%; object-fit:contain; display:none;}
+  .phrase .text{font-size:1.45rem; color:var(--ink); line-height:1.15; text-align:center;}
+  .phrase.dragging-src{opacity:.35;}
+  body.scan .phrase.scan-on{border-color:var(--coral-deep); transform:scale(1.04);
     box-shadow:0 0 0 6px rgba(63,168,156,.30), 0 7px 0 rgba(0,0,0,.10);}
 
-  .footer{display:flex; gap:14px; margin-top:24px;}
-  .btn{flex:1; border:none; cursor:pointer; border-radius:24px; padding:18px 10px; font-family:'Jua'; font-size:1.5rem;
+  .drag-ghost{position:fixed; z-index:120; pointer-events:none; border:6px solid var(--coral); border-radius:26px;
+    background:#fff; box-shadow:0 12px 24px rgba(0,0,0,.22); display:flex; flex-direction:column; align-items:center;
+    gap:8px; padding:14px 8px 12px; font-family:'Jua'; transition:none;}
+  .drag-ghost.flying{transition:transform .42s cubic-bezier(.5,-0.2,.4,1.3), opacity .42s ease;}
+  .drag-ghost .text{font-size:1.45rem; color:var(--ink); text-align:center;}
+  .drag-ghost .pic-box{width:74px; height:74px; border-radius:20px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .drag-ghost .pic-box .emoji{font-size:2.7rem;}
+
+  .footer{display:flex; gap:14px; margin-top:22px;}
+  .btn{flex:1; border:none; cursor:pointer; border-radius:24px; padding:16px 10px; font-family:'Jua'; font-size:1.4rem;
     color:#fff; box-shadow:0 6px 0 rgba(0,0,0,.12); transition:transform .12s; display:flex; align-items:center;
     justify-content:center; gap:8px;}
   .btn:active{transform:translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,.12);}
   .btn-home{background:var(--sky);}
   .btn-replay{background:var(--mint-deep);}
-  .scan-bar{display:none; width:100%; margin-top:20px; border:none; cursor:pointer; border-radius:28px; padding:26px;
-    font-family:'Jua'; font-size:2rem; color:#fff; background:var(--coral-deep); box-shadow:0 7px 0 rgba(0,0,0,.14);
+  .scan-bar{display:none; width:100%; margin-top:18px; border:none; cursor:pointer; border-radius:28px; padding:24px;
+    font-family:'Jua'; font-size:1.9rem; color:#fff; background:var(--coral-deep); box-shadow:0 7px 0 rgba(0,0,0,.14);
     animation:pulse 1.6s ease-in-out infinite;}
   body.scan .play .scan-bar{display:block;}
-  body.scan .play .footer .btn-replay{display:none;}
   @keyframes pulse{50%{filter:brightness(1.08); transform:scale(1.01);}}
 
-  .hearts{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .hearts{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:90;}
   .heart{position:absolute; font-size:2.4rem; animation:floatUp 1.6s ease-out forwards;}
   @keyframes floatUp{0%{opacity:0; transform:translateY(0) scale(.4);} 20%{opacity:1;}
     100%{opacity:0; transform:translateY(-220px) scale(1.3);}}
 
-  .help{text-align:center; color:var(--ink-soft); font-size:1.15rem; margin-top:26px; line-height:1.6;}
-  .teacher{margin-top:30px; text-align:center; font-family:'Gaegu'; color:var(--ink-soft); font-size:1rem;}
-  .teacher summary{cursor:pointer; font-size:1.1rem;}
-  .teacher .row{display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:12px;}
-  .teacher select, .teacher input[type=range]{font-family:'Gaegu'; font-size:1rem;}
-  .teacher label{display:flex; align-items:center; gap:6px;}
+  .help{text-align:center; color:var(--ink-soft); font-size:1.1rem; margin-top:24px; line-height:1.6;}
+
+  /* ---------- 설정 / 모달 ---------- */
+  .teacher-set{margin-top:30px; text-align:center; font-family:'Gaegu'; color:var(--ink-soft); font-size:1rem;}
+  .teacher-set summary{cursor:pointer; font-size:1.1rem;}
+  .teacher-set .row{display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:12px;}
+  .teacher-set select, .teacher-set input[type=range]{font-family:'Gaegu'; font-size:1rem;}
+  .teacher-set label{display:flex; align-items:center; gap:6px;}
+
+  .modal{position:fixed; inset:0; background:rgba(60,50,40,.45); display:none; align-items:center; justify-content:center;
+    z-index:200; padding:20px;}
+  .modal.on{display:flex;}
+  .modal-card{background:#fff; border-radius:30px; padding:26px 24px; width:100%; max-width:420px; text-align:center;
+    box-shadow:0 14px 40px rgba(0,0,0,.25);}
+  .modal-card h2{font-family:'Jua'; font-size:1.9rem; margin:0 0 16px; color:var(--ink);}
+  .photo-pick{width:150px; height:150px; border-radius:50%; margin:0 auto 14px; border:6px solid var(--coral);
+    background:#EAF6F2; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;}
+  .photo-pick img{width:100%; height:100%; object-fit:cover;}
+  .photo-pick .ph{font-family:'Jua'; color:var(--coral-deep); font-size:1.2rem; line-height:1.3;}
+  .name-input{width:100%; font-family:'Jua'; font-size:1.5rem; text-align:center; padding:12px 14px; border-radius:18px;
+    border:4px solid var(--coral); color:var(--ink); margin-bottom:18px; outline:none;}
+  .modal-btns{display:flex; gap:12px;}
+  .modal-btns .btn{font-size:1.3rem; padding:14px 10px;}
+  .btn-save{background:var(--coral-deep);}
+  .btn-cancel{background:#C9BCAE;}
 
   @media (max-width:480px){
-    .home-title{font-size:2rem;} .choice .text{font-size:1.85rem;} .bubble .prompt{font-size:1.35rem;}
-    .bubble .said{font-size:2rem;} .sit-card .name{font-size:1.45rem;} .choice .pic-box{width:78px; height:78px;}
+    .home-title{font-size:2rem;} .phrase .text{font-size:1.3rem;} .reply-bubble{font-size:1.45rem;}
+    .said-tag{font-size:1.5rem;} .t-name{font-size:1.4rem;} .drop-zone{width:200px; height:200px;}
+    .phrase .pic-box{width:64px; height:64px;}
   }
   @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;} .scan-bar{animation:none;}}
 </style>
@@ -122,35 +192,52 @@
     <button class="scan-toggle" id="scanToggle" aria-pressed="false"><span class="dot"></span><span>한 번 누르기</span></button>
   </div>
 
-  <!-- 홈 -->
+  <!-- 홈: 선생님 고르기 -->
   <section class="screen on" id="home">
     <div class="mascot-wrap"><div class="mascot" id="homeMascot"></div></div>
-    <h1 class="home-title">선생님께 고운 말 하기</h1>
-    <p class="home-sub">선생님께 어떤 고운 말을 할까요? 골라 보아요 🌷</p>
-    <div class="situations" id="situations"></div>
-    <p class="help">그림을 누르면 마음이가 고운 말을 들려줘요.<br>손가락으로 누르거나, 스페이스 바를 눌러도 돼요.</p>
+    <h1 class="home-title">선생님께 고운 말 드리기</h1>
+    <p class="home-sub">어떤 선생님께 말할까요? 🌷</p>
+    <div class="teacher-grid" id="teacherGrid"></div>
+    <div class="home-tools">
+      <button class="tool-btn" id="editBtn">✎ 선생님 편집</button>
+      <button class="tool-btn coral" id="exportBtn">📤 내보내기</button>
+      <button class="tool-btn sky" id="importBtn">📥 불러오기</button>
+      <button class="tool-btn coral" id="importUrlBtn">🌐 주소에서 불러오기</button>
+      <input type="file" id="importInput" accept="application/json,.json" hidden>
+    </div>
+    <p class="help">선생님을 누르면 고운 말을 드릴 수 있어요.<br>➕ 를 눌러 우리 반 선생님 사진을 넣어 보아요.<br>다른 기기로 옮기려면 📤 내보내기 → 그 파일을 📥 불러오기 하세요.</p>
   </section>
 
-  <!-- 표현 고르기 -->
+  <!-- 말하기 -->
   <section class="screen play" id="play">
-    <div class="mascot-wrap"><div class="mascot" id="playMascot"></div></div>
-    <div class="bubble">
-      <div class="prompt" id="prompt"></div>
-      <div class="stage"><img class="stage-pic" id="stagePic" alt=""><div class="said" id="said"></div></div>
+    <div class="play-top">
+      <span class="name-tag" id="curName">선생님</span>
     </div>
-    <div class="choices" id="choices"></div>
+
+    <div class="stage-wrap">
+      <div class="reply-bubble" id="replyBubble"></div>
+      <div class="drop-zone" id="dropZone"></div>
+      <div class="drop-hint" id="dropHint">고운 말을 끌어다 선생님께 드려요 ⬆️</div>
+      <div class="said-tag" id="saidTag"></div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="cards" id="cards"></div>
+
     <button class="scan-bar" id="scanBar">👇 여기를 눌러요</button>
+
     <div class="footer">
-      <button class="btn btn-home" id="btnHome">🏠 처음으로</button>
+      <button class="btn btn-home" id="btnHome">🏠 선생님 고르기</button>
       <button class="btn btn-replay" id="btnReplay">🔊 다시 듣기</button>
     </div>
   </section>
 
   <!-- 선생님용 설정 -->
-  <details class="teacher">
+  <details class="teacher-set">
     <summary>🎚️ 선생님용 설정</summary>
     <div class="row">
-      <label>목소리 <select id="voiceSelect"><option value="">자동</option></select></label>
+      <label>학생 목소리 <select id="childVoiceSel"><option value="">자동</option></select></label>
+      <label>선생님 목소리 <select id="teacherVoiceSel"><option value="">자동</option></select></label>
       <label>속도 <input type="range" id="rateRange" min="0.6" max="1.1" step="0.05" value="0.85"></label>
       <label><input type="checkbox" id="useArasaac" checked> 그림(ARASAAC) 불러오기</label>
     </div>
@@ -158,50 +245,65 @@
 
 </div>
 
+<!-- 선생님 추가 모달 -->
+<div class="modal" id="addModal">
+  <div class="modal-card">
+    <h2 id="modalTitle">선생님 추가하기</h2>
+    <label class="photo-pick" id="photoPick">
+      <span class="ph">📷<br>사진 넣기</span>
+      <img id="photoPreview" alt="" style="display:none">
+      <input type="file" id="photoInput" accept="image/*" hidden>
+    </label>
+    <input class="name-input" id="nameInput" type="text" maxlength="10" placeholder="선생님 이름">
+    <div class="modal-btns">
+      <button class="btn btn-cancel" id="btnCancel">취소</button>
+      <button class="btn btn-save" id="btnSave">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="hearts" id="hearts" aria-hidden="true"></div>
 
 <script>
-/* ============ 데이터 (선생님께 — 모두 존댓말) ============
-   key   : ARASAAC 그림 검색 낱말 / audio : audio/파일명.mp3 (없으면 브라우저 음성) */
-const SITUATIONS = [
-  { id:'greet', name:'인사할 때', emoji:'👋', bg:'linear-gradient(160deg,#A9D6E5,#7FB8D6)',
-    prompt:'선생님을 만났어요.\n뭐라고 인사할까요?',
-    items:[
-      {emoji:'🌞', cell:'#DCEFF6', text:'안녕하세요',     key:'인사', audio:'안녕하세요'},
-      {emoji:'🙇', cell:'#E2F1F7', text:'안녕히 계세요',   key:'인사', audio:'안녕히계세요'},
-      {emoji:'📅', cell:'#D6ECF4', text:'내일 뵐게요',     key:'인사', audio:'내일뵐게요'},
-    ]},
-  { id:'thanks', name:'고마울 때', emoji:'🙏', bg:'linear-gradient(160deg,#FFD97D,#FFB85C)',
-    prompt:'선생님이 가르쳐 주셨어요.\n뭐라고 말할까요?',
-    items:[
+/* ============ 고운 말 묶음 (모두 존댓말) ============ */
+const GROUPS = [
+  { id:'greet', label:'인사', items:[
+      {emoji:'🌞', cell:'#DCEFF6', text:'안녕하세요',   key:'인사', audio:'안녕하세요'},
+      {emoji:'🙇', cell:'#E2F1F7', text:'안녕히 계세요', key:'인사', audio:'안녕히계세요'},
+      {emoji:'📅', cell:'#D6ECF4', text:'내일 뵐게요',   key:'인사', audio:'내일뵐게요'},
+    ],
+    praise:['반가워요! 인사를 참 잘했어요!','안녕! 만나서 정말 기뻐요!','인사하는 모습이 멋져요!'] },
+
+  { id:'thanks', label:'고마워요', items:[
       {emoji:'💛', cell:'#FFF3CE', text:'감사합니다',              key:'고맙다',  audio:'감사합니다'},
       {emoji:'📚', cell:'#FFE9CE', text:'가르쳐 주셔서 감사합니다', key:'감사하다', audio:'가르쳐주셔서감사합니다'},
       {emoji:'😊', cell:'#FFF0D6', text:'고맙습니다',              key:'고맙다',  audio:'고맙습니다'},
-    ]},
-  { id:'ask', name:'여쭤볼 때', emoji:'🙋', bg:'linear-gradient(160deg,#A8D5BA,#7FC4A0)',
-    prompt:'궁금한 게 있어요.\n선생님께 어떻게 말할까요?',
-    items:[
-      {emoji:'🙋', cell:'#DCF0E4', text:'질문 있어요',         key:'묻다',    audio:'질문있어요'},
-      {emoji:'🙏', cell:'#E2F2EA', text:'도와주세요',          key:'돕다',    audio:'도와주세요'},
-      {emoji:'🔁', cell:'#D6EEDF', text:'다시 설명해 주세요',   key:'설명하다', audio:'다시설명해주세요'},
-    ]},
-  { id:'sorry', name:'미안할 때', emoji:'🙇', bg:'linear-gradient(160deg,#FFB5A7,#FF8E7A)',
-    prompt:'내가 실수했어요.\n선생님께 뭐라고 말할까요?',
-    items:[
-      {emoji:'🙇', cell:'#FFE3DC', text:'죄송합니다',          key:'미안하다', audio:'죄송합니다'},
-      {emoji:'😔', cell:'#FFE8E2', text:'잘못했어요',          key:'미안하다', audio:'잘못했어요'},
-      {emoji:'🤝', cell:'#FFDED6', text:'다음부터 조심할게요',  key:'조심하다', audio:'다음부터조심할게요'},
-    ]},
-  { id:'answer', name:'대답할 때', emoji:'✋', bg:'linear-gradient(160deg,#FF8FA3,#FF6F8A)',
-    prompt:'선생님이 부르셨어요.\n뭐라고 대답할까요?',
-    items:[
-      {emoji:'✅', cell:'#FFE0E6', text:'네, 알겠습니다',     key:'알다',    audio:'네알겠습니다'},
-      {emoji:'🙋', cell:'#FFE6EB', text:'네, 선생님',         key:'선생님',   audio:'네선생님'},
-      {emoji:'💪', cell:'#FFDBE3', text:'열심히 하겠습니다',   key:'공부하다', audio:'열심히하겠습니다'},
-    ]},
+    ],
+    praise:['천만에요! 마음이 참 예뻐요!','고마운 마음을 표현하다니 멋져요!','그렇게 말해 줘서 선생님도 행복해요!'] },
+
+  { id:'ask', label:'여쭤봐요', items:[
+      {emoji:'🙋', cell:'#DCF0E4', text:'질문 있어요',        key:'묻다',    audio:'질문있어요'},
+      {emoji:'🙏', cell:'#E2F2EA', text:'도와주세요',         key:'돕다',    audio:'도와주세요'},
+      {emoji:'🔁', cell:'#D6EEDF', text:'다시 설명해 주세요',  key:'설명하다', audio:'다시설명해주세요'},
+    ],
+    praise:['좋은 질문이에요! 궁금한 걸 물어봐서 멋져요!','그럼요, 같이 해 봐요!','물어봐 줘서 고마워요!'] },
+
+  { id:'sorry', label:'미안해요', items:[
+      {emoji:'🙇', cell:'#FFE3DC', text:'죄송합니다',         key:'미안하다', audio:'죄송합니다'},
+      {emoji:'😔', cell:'#FFE8E2', text:'잘못했어요',         key:'미안하다', audio:'잘못했어요'},
+      {emoji:'🤝', cell:'#FFDED6', text:'다음부터 조심할게요', key:'조심하다', audio:'다음부터조심할게요'},
+    ],
+    praise:['괜찮아요! 사과할 줄 아는 모습이 정말 멋져요!','용기 내 줘서 고마워요!','다음엔 잘할 수 있을 거예요!'] },
+
+  { id:'answer', label:'대답해요', items:[
+      {emoji:'✅', cell:'#FFE0E6', text:'네, 알겠습니다',   key:'알다',    audio:'네알겠습니다'},
+      {emoji:'🙋', cell:'#FFE6EB', text:'네, 선생님',       key:'선생님',   audio:'네선생님'},
+      {emoji:'💪', cell:'#FFDBE3', text:'열심히 하겠습니다', key:'공부하다', audio:'열심히하겠습니다'},
+    ],
+    praise:['대답을 참 잘했어요!','씩씩하게 대답하니 멋져요!','아주 좋아요!'] },
 ];
 
-/* ============ 귀여운 마스코트 (마음이) ============ */
+/* ============ 마스코트 (마음이) ============ */
 function mascotSVG(){
   return `
   <svg viewBox="0 0 120 124" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -228,35 +330,76 @@ function mascotSVG(){
   </svg>`;
 }
 
+/* 기본 선생님 얼굴 (사진을 넣기 전 보여 줄 그림) */
+function avatarSVG(seed){
+  const skins=['#FAD9B8','#F2C7A0','#FFE3C7'];
+  const hairs=['#6B4A33','#3F3A38','#8A5A3B','#4A4A4A'];
+  const tops=['#7FC4A0','#A9D6E5','#FFB85C','#FF8FA3'];
+  const s=skins[seed%skins.length], h=hairs[seed%hairs.length], t=tops[seed%tops.length];
+  return `
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <rect width="120" height="120" fill="#EAF6F2"/>
+    <path d="M22 120 C22 92 42 80 60 80 C78 80 98 92 98 120 Z" fill="${t}"/>
+    <ellipse cx="60" cy="54" rx="30" ry="32" fill="${s}"/>
+    <path d="M30 50 C30 26 50 18 60 18 C70 18 90 26 90 50 C90 42 78 34 60 34 C42 34 30 42 30 50 Z" fill="${h}"/>
+    <circle cx="50" cy="56" r="4" fill="#4A3B30"/>
+    <circle cx="70" cy="56" r="4" fill="#4A3B30"/>
+    <path d="M52 70 Q60 78 68 70" fill="none" stroke="#C9606F" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="44" cy="64" r="5" fill="#FF9FB0" opacity=".5"/>
+    <circle cx="76" cy="64" r="5" fill="#FF9FB0" opacity=".5"/>
+  </svg>`;
+}
+
+/* ============ 저장된 선생님 (브라우저에 저장) ============ */
+const LS='respectTeacher.teachers.v1';
+function loadTeachers(){ try{ return JSON.parse(localStorage.getItem(LS))||[] }catch(e){ return [] } }
+function saveTeachers(list){
+  try{ localStorage.setItem(LS, JSON.stringify(list)); return true; }
+  catch(e){ alert('사진을 저장할 공간이 부족해요. 선생님 수를 줄이거나 사진을 다시 넣어 주세요.'); return false; }
+}
+let teachers = loadTeachers();
+if(!teachers.length){ teachers=[{id:'t0', name:'우리 선생님', photo:null}]; }
+
 /* ============ 음성 ============ */
-let voices=[], chosenVoice=null, rate=0.85;
+let voices=[], childVoice=null, teacherVoice=null, rate=0.85;
 function loadVoices(){
   if(!('speechSynthesis' in window)) return;
   voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
-  const sel=document.getElementById('voiceSelect'); sel.length=1;
-  voices.forEach((v,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=v.name; sel.appendChild(o); });
-  chosenVoice = voices.find(v=>/google|natural|신경|yuna|sora|sunhi|injoon|hyunsu/i.test(v.name)) || voices[0] || null;
+  ['childVoiceSel','teacherVoiceSel'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return; sel.length=1;
+    voices.forEach((v,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=v.name; sel.appendChild(o); });
+  });
+  const pref = voices.find(v=>/google|natural|신경|yuna|sora|sunhi|injoon|hyunsu/i.test(v.name));
+  childVoice = pref || voices[0] || null;
+  teacherVoice = voices.find(v=>v!==childVoice) || childVoice;
 }
 if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
-function speak(text, audioName){
-  if(audioName){
-    const a=new Audio('audio/'+audioName+'.mp3');
-    a.play().then(()=>{}).catch(()=>speakTTS(text));
-    a.onerror=()=>speakTTS(text);
-    return;
-  }
-  speakTTS(text);
-}
-function speakTTS(text){
-  if(!('speechSynthesis' in window)) return;
+
+function ttsSpeak(text, opts, done){
+  if(!('speechSynthesis' in window)){ if(done) setTimeout(done,300); return; }
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.lang='ko-KR'; u.rate=rate; u.pitch=1.12;
-  if(chosenVoice) u.voice=chosenVoice;
+  u.lang='ko-KR'; u.rate=opts.rate; u.pitch=opts.pitch; if(opts.voice) u.voice=opts.voice;
+  let called=false; const fin=()=>{ if(called) return; called=true; if(done) done(); };
+  u.onend=fin; u.onerror=fin;
   speechSynthesis.speak(u);
+  setTimeout(fin, Math.min(6500, 900 + text.length*230));
+}
+function speakAs(text, who, audioName, done){
+  const opts = who==='teacher'
+    ? {pitch:0.95, rate:rate*0.97, voice:teacherVoice}
+    : {pitch:1.22, rate:rate,      voice:childVoice};
+  if(audioName){
+    const a=new Audio('audio/'+audioName+'.mp3'); let fell=false;
+    const fb=()=>{ if(!fell){ fell=true; ttsSpeak(text,opts,done); } };
+    a.onended=()=>{ if(done) done(); };
+    a.onerror=fb; a.play().catch(fb);
+    return;
+  }
+  ttsSpeak(text, opts, done);
 }
 
-/* ============ 칭찬 소리 ============ */
+/* ============ 칭찬 효과음 ============ */
 let audioCtx=null;
 function chime(){
   try{
@@ -292,53 +435,266 @@ async function loadPicto(keyword, imgEl){
   }catch(e){}
 }
 
-/* ============ 상태 / 로직 ============ */
-let stars=0, current=null, scanMode=false, scanIndex=0, scanTimer=null;
+/* ============ 상태 ============ */
 const $=id=>document.getElementById(id);
+let stars=0, currentTeacher=null, currentGroup=GROUPS[0], scanMode=false, scanIndex=0, scanTimer=null;
+let lastPraise='', lastSaid=null;
 
+/* ---------- 홈: 선생님 그리기 ---------- */
 function buildHome(){
   $('homeMascot').innerHTML=mascotSVG();
-  const wrap=$('situations'); wrap.innerHTML='';
-  SITUATIONS.forEach(s=>{
-    const b=document.createElement('button'); b.className='sit-card'; b.style.background=s.bg;
-    b.innerHTML=`<span class="emoji">${s.emoji}</span><span class="name">${s.name}</span>`;
-    b.addEventListener('click',()=>{ speak(s.name); openSituation(s); });
-    wrap.appendChild(b);
+  const grid=$('teacherGrid'); grid.innerHTML='';
+  teachers.forEach((t,idx)=>{
+    const card=document.createElement('button'); card.className='t-card';
+    const inner = t.photo ? `<img src="${t.photo}" alt="">` : avatarSVG(idx);
+    card.innerHTML=`<button class="t-del" data-id="${t.id}" aria-label="삭제">✕</button>
+                    <span class="t-photo">${inner}</span><span class="t-name">${escapeHtml(t.name)}</span>`;
+    card.addEventListener('click',(e)=>{
+      if(e.target.classList.contains('t-del')){ e.stopPropagation(); deleteTeacher(t.id); return; }
+      if(document.body.classList.contains('edit')) return;
+      openTalk(t);
+    });
+    grid.appendChild(card);
   });
+  const add=document.createElement('button'); add.className='t-card t-add is-add';
+  add.innerHTML=`<span class="plus">➕</span><span class="t-name">선생님 추가</span>`;
+  add.addEventListener('click',()=>openAddModal());
+  grid.appendChild(add);
 }
-function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
-function goHome(){ stopScan(); current=null; resetStage(); show('home'); }
-function resetStage(){ $('said').textContent=''; const p=$('stagePic'); p.style.display='none'; p.removeAttribute('src'); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-function openSituation(s){
-  current=s;
-  $('playMascot').innerHTML=mascotSVG();
-  $('prompt').textContent=s.prompt; resetStage();
-  const wrap=$('choices'); wrap.innerHTML='';
-  s.items.forEach((it)=>{
-    const b=document.createElement('button'); b.className='choice';
-    b.innerHTML=`<span class="pic-box" style="background:${it.cell}">
-                   <span class="emoji">${it.emoji}</span><img alt="">
-                 </span><span class="text">${it.text}</span>`;
-    b.addEventListener('click',()=>choose(it));
-    wrap.appendChild(b);
-    loadPicto(it.key, b.querySelector('img'));
+function deleteTeacher(id){
+  teachers = teachers.filter(t=>t.id!==id);
+  if(!teachers.length) teachers=[{id:'t0', name:'우리 선생님', photo:null}];
+  saveTeachers(teachers); buildHome();
+}
+
+/* ---------- 모달: 선생님 추가 ---------- */
+let pendingPhoto=null;
+function openAddModal(){
+  pendingPhoto=null;
+  $('photoPreview').style.display='none'; $('photoPreview').removeAttribute('src');
+  $('photoPick').querySelector('.ph').style.display='block';
+  $('nameInput').value='';
+  $('addModal').classList.add('on');
+  setTimeout(()=>$('nameInput').focus(),100);
+}
+function closeModal(){ $('addModal').classList.remove('on'); }
+function fileToThumb(file, cb){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=480, scale=Math.min(1, max/Math.max(img.width,img.height));
+      const cw=Math.round(img.width*scale), ch=Math.round(img.height*scale);
+      const c=document.createElement('canvas'); c.width=cw; c.height=ch;
+      c.getContext('2d').drawImage(img,0,0,cw,ch);
+      cb(c.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=()=>cb(null);
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+$('photoPick').addEventListener('click',()=>$('photoInput').click());
+$('photoInput').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  fileToThumb(f, url=>{
+    if(!url) return;
+    pendingPhoto=url;
+    const p=$('photoPreview'); p.src=url; p.style.display='block';
+    $('photoPick').querySelector('.ph').style.display='none';
   });
+});
+$('btnCancel').addEventListener('click',closeModal);
+$('btnSave').addEventListener('click',()=>{
+  const name=($('nameInput').value||'').trim() || '선생님';
+  teachers.push({ id:'t'+Date.now(), name, photo:pendingPhoto });
+  saveTeachers(teachers); closeModal(); buildHome();
+});
+
+$('editBtn').addEventListener('click',()=>document.body.classList.toggle('edit'));
+
+/* ---------- 내보내기 / 불러오기 (기기 간 옮기기) ---------- */
+function pad2(n){ return n<10?'0'+n:''+n; }
+$('exportBtn').addEventListener('click',()=>{
+  const data={ app:'respect-teacher', version:1, savedAt:new Date().toISOString(), teachers:teachers };
+  const blob=new Blob([JSON.stringify(data)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const d=new Date();
+  const fname=`선생님목록_${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}.json`;
+  const a=document.createElement('a'); a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+});
+function applyImportedText(text){
+  let parsed;
+  try{ parsed=JSON.parse(text); }
+  catch(_){ alert('선생님 목록 파일이 아니에요. 내보내기로 만든 JSON을 골라 주세요.'); return; }
+  const list = Array.isArray(parsed) ? parsed : parsed.teachers;
+  if(!Array.isArray(list)){ alert('이 파일에서 선생님 목록을 찾지 못했어요.'); return; }
+  const clean = list
+    .filter(t=>t && typeof t.name==='string')
+    .map(t=>({ id:t.id||('t'+Date.now()+Math.random().toString(36).slice(2,6)),
+               name:t.name, photo:(typeof t.photo==='string'?t.photo:null) }));
+  if(!clean.length){ alert('불러올 선생님이 없어요.'); return; }
+  let mode='replace';
+  if(teachers.length && !(teachers.length===1 && teachers[0].id==='t0' && !teachers[0].photo)){
+    mode = confirm(`${clean.length}명을 불러옵니다.\n\n[확인] 지금 목록에 추가하기\n[취소] 지금 목록을 지우고 새로 바꾸기`) ? 'merge' : 'replace';
+  }
+  if(mode==='merge'){
+    const ids=new Set(teachers.map(t=>t.id));
+    clean.forEach(t=>{ if(ids.has(t.id)) t.id='t'+Date.now()+Math.random().toString(36).slice(2,6); teachers.push(t); });
+  } else {
+    teachers = clean;
+  }
+  if(saveTeachers(teachers)){ buildHome(); alert('불러오기를 마쳤어요! 🌷'); }
+}
+
+$('importBtn').addEventListener('click',()=>$('importInput').click());
+$('importInput').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>applyImportedText(reader.result);
+  reader.readAsText(f);
+});
+
+/* 깃허브 일반 주소를 raw 주소로 바꿔 줌 */
+function toRawUrl(u){
+  u=(u||'').trim();
+  const m=u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  if(m) return `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`;
+  return u;
+}
+const URLKEY='respectTeacher.importUrl';
+$('importUrlBtn').addEventListener('click', async ()=>{
+  const saved=localStorage.getItem(URLKEY);
+  const sample='https://raw.githubusercontent.com/answkdus1116/저장소이름/main/선생님목록.json';
+  const input=prompt('선생님 목록 JSON의 주소를 넣어 주세요.\n(깃허브 raw 주소)', saved||sample);
+  if(input===null) return;
+  const url=toRawUrl(input);
+  if(!/^https?:\/\//.test(url)){ alert('주소가 올바르지 않아요. https:// 로 시작하는 주소를 넣어 주세요.'); return; }
+  const btn=$('importUrlBtn'); const label=btn.textContent; btn.textContent='⏳ 받는 중…'; btn.disabled=true;
+  try{
+    const r=await fetch(url, {cache:'no-store'});
+    if(!r.ok) throw new Error('status '+r.status);
+    const text=await r.text();
+    localStorage.setItem(URLKEY, url);
+    applyImportedText(text);
+  }catch(err){
+    alert('주소에서 불러오지 못했어요.\n· raw 주소가 맞는지\n· 저장소가 공개(Public)인지\n· 인터넷 연결을 확인해 주세요.');
+  }finally{ btn.textContent=label; btn.disabled=false; }
+});
+
+/* ---------- 말하기 화면 ---------- */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
+function openTalk(t){
+  currentTeacher=t; currentGroup=GROUPS[0];
+  $('curName').textContent=t.name;
+  const dz=$('dropZone'); dz.innerHTML = t.photo ? `<img src="${t.photo}" alt="${escapeHtml(t.name)}">` : avatarSVG(teachers.indexOf(t));
+  $('replyBubble').classList.remove('show'); $('replyBubble').textContent='';
+  $('saidTag').classList.remove('show'); $('saidTag').textContent='';
+  buildTabs(); buildCards();
   show('play');
-  setTimeout(()=>speak(s.prompt.replace('\n',' ')), 350);
+  setTimeout(()=>speakAs(t.name+'께 고운 말을 드려요','teacher'),350);
   if(scanMode) startScan();
 }
+function goHome(){ stopScan(); show('home'); }
 
-function choose(item){
-  $('said').textContent=item.text;
-  const pic=$('stagePic');
-  const url=picCache[item.key] ? 'https://static.arasaac.org/pictograms/'+picCache[item.key]+'/'+picCache[item.key]+'_500.png' : null;
-  if(url){ pic.src=url; pic.style.display='block'; } else { pic.style.display='none'; }
-  speak(item.text, item.audio);
-  chime(); rainHearts(); celebrateMascot(); addStar();
-  if(scanMode){ stopScan(); setTimeout(startScan,1600); }
+function buildTabs(){
+  const wrap=$('tabs'); wrap.innerHTML='';
+  GROUPS.forEach(g=>{
+    const b=document.createElement('button'); b.className='tab'+(g===currentGroup?' active':'');
+    b.textContent=g.label;
+    b.addEventListener('click',()=>{ currentGroup=g; buildTabs(); buildCards(); if(scanMode) startScan(); });
+    wrap.appendChild(b);
+  });
 }
-function celebrateMascot(){ const m=$('playMascot'); m.classList.remove('happy'); void m.offsetWidth; m.classList.add('happy'); }
+function buildCards(){
+  const wrap=$('cards'); wrap.innerHTML='';
+  currentGroup.items.forEach(it=>{
+    const c=document.createElement('button'); c.className='phrase';
+    c.innerHTML=`<span class="pic-box" style="background:${it.cell}">
+                   <span class="emoji">${it.emoji}</span><img alt="">
+                 </span><span class="text">${it.text}</span>`;
+    wrap.appendChild(c);
+    loadPicto(it.key, c.querySelector('img'));
+    makeDraggable(c, it);
+  });
+}
+
+/* ---------- 드래그 & 탭 ---------- */
+function overTeacher(x,y){
+  const r=$('dropZone').getBoundingClientRect();
+  const pad=24;
+  return x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad;
+}
+function setHover(on){ $('dropZone').classList.toggle('hover', !!on); }
+
+function makeDraggable(card, item){
+  let dragging=false, ghost=null, sx=0, sy=0, moved=false;
+  card.addEventListener('pointerdown', e=>{
+    if(e.button!==undefined && e.button>0) return;
+    dragging=true; moved=false; sx=e.clientX; sy=e.clientY;
+    try{ card.setPointerCapture(e.pointerId); }catch(_){}
+    const r=card.getBoundingClientRect();
+    ghost=card.cloneNode(true); ghost.className='drag-ghost';
+    ghost.style.width=r.width+'px'; ghost.style.height=r.height+'px';
+    ghost.style.left=r.left+'px'; ghost.style.top=r.top+'px';
+    document.body.appendChild(ghost);
+    card.classList.add('dragging-src');
+  });
+  card.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(Math.abs(dx)>6||Math.abs(dy)>6) moved=true;
+    if(ghost) ghost.style.transform=`translate(${dx}px,${dy}px) scale(1.06)`;
+    setHover(overTeacher(e.clientX,e.clientY));
+  });
+  const end=e=>{
+    if(!dragging) return; dragging=false;
+    const over=overTeacher(e.clientX,e.clientY);
+    if(ghost){ ghost.remove(); ghost=null; }
+    card.classList.remove('dragging-src'); setHover(false);
+    if(over) send(item);
+    else if(!moved) flyToTeacher(card, item);
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', ()=>{ dragging=false; if(ghost){ghost.remove(); ghost=null;} card.classList.remove('dragging-src'); setHover(false); });
+}
+function flyToTeacher(card, item){
+  const r=card.getBoundingClientRect(), tz=$('dropZone').getBoundingClientRect();
+  const g=card.cloneNode(true); g.className='drag-ghost flying';
+  g.style.width=r.width+'px'; g.style.height=r.height+'px';
+  g.style.left=r.left+'px'; g.style.top=r.top+'px';
+  document.body.appendChild(g);
+  const dx=(tz.left+tz.width/2)-(r.left+r.width/2);
+  const dy=(tz.top+tz.height/2)-(r.top+r.height/2);
+  requestAnimationFrame(()=>{ g.style.transform=`translate(${dx}px,${dy}px) scale(.3)`; g.style.opacity='0'; });
+  setTimeout(()=>{ g.remove(); send(item); }, 430);
+}
+
+/* ---------- 보내기 → 칭찬 받기 ---------- */
+function send(item){
+  lastSaid=item;
+  showSaid(item.text);
+  speakAs(item.text, 'child', item.audio, teacherReply);
+}
+function showSaid(text){ const s=$('saidTag'); s.textContent='“'+text+'”'; s.classList.remove('show'); void s.offsetWidth; s.classList.add('show'); }
+function pickPraise(){
+  const pool=currentGroup.praise; let p;
+  do{ p=pool[Math.floor(Math.random()*pool.length)]; }while(pool.length>1 && p===lastPraise);
+  lastPraise=p; return p;
+}
+function teacherReply(){
+  const praise=pickPraise();
+  const b=$('replyBubble'); b.textContent=praise; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  const dz=$('dropZone'); dz.classList.remove('happy'); void dz.offsetWidth; dz.classList.add('happy');
+  chime(); rainHearts(); addStar();
+  speakAs(praise, 'teacher');
+  if(scanMode){ stopScan(); setTimeout(startScan,1800); }
+}
 function addStar(){ stars++; $('starCount').textContent=stars; }
 function rainHearts(){
   const box=$('hearts'), icons=['💛','💖','⭐','🌸','✨'];
@@ -351,30 +707,32 @@ function rainHearts(){
   }
 }
 
+/* ---------- 스캔 / 스위치 ---------- */
 function toggleScan(){
   scanMode=!scanMode; document.body.classList.toggle('scan',scanMode);
   const t=$('scanToggle'); t.classList.toggle('active',scanMode); t.setAttribute('aria-pressed',scanMode);
-  if(scanMode && current) startScan(); else stopScan();
+  if(scanMode && $('play').classList.contains('on')) startScan(); else stopScan();
 }
 function startScan(){
   stopScan();
-  const cards=document.querySelectorAll('#choices .choice'); if(!cards.length) return;
+  const cards=document.querySelectorAll('#cards .phrase'); if(!cards.length) return;
   scanIndex=0; highlight(cards);
   scanTimer=setInterval(()=>{ scanIndex=(scanIndex+1)%cards.length; highlight(cards); },2200);
 }
 function highlight(cards){ cards.forEach((c,i)=>c.classList.toggle('scan-on',i===scanIndex)); }
-function stopScan(){ if(scanTimer){clearInterval(scanTimer); scanTimer=null;} document.querySelectorAll('.choice.scan-on').forEach(c=>c.classList.remove('scan-on')); }
-function selectScanned(){ const cards=document.querySelectorAll('#choices .choice'); if(cards[scanIndex]&&current) choose(current.items[scanIndex]); }
+function stopScan(){ if(scanTimer){clearInterval(scanTimer); scanTimer=null;} document.querySelectorAll('.phrase.scan-on').forEach(c=>c.classList.remove('scan-on')); }
+function selectScanned(){ const it=currentGroup.items[scanIndex]; if(it) send(it); }
 
+/* ---------- 버튼 / 입력 ---------- */
 $('btnHome').addEventListener('click',goHome);
 $('btnReplay').addEventListener('click',()=>{
-  const said=$('said').textContent;
-  if(said){ const it=current?.items.find(i=>i.text===said); speak(said, it?.audio); }
-  else if(current) speak(current.prompt.replace('\n',' '));
+  if(lastSaid) speakAs(lastSaid.text,'child',lastSaid.audio,()=>{ if($('replyBubble').textContent) speakAs($('replyBubble').textContent,'teacher'); });
+  else if(currentTeacher) speakAs(currentTeacher.name+'께 고운 말을 드려요','teacher');
 });
 $('scanToggle').addEventListener('click',toggleScan);
 $('scanBar').addEventListener('click',selectScanned);
-$('voiceSelect').addEventListener('change',e=>{ const v=e.target.value; chosenVoice = v==='' ? (voices[0]||null) : voices[+v]; });
+$('childVoiceSel').addEventListener('change',e=>{ const v=e.target.value; childVoice = v==='' ? (voices[0]||null) : voices[+v]; });
+$('teacherVoiceSel').addEventListener('change',e=>{ const v=e.target.value; teacherVoice = v==='' ? (voices[0]||null) : voices[+v]; });
 $('rateRange').addEventListener('input',e=>{ rate=+e.target.value; });
 document.addEventListener('keydown',e=>{
   if((e.code==='Space'||e.code==='Enter') && $('play').classList.contains('on')){
