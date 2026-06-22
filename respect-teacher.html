@@ -570,7 +570,7 @@ function toRawUrl(u){
 const URLKEY='respectTeacher.importUrl';
 $('importUrlBtn').addEventListener('click', async ()=>{
   const saved=localStorage.getItem(URLKEY);
-  const sample='https://raw.githubusercontent.com/answkdus1116/저장소이름/main/선생님목록.json';
+  const sample='https://raw.githubusercontent.com/answkdus1116-ops/answkdus1116/main/선생님목록_20260622.json';
   const input=prompt('선생님 목록 JSON의 주소를 넣어 주세요.\n(깃허브 raw 주소)', saved||sample);
   if(input===null) return;
   const url=toRawUrl(input);
