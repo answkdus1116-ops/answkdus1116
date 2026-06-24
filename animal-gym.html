@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>동물 체조 교실 🐾</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EF; --paper:#FFFFFF; --ink:#4A4039; --ink-soft:#9A8E80;
+    --gold:#F2B705; --gold-soft:#FFF1C9;
+    --accent:#7BA886; --accent-soft:#E4EFE2;
+    --shadow:0 10px 30px rgba(74,64,57,.12); --radius:28px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Gaegu',sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, var(--accent-soft), transparent 60%), var(--cream);
+    color:var(--ink); min-height:100vh; transition:background .6s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3,.jua{font-family:'Jua',sans-serif;font-weight:400;}
+
+  .app{max-width:1600px;margin:0 auto;}
+
+  /* 상단 바 */
+  header{display:flex;align-items:center;gap:14px;padding:14px 20px;}
+  .title{font-family:'Jua',sans-serif;font-size:clamp(22px,3vw,34px);}
+  .title .pin{color:var(--accent);transition:color .5s ease;}
+  .top-tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .icon-btn{border:none;background:var(--paper);color:var(--ink);width:48px;height:48px;
+    border-radius:16px;font-size:22px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s ease;}
+  .icon-btn:hover{transform:translateY(-2px);}
+  .icon-btn[aria-pressed="false"]{opacity:.45;}
+  .pill-link{display:flex;align-items:center;gap:8px;text-decoration:none;
+    background:var(--accent);color:#fff;font-family:'Jua';font-size:17px;
+    padding:0 18px;height:48px;border-radius:16px;box-shadow:var(--shadow);transition:transform .15s ease;}
+  .pill-link:hover{transform:translateY(-2px);}
+
+  /* 진행 표시 */
+  .progress{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:4px 16px 12px;}
+  .pdot{display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:transparent;
+    cursor:pointer;font-family:'Gaegu';color:var(--ink-soft);font-size:14px;padding:4px;border-radius:14px;}
+  .pdot .face{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:26px;
+    background:var(--paper);box-shadow:var(--shadow);border:3px solid transparent;transition:.2s;position:relative;}
+  .pdot[aria-current="true"] .face{border-color:var(--accent);transform:scale(1.08);}
+  .pdot.done .face{background:var(--gold-soft);}
+  .pdot.done .face::after{content:"⭐";position:absolute;bottom:-6px;right:-6px;font-size:18px;}
+
+  /* 본문 */
+  main{padding:6px 16px 40px;}
+  .station{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);
+    overflow:hidden;display:grid;grid-template-columns:1fr 1.15fr;}
+  .guide{padding:26px;display:flex;flex-direction:column;background:var(--accent-soft);transition:background .5s ease;}
+  .animal-row{display:flex;align-items:center;gap:14px;}
+  .animal-emoji{font-size:clamp(60px,8vw,110px);line-height:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.12));}
+  .animal-name{font-family:'Jua';font-size:clamp(26px,4vw,46px);}
+  .tag{display:inline-block;background:var(--accent);color:#fff;font-family:'Jua';font-size:15px;
+    padding:3px 12px;border-radius:999px;margin-bottom:4px;align-self:flex-start;}
+  .speak-line{font-family:'Jua';font-size:clamp(20px,2.4vw,30px);color:var(--accent);margin:14px 0 6px;}
+  .steps{margin:6px 0 0;padding:0;list-style:none;}
+  .steps li{display:flex;gap:10px;align-items:flex-start;font-size:clamp(17px,2vw,22px);line-height:1.5;margin-bottom:8px;}
+  .steps li .num{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;
+    font-family:'Jua';display:grid;place-items:center;font-size:16px;}
+  .listen{margin-top:14px;align-self:flex-start;border:none;cursor:pointer;background:var(--paper);color:var(--ink);
+    font-family:'Jua';font-size:18px;padding:10px 18px;border-radius:16px;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:8px;}
+
+  .mirror-wrap{padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  .mirror{position:relative;width:100%;max-width:420px;aspect-ratio:3/4;border-radius:24px;overflow:hidden;
+    background:#2a2622;box-shadow:inset 0 0 0 6px var(--accent), var(--shadow);}
+  .mirror video,.mirror canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+  .mirror .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;text-align:center;color:#fff;padding:24px;font-size:18px;}
+  .mirror .placeholder .big{font-size:54px;}
+  .gauge{position:absolute;inset:0;pointer-events:none;}
+  .status{width:100%;max-width:420px;text-align:center;border-radius:18px;padding:12px 14px;font-family:'Jua';
+    font-size:clamp(18px,2.2vw,24px);background:var(--accent-soft);color:var(--ink);min-height:54px;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s;}
+  .status.pass{background:var(--gold-soft);color:#9a6b00;}
+  .badge-pass{position:absolute;top:14px;left:50%;transform:translateX(-50%) scale(0);background:var(--gold);
+    color:#fff;font-family:'Jua';font-size:24px;padding:8px 22px;border-radius:999px;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:8px;transition:transform .35s cubic-bezier(.2,1.4,.4,1);}
+  .badge-pass.show{transform:translateX(-50%) scale(1);}
+  .cam-btn{border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:'Jua';font-size:20px;
+    padding:14px 26px;border-radius:18px;box-shadow:var(--shadow);}
+
+  .controls{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
+  .nav-btn{border:none;cursor:pointer;font-family:'Jua';font-size:20px;padding:14px 22px;border-radius:18px;
+    box-shadow:var(--shadow);background:var(--paper);color:var(--ink);transition:transform .15s ease,opacity .2s;
+    display:flex;align-items:center;gap:8px;}
+  .nav-btn:hover{transform:translateY(-2px);}
+  .nav-btn:disabled{opacity:.4;cursor:default;transform:none;}
+  .nav-btn.next{background:var(--accent);color:#fff;}
+  .nav-btn.next.ready{animation:nudge 1.4s ease-in-out infinite;}
+  .teacher-pass{background:var(--gold-soft);color:#9a6b00;}
+  .diff{display:flex;gap:6px;background:var(--paper);padding:6px;border-radius:16px;box-shadow:var(--shadow);}
+  .diff button{border:none;cursor:pointer;font-family:'Jua';font-size:16px;padding:8px 16px;border-radius:12px;
+    background:transparent;color:var(--ink-soft);}
+  .diff button[aria-pressed="true"]{background:var(--accent);color:#fff;}
+  .hint-note{text-align:center;color:var(--ink-soft);font-size:15px;margin-top:14px;line-height:1.5;}
+
+  /* 완료 */
+  .finale{position:fixed;inset:0;background:rgba(74,64,57,.55);backdrop-filter:blur(4px);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .finale.show{display:flex;}
+  .finale .card{background:var(--paper);border-radius:32px;padding:40px 34px;text-align:center;max-width:440px;box-shadow:var(--shadow);}
+  .finale .big{font-size:80px;}
+  .finale h2{font-size:34px;margin:10px 0 6px;}
+  .finale p{font-size:20px;color:var(--ink-soft);margin:0 0 22px;}
+  .finale .btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .finale a,.finale button{border:none;cursor:pointer;font-family:'Jua';font-size:20px;color:#fff;background:var(--gold);
+    padding:14px 24px;border-radius:18px;box-shadow:var(--shadow);text-decoration:none;}
+  .finale .ghost{background:var(--paper);color:var(--ink);}
+
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden;}
+  .confetti i{position:absolute;top:-20px;width:12px;height:14px;border-radius:3px;opacity:.9;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0;}}
+  @keyframes nudge{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+  @keyframes pop{0%{transform:scale(.7);}60%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .animal-emoji.celebrate{animation:pop .5s ease;}
+
+  /* ===== 좁은 화면(태블릿 세로/휴대폰): 세로로 쌓기 ===== */
+  @media (max-width:860px){
+    .station{grid-template-columns:1fr;}
+    .mirror-wrap{order:-1;}
+  }
+
+  /* ===== 가로가 긴 디스플레이(교실 TV·와이드 모니터): 화면 꽉 채우기 ===== */
+  @media (min-width:1000px) and (orientation:landscape){
+    body{overflow:hidden;}
+    .app{height:100dvh;display:flex;flex-direction:column;}
+    header{padding:10px 26px;}
+    .progress{padding:0 16px 8px;}
+    main{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 26px 16px;}
+    .station{flex:1;min-height:0;grid-template-columns:minmax(360px,34%) 1fr;align-items:stretch;}
+    .guide{overflow:auto;justify-content:center;}
+    .mirror-wrap{min-height:0;padding:16px;justify-content:center;}
+    .mirror{flex:1 1 auto;min-height:0;max-height:100%;width:auto;max-width:100%;aspect-ratio:3/4;margin:0 auto;}
+    .controls{margin-top:12px;}
+    .hint-note{display:none;}
+  }
+
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+      <ellipse cx="28" cy="32" rx="20" ry="19" fill="#FFD7A8"/>
+      <circle cx="14" cy="22" r="6" fill="#FFD7A8"/><circle cx="42" cy="22" r="6" fill="#FFD7A8"/>
+      <circle cx="22" cy="31" r="3.2" fill="#4A4039"/><circle cx="34" cy="31" r="3.2" fill="#4A4039"/>
+      <circle cx="18" cy="38" r="3.5" fill="#F6B0B0" opacity=".7"/><circle cx="38" cy="38" r="3.5" fill="#F6B0B0" opacity=".7"/>
+      <path d="M24 39 q4 4 8 0" stroke="#4A4039" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="title">동물 체조 교실 <span class="pin">🐾</span></div>
+    <div class="top-tools">
+      <!-- 게임 목록(놀이터)으로 돌아가기. 실제 게임 섹션 주소로 바꿔주세요 (예: index.html#games) -->
+      <a class="pill-link" id="homeBtn" href="index.html">🎮 게임 목록</a>
+      <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="소리 켜기 끄기">🔊</button>
+    </div>
+  </header>
+
+  <nav class="progress" id="progress" aria-label="동물 진행 상황"></nav>
+
+  <main>
+    <section class="station" id="station" aria-live="polite">
+      <div class="guide">
+        <span class="tag" id="tag" hidden>준비 운동</span>
+        <div class="animal-row">
+          <div class="animal-emoji" id="animalEmoji">🐢</div>
+          <div class="animal-name" id="animalName">거북이</div>
+        </div>
+        <div class="speak-line" id="speakLine">"목을 길게 쭉쭉!"</div>
+        <ol class="steps" id="steps"></ol>
+        <button class="listen" id="listenBtn">🔊 안내 듣기</button>
+      </div>
+
+      <div class="mirror-wrap">
+        <div class="mirror" id="mirror">
+          <video id="video" playsinline muted></video>
+          <canvas id="overlay"></canvas>
+          <svg class="gauge" id="gauge" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <rect x="3" y="3" width="94" height="94" rx="14" ry="14" fill="none" stroke="var(--gold)"
+              stroke-width="6" pathLength="100" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="100" id="gaugeRing"/>
+          </svg>
+          <div class="badge-pass" id="badge">⭐ 통과!</div>
+          <div class="placeholder" id="placeholder">
+            <div class="big">📷</div>
+            <div>카메라를 켜면<br>거울 속에서 동물로 변신해요!</div>
+          </div>
+        </div>
+        <button class="cam-btn" id="camBtn">📷 카메라 켜기</button>
+        <div class="status" id="status" role="status">카메라를 켜고 동작을 해봐요</div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <button class="nav-btn" id="prevBtn">◀ 이전</button>
+      <div class="diff" role="group" aria-label="난이도">
+        <button id="diffEasy" aria-pressed="false">쉬움(자세만)</button>
+        <button id="diffNormal" aria-pressed="true">보통(움직임)</button>
+      </div>
+      <button class="nav-btn teacher-pass" id="teacherBtn">✓ 선생님 통과</button>
+      <button class="nav-btn next" id="nextBtn">다음 ▶</button>
+    </div>
+
+    <p class="hint-note" id="hintNote">
+      온몸이 잘 보이게 카메라 앞에 서요 · <b>쉬움</b>은 자세만, <b>보통</b>은 점프·날갯짓 같은 움직임까지 인식해요 · 잘 안 되면 <b>선생님 통과</b>를 누르세요
+    </p>
+  </main>
+</div>
+
+<div class="finale" id="finale">
+  <div class="card">
+    <div class="big">🎉</div>
+    <h2>참 잘했어요!</h2>
+    <p>다섯 가지 동물 체조를<br>모두 해냈어요</p>
+    <div class="btnrow">
+      <button id="restartBtn" class="ghost">다시 하기</button>
+      <a id="finaleHome" href="index.html">🎮 게임 목록으로</a>
+    </div>
+  </div>
+</div>
+
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div class="sr-only" id="live" role="status" aria-live="assertive"></div>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+/* ===== 동물 데이터(내용) ===== */
+const STATIONS=[
+  {id:'turtle',emoji:'🐢',name:'거북이',tag:'준비 운동',line:'"목을 길게 쭉쭉!"',accent:'#7BA886',soft:'#E4EFE2',
+    steps:['어깨를 내리고 목을 앞으로 길게 빼요','목을 왼쪽, 오른쪽으로 천천히 기울여요'],
+    tts:'거북이처럼 목을 길게 쭉쭉 빼요. 목을 왼쪽으로 오른쪽으로 천천히 기울여요.'},
+  {id:'rabbit',emoji:'🐰',name:'토끼',tag:null,line:'"깡충깡충 높이 뛰기"',accent:'#E89BB0',soft:'#FBE6EC',
+    steps:['양손을 머리 위로 올려 길쭉한 귀를 만들어요','무릎을 굽혔다 펴며 깡충 뛰어요'],
+    tts:'토끼처럼 양손을 머리 위로 올려 귀를 만들어요. 무릎을 굽혔다 펴며 깡충 뛰어요.'},
+  {id:'ox',emoji:'🐂',name:'황소',tag:null,line:'"네 발로 튼튼하게 걷기"',accent:'#D9A05B',soft:'#F6E8D2',
+    steps:['양손과 양발을 바닥에 단단히 대고 엎드려요','손과 발을 번갈아 엉금엉금 걸어요'],
+    tts:'황소처럼 양손과 양발을 바닥에 대고 엎드려요. 손과 발을 번갈아 엉금엉금 걸어요.'},
+  {id:'frog',emoji:'🐸',name:'개구리',tag:null,line:'"폴짝! 점프 놀이"',accent:'#8FC457',soft:'#E8F4D6',
+    steps:['바닥에 아주 낮게 쭈그려 앉아요','개굴! 하고 양손과 발로 바닥을 밀어 뛰어요'],
+    tts:'개구리처럼 바닥에 아주 낮게 쭈그려 앉아요. 개굴 하고 높이 뛰어올라요.'},
+  {id:'butterfly',emoji:'🦋',name:'나비',tag:null,line:'"훨훨 부드러운 날갯짓"',accent:'#A98BD1',soft:'#ECE4F6',
+    steps:['양팔을 옆으로 넓게 펼쳐 날개를 만들어요','팔을 위아래로 부드럽게 흔들며 걸어요'],
+    tts:'나비처럼 양팔을 옆으로 넓게 펼쳐 날개를 만들어요. 팔을 위아래로 부드럽게 흔들어요.'},
+];
+const CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[0,11],[0,12]];
+const HOLD={easy:1.0,normal:1.6};
+const NEED_JUMPS=2, NEED_FLAPS=4;
+
+/* ===== 상태 ===== */
+const S={index:0,difficulty:'normal',sound:true,cameraOn:false,passed:STATIONS.map(()=>false),
+  lastTs:0,done:false,rt:{}};
+function resetRt(){S.rt={hold:0,restY:null,air:false,jumps:0,flaps:0,fext:null,fdir:0,squatted:false,squatLowY:null,tL:false,tR:false,noHips:false};}
+let landmarker=null,rafId=null;
+
+/* ===== DOM ===== */
+const $=id=>document.getElementById(id);
+const video=$('video'),overlay=$('overlay'),octx=overlay.getContext('2d');
+const gaugeRing=$('gaugeRing'),badge=$('badge'),status=$('status'),placeholder=$('placeholder'),live=$('live');
+
+/* ===== 사운드 ===== */
+let actx=null;
+function tone(freqs,dur=0.18,type='sine',vol=0.16){
+  if(!S.sound)return;
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+    freqs.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+i*0.06);g.gain.linearRampToValueAtTime(vol,t+i*0.06+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.06+dur);o.connect(g).connect(actx.destination);
+      o.start(t+i*0.06);o.stop(t+i*0.06+dur+0.05);});}catch(e){}
+}
+const sndPass=()=>tone([523,659,784,1047],0.32,'sine',0.16);
+const sndStep=()=>tone([440,587],0.14,'triangle',0.12);
+
+/* ===== TTS ===== */
+function speak(t){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=0.92;u.pitch=1.05;speechSynthesis.speak(u);}
+
+/* ===== 유틸 ===== */
+function vis(p){return p&&(p.visibility===undefined||p.visibility>0.3);}
+function sw(L){const a=L[11],b=L[12];return Math.hypot(a.x-b.x,a.y-b.y)||0.001;}
+
+/* ===== 진행 표시 ===== */
+const progressEl=$('progress');
+STATIONS.forEach((st,i)=>{const b=document.createElement('button');b.className='pdot';
+  b.innerHTML=`<span class="face">${st.emoji}</span><span>${st.name}</span>`;
+  b.addEventListener('click',()=>goTo(i));progressEl.appendChild(b);});
+
+/* ===== 스테이션 렌더 ===== */
+function renderStation(){
+  const st=STATIONS[S.index];
+  document.documentElement.style.setProperty('--accent',st.accent);
+  document.documentElement.style.setProperty('--accent-soft',st.soft);
+  $('animalEmoji').textContent=st.emoji;$('animalName').textContent=st.name;$('speakLine').textContent=st.line;
+  const tag=$('tag');if(st.tag){tag.hidden=false;tag.textContent=st.tag;}else tag.hidden=true;
+  const steps=$('steps');steps.innerHTML='';
+  st.steps.forEach((s,i)=>{const li=document.createElement('li');
+    li.innerHTML=`<span class="num">${i+1}</span><span>${s}</span>`;steps.appendChild(li);});
+  [...progressEl.children].forEach((b,i)=>{b.setAttribute('aria-current',i===S.index?'true':'false');
+    b.classList.toggle('done',S.passed[i]);});
+  resetRt();S.done=S.passed[S.index];
+  $('prevBtn').disabled=S.index===0;
+  $('nextBtn').classList.toggle('ready',S.done);
+  resetGauge();
+  if(S.done){showPass(false);}else{badge.classList.remove('show');status.classList.remove('pass');}
+  setStatus(S.cameraOn?`${st.name} 동작을 해볼까요?`:`카메라를 켜고 ${st.name} 동작을 해봐요`);
+}
+function setStatus(t,pass=false){status.textContent=t;status.classList.toggle('pass',pass);}
+function resetGauge(){gaugeRing.setAttribute('stroke-dashoffset','100');}
+function setGauge(p){gaugeRing.setAttribute('stroke-dashoffset',String(100-Math.round(Math.max(0,Math.min(1,p))*100)));}
+
+/* ===== 통과 ===== */
+function markPassed(announce=true){
+  if(S.done)return;S.done=true;S.passed[S.index]=true;showPass(announce);
+  [...progressEl.children][S.index].classList.add('done');$('nextBtn').classList.add('ready');
+  if(S.passed.every(Boolean))setTimeout(showFinale,900);
+}
+function showPass(announce){setGauge(1);badge.classList.add('show');setStatus('변신 성공! ⭐ 통과!',true);
+  const e=$('animalEmoji');e.classList.remove('celebrate');void e.offsetWidth;e.classList.add('celebrate');
+  if(announce){sndPass();confetti();live.textContent=`${STATIONS[S.index].name} 통과했어요!`;speak('통과! 잘했어요!');}}
+
+/* ===== 반짝이 ===== */
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const box=$('confetti'),colors=['#F2B705','#E89BB0','#8FC457','#A98BD1','#7BA886'];
+  for(let i=0;i<26;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'%';
+    s.style.background=colors[i%colors.length];s.style.animationDuration=(1.6+Math.random()*1.2)+'s';
+    s.style.animationDelay=(Math.random()*0.3)+'s';box.appendChild(s);setTimeout(()=>s.remove(),3200);}
+}
+
+/* ===== 네비게이션 ===== */
+function goTo(i){i=Math.max(0,Math.min(STATIONS.length-1,i));if(i===S.index){renderStation();return;}
+  S.index=i;sndStep();renderStation();}
+$('prevBtn').addEventListener('click',()=>goTo(S.index-1));
+$('nextBtn').addEventListener('click',()=>{
+  if(S.index===STATIONS.length-1){if(S.passed.every(Boolean))showFinale();else goTo(S.index);}else goTo(S.index+1);});
+$('teacherBtn').addEventListener('click',()=>markPassed(true));
+$('listenBtn').addEventListener('click',()=>speak(STATIONS[S.index].tts));
+$('diffEasy').addEventListener('click',()=>setDiff('easy'));
+$('diffNormal').addEventListener('click',()=>setDiff('normal'));
+function setDiff(d){S.difficulty=d;resetRt();
+  $('diffEasy').setAttribute('aria-pressed',d==='easy');$('diffNormal').setAttribute('aria-pressed',d==='normal');}
+$('soundBtn').addEventListener('click',e=>{S.sound=!S.sound;e.currentTarget.setAttribute('aria-pressed',S.sound);
+  e.currentTarget.textContent=S.sound?'🔊':'🔇';if(!S.sound)speechSynthesis?.cancel();});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='BUTTON'||e.target.tagName==='A')return;
+  if(e.key==='ArrowRight')$('nextBtn').click();else if(e.key==='ArrowLeft')$('prevBtn').click();
+  else if(e.key===' '){e.preventDefault();markPassed(true);}});
+function showFinale(){$('finale').classList.add('show');sndPass();confetti();}
+$('restartBtn').addEventListener('click',()=>{S.passed=STATIONS.map(()=>false);S.index=0;
+  $('finale').classList.remove('show');renderStation();});
+
+/* ===== 카메라 + 인식 ===== */
+$('camBtn').addEventListener('click',startCamera);
+async function startCamera(){
+  setStatus('잠깐만요, 준비하고 있어요…');
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+    video.srcObject=stream;await video.play();
+    placeholder.style.display='none';$('camBtn').style.display='none';S.cameraOn=true;
+    if(!landmarker)await initLandmarker();
+    overlay.width=video.videoWidth||640;overlay.height=video.videoHeight||480;
+    S.lastTs=performance.now();loop();setStatus(`${STATIONS[S.index].name} 동작을 해볼까요?`);
+  }catch(err){setStatus('카메라를 켤 수 없어요. 브라우저에서 카메라 권한을 허용해 주세요.');$('camBtn').style.display='';}
+}
+async function initLandmarker(){
+  const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(vision,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
+    runningMode:"VIDEO",numPoses:1});
+}
+function loop(){
+  rafId=requestAnimationFrame(loop);
+  if(!S.cameraOn||!landmarker||video.readyState<2)return;
+  const now=performance.now();let res;
+  try{res=landmarker.detectForVideo(video,now);}catch(e){return;}
+  const dt=Math.min(0.1,(now-S.lastTs)/1000);S.lastTs=now;
+  const L=res.landmarks&&res.landmarks[0];
+  draw(L);
+  if(S.done)return;
+  if(!L){setGauge(0);setStatus('온몸이 잘 보이게 해주세요');return;}
+  switch(STATIONS[S.index].id){
+    case'turtle':updateTurtle(L);break;
+    case'rabbit':updateRabbit(L,dt);break;
+    case'ox':updateOx(L,dt);break;
+    case'frog':updateFrog(L,dt);break;
+    case'butterfly':updateButterfly(L,dt);break;
+  }
+}
+
+/* ----- 동적 움직임 감지 보조 ----- */
+function trackJump(L,gate){ // 엉덩이 수직 이동으로 점프 카운트
+  const lh=L[23],rh=L[24],ls=L[11],rs=L[12];
+  if(!vis(lh)||!vis(rh)){S.rt.noHips=true;return;}
+  S.rt.noHips=false;
+  const hipY=(lh.y+rh.y)/2;
+  const torso=(vis(ls)&&vis(rs))?Math.abs(hipY-(ls.y+rs.y)/2):0.15;
+  if(S.rt.restY==null)S.rt.restY=hipY;
+  const rise=S.rt.restY-hipY;                 // +면 위로 뜸
+  const TH=Math.max(torso*0.30,0.03);
+  if(!S.rt.air&&rise>TH){S.rt.air=true;if(gate)S.rt.jumps++;}
+  if(S.rt.air&&rise<TH*0.4)S.rt.air=false;
+  if(!S.rt.air)S.rt.restY=S.rt.restY*0.9+hipY*0.1;
+}
+function trackFlap(L){ // 손목 위아래 진동으로 날갯짓 카운트
+  const lw=L[15],rw=L[16];if(!vis(lw)||!vis(rw))return;
+  const wy=(lw.y+rw.y)/2,amp=sw(L)*0.25;
+  if(S.rt.fext==null){S.rt.fext=wy;S.rt.fdir=0;return;}
+  if(wy<S.rt.fext-amp){if(S.rt.fdir!==-1){S.rt.fdir=-1;S.rt.flaps++;}S.rt.fext=wy;}
+  else if(wy>S.rt.fext+amp){if(S.rt.fdir!==1){S.rt.fdir=1;S.rt.flaps++;}S.rt.fext=wy;}
+}
+
+/* ----- 거북이: 목 좌우 기울이기 ----- */
+function updateTurtle(L){
+  const nose=L[0],ls=L[11],rs=L[12];
+  if(!vis(nose)||!vis(ls)||!vis(rs)){setStatus('얼굴과 어깨가 보이게 해주세요');return;}
+  const tilt=(nose.x-(ls.x+rs.x)/2)/sw(L);
+  const TH=S.difficulty==='easy'?0.12:0.18;
+  if(tilt>TH)S.rt.tR=true;if(tilt<-TH)S.rt.tL=true;
+  let p;
+  if(S.difficulty==='easy')p=(S.rt.tL||S.rt.tR)?1:Math.min(Math.abs(tilt)/TH,0.95);
+  else p=(S.rt.tL?0.5:0)+(S.rt.tR?0.5:0);
+  setGauge(p);
+  if(p>=1){markPassed(true);return;}
+  if(!S.rt.tL&&!S.rt.tR)setStatus('목을 한쪽으로 천천히 기울여요');
+  else setStatus(S.difficulty==='easy'?'조금만 더!':'좋아요! 반대쪽으로도 기울여요');
+}
+
+/* ----- 토끼: 귀 만들기 (+점프) ----- */
+function earsActive(L){
+  const lw=L[15],rw=L[16],nose=L[0],ls=L[11],rs=L[12];
+  if(!vis(lw)||!vis(rw))return false;
+  if(S.difficulty==='easy')return vis(ls)&&vis(rs)&&lw.y<ls.y&&rw.y<rs.y;
+  return vis(nose)&&lw.y<nose.y&&rw.y<nose.y;
+}
+function updateRabbit(L,dt){
+  const ears=earsActive(L);
+  if(S.difficulty==='easy'){
+    const req=HOLD.easy;S.rt.hold=ears?Math.min(req,S.rt.hold+dt):Math.max(0,S.rt.hold-dt*1.5);
+    setGauge(S.rt.hold/req);setStatus(ears?'좋아요! 그대로 멈춰요…':'양손을 머리 위로 쭉 올려요');
+    if(S.rt.hold>=req)markPassed(true);return;
+  }
+  trackJump(L,ears);
+  if(S.rt.noHips){setGauge(0.1);setStatus('온몸이 보이게 한 발 뒤로 물러서요');return;}
+  const p=(ears||S.rt.jumps>0?0.2:0)+0.4*Math.min(S.rt.jumps,NEED_JUMPS);
+  setGauge(p);
+  if(S.rt.jumps>=NEED_JUMPS){markPassed(true);return;}
+  setStatus(ears?`귀 만들고 깡충 뛰어요! (${Math.min(S.rt.jumps,NEED_JUMPS)}/${NEED_JUMPS})`:'먼저 양손으로 귀를 만들어요');
+}
+
+/* ----- 황소: 네 발 자세 유지 ----- */
+function updateOx(L,dt){
+  const lw=L[15],rw=L[16],lh=L[23],rh=L[24];let active=false;
+  if(vis(lh)&&vis(rh)){const hipY=(lh.y+rh.y)/2;const okL=vis(lw)&&lw.y>hipY,okR=vis(rw)&&rw.y>hipY;
+    active=S.difficulty==='easy'?(okL||okR):(okL&&okR);}
+  const req=HOLD[S.difficulty];S.rt.hold=active?Math.min(req,S.rt.hold+dt):Math.max(0,S.rt.hold-dt*1.5);
+  setGauge(S.rt.hold/req);setStatus(active?'좋아요! 그대로 멈춰요…':'손을 바닥 쪽으로 내려 엎드려요');
+  if(S.rt.hold>=req)markPassed(true);
+}
+
+/* ----- 개구리: 쭈그려 앉기 (+점프) ----- */
+function updateFrog(L,dt){
+  const lh=L[23],rh=L[24],lk=L[25],rk=L[26],ls=L[11],rs=L[12];
+  if(!vis(lh)||!vis(rh)||!vis(lk)||!vis(rk)||!vis(ls)||!vis(rs)){setStatus('다리까지 보이게 뒤로 물러서요');return;}
+  const hipY=(lh.y+rh.y)/2,kneeY=(lk.y+rk.y)/2,drop=(kneeY-hipY)/sw(L);
+  const squatTh=S.difficulty==='easy'?1.05:0.7;const squatting=drop<squatTh;
+  if(S.difficulty==='easy'){
+    const req=HOLD.easy;S.rt.hold=squatting?Math.min(req,S.rt.hold+dt):Math.max(0,S.rt.hold-dt*1.5);
+    setGauge(S.rt.hold/req);setStatus(squatting?'좋아요! 낮게 멈춰요…':'무릎을 굽혀 낮게 앉아요');
+    if(S.rt.hold>=req)markPassed(true);return;
+  }
+  const torso=Math.abs(hipY-(ls.y+rs.y)/2)||0.15;
+  if(squatting){S.rt.squatted=true;S.rt.squatLowY=Math.max(S.rt.squatLowY||0,hipY);}
+  if(!S.rt.squatted){setGauge(0.15);setStatus('낮게 쭈그려 앉아요');return;}
+  if((S.rt.squatLowY-hipY)>torso*0.5){markPassed(true);return;}
+  setGauge(0.6);setStatus('좋아요! 이제 폴짝 뛰어요!');
+}
+
+/* ----- 나비: 날개 펼치기 (+날갯짓) ----- */
+function wingsActive(L){
+  const ls=L[11],rs=L[12],lw=L[15],rw=L[16];
+  if(!vis(ls)||!vis(rs)||!vis(lw)||!vis(rw))return false;
+  const s=sw(L),span=Math.abs(lw.x-rw.x)/s,lvl=(Math.abs(lw.y-ls.y)+Math.abs(rw.y-rs.y))/2/s;
+  return S.difficulty==='easy'?(span>1.3&&lvl<0.85):(span>1.5&&lvl<0.7);
+}
+function updateButterfly(L,dt){
+  const wings=wingsActive(L);
+  if(S.difficulty==='easy'){
+    const req=HOLD.easy;S.rt.hold=wings?Math.min(req,S.rt.hold+dt):Math.max(0,S.rt.hold-dt*1.5);
+    setGauge(S.rt.hold/req);setStatus(wings?'좋아요! 그대로 멈춰요…':'양팔을 옆으로 활짝 펼쳐요');
+    if(S.rt.hold>=req)markPassed(true);return;
+  }
+  if(wings)trackFlap(L);
+  const p=(wings||S.rt.flaps>0?0.2:0)+0.2*Math.min(S.rt.flaps,NEED_FLAPS);
+  setGauge(p);
+  if(S.rt.flaps>=NEED_FLAPS){markPassed(true);return;}
+  setStatus(wings?`날개를 위아래로 훨훨! (${Math.min(S.rt.flaps,NEED_FLAPS)}/${NEED_FLAPS})`:'먼저 양팔을 활짝 펼쳐요');
+}
+
+/* ----- 골격 그리기 ----- */
+function draw(L){
+  const w=overlay.width,h=overlay.height;octx.clearRect(0,0,w,h);if(!L)return;
+  octx.save();octx.translate(w,0);octx.scale(-1,1);
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#7BA886';
+  octx.strokeStyle=accent;octx.lineWidth=Math.max(4,w*0.012);octx.lineCap='round';
+  CONNECTIONS.forEach(([a,b])=>{const pa=L[a],pb=L[b];if(!vis(pa)||!vis(pb))return;
+    octx.beginPath();octx.moveTo(pa.x*w,pa.y*h);octx.lineTo(pb.x*w,pb.y*h);octx.stroke();});
+  octx.fillStyle='#fff';
+  L.forEach(p=>{if(!vis(p))return;octx.beginPath();octx.arc(p.x*w,p.y*h,Math.max(4,w*0.009),0,Math.PI*2);octx.fill();
+    octx.strokeStyle=accent;octx.lineWidth=2;octx.stroke();});
+  octx.restore();
+}
+
+renderStation();
+</script>
+</body>
+</html>
