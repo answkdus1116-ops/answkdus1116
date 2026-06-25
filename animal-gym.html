@@ -507,15 +507,17 @@ function updateButterfly(L,dt){
 /* ----- 골격 그리기 ----- */
 function draw(L){
   const w=overlay.width,h=overlay.height;octx.clearRect(0,0,w,h);if(!L)return;
-  octx.save();octx.translate(w,0);octx.scale(-1,1);
+  // 캔버스 자체가 CSS(scaleX(-1))로 영상과 함께 좌우반전되므로, 좌표는 그대로 그린다(이중 반전 금지)
   const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#7BA886';
-  octx.strokeStyle=accent;octx.lineWidth=Math.max(4,w*0.012);octx.lineCap='round';
+  octx.lineCap='round';
+  octx.globalAlpha=0.4;                       // 선: 옅게
+  octx.strokeStyle=accent;octx.lineWidth=Math.max(4,w*0.012);
   CONNECTIONS.forEach(([a,b])=>{const pa=L[a],pb=L[b];if(!vis(pa)||!vis(pb))return;
     octx.beginPath();octx.moveTo(pa.x*w,pa.y*h);octx.lineTo(pb.x*w,pb.y*h);octx.stroke();});
-  octx.fillStyle='#fff';
-  L.forEach(p=>{if(!vis(p))return;octx.beginPath();octx.arc(p.x*w,p.y*h,Math.max(4,w*0.009),0,Math.PI*2);octx.fill();
-    octx.strokeStyle=accent;octx.lineWidth=2;octx.stroke();});
-  octx.restore();
+  octx.globalAlpha=0.55;                       // 점: 조금 또렷하지만 여전히 투명
+  L.forEach(p=>{if(!vis(p))return;octx.beginPath();octx.arc(p.x*w,p.y*h,Math.max(4,w*0.009),0,Math.PI*2);
+    octx.fillStyle='#fff';octx.fill();octx.strokeStyle=accent;octx.lineWidth=2;octx.stroke();});
+  octx.globalAlpha=1;
 }
 
 renderStation();
