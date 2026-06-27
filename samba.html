@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>신나는 삼바 교실 🎉 | 자연쌤의 웹 앱 공작소</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- MediaPipe Pose (legacy, 안정적) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<style>
+  :root{
+    --cream:#FFF8EF;
+    --cream-2:#FFEFD8;
+    --ink:#5A4632;
+    --ink-soft:#8C7256;
+    --pink:#FF6FB5;
+    --pink-deep:#E84C97;
+    --yellow:#FFD23F;
+    --green:#3DD68C;
+    --blue:#5BC8FF;
+    --orange:#FF924C;
+    --purple:#B06FE8;
+    --card:#FFFFFF;
+    --shadow:0 10px 0 rgba(90,70,50,.10), 0 18px 40px rgba(90,70,50,.16);
+    --radius:28px;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:'Gaegu', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(255,210,63,.35), transparent 60%),
+      radial-gradient(1000px 600px at -10% 110%, rgba(91,200,255,.30), transparent 60%),
+      var(--cream);
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+
+  /* 떠다니는 음표/별 장식 */
+  .deco{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;}
+  .deco span{position:absolute; font-size:clamp(20px,3vw,34px); opacity:.5; animation:float linear infinite;}
+  @keyframes float{
+    0%{transform:translateY(110vh) rotate(0deg);}
+    100%{transform:translateY(-15vh) rotate(360deg);}
+  }
+
+  .wrap{position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:18px 16px 40px;}
+
+  /* 헤더 */
+  header{
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    flex-wrap:wrap; text-align:center; margin-bottom:14px;
+  }
+  .logo-mini{width:54px; height:54px; flex:0 0 auto;}
+  h1{
+    font-family:'Jua', sans-serif; font-weight:400;
+    font-size:clamp(28px,5.2vw,52px); margin:0; line-height:1.05;
+    color:var(--ink);
+    text-shadow:0 3px 0 #fff, 0 4px 0 rgba(232,76,151,.25);
+  }
+  h1 .accent{color:var(--pink-deep);}
+  .subtitle{
+    width:100%; font-size:clamp(15px,2.4vw,20px); color:var(--ink-soft);
+    margin-top:2px;
+  }
+
+  /* 메인 패널 */
+  .stage{
+    display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch;
+  }
+  @media (max-width: 900px){ .stage{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    border:3px solid #fff; padding:16px; position:relative; overflow:hidden;
+  }
+  .panel-title{
+    font-family:'Jua', sans-serif; font-size:clamp(18px,2.8vw,24px);
+    display:flex; align-items:center; gap:8px; margin:2px 4px 12px;
+  }
+  .pill{
+    font-size:14px; font-family:'Gaegu'; font-weight:700; color:#fff;
+    padding:3px 12px; border-radius:999px; margin-left:auto;
+  }
+  .pill.ref{background:var(--purple);}
+  .pill.cam{background:var(--blue);}
+
+  /* 참고 캐릭터 무대 */
+  .ref-stage{
+    position:relative; width:100%; aspect-ratio:4/3; border-radius:20px;
+    background:
+      radial-gradient(120% 80% at 50% 120%, rgba(255,146,76,.20), transparent 60%),
+      linear-gradient(180deg,#FFF3FA 0%, #FDEBFF 100%);
+    display:flex; align-items:flex-end; justify-content:center; overflow:hidden;
+    border:2px dashed rgba(176,111,232,.45);
+  }
+  .ref-stage .spotlight{
+    position:absolute; top:-30%; left:50%; transform:translateX(-50%);
+    width:70%; height:130%;
+    background:radial-gradient(closest-side, rgba(255,210,63,.5), transparent 70%);
+    pointer-events:none;
+  }
+  .ref-uploaded{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:none; background:#fff;}
+  svg.dancer{width:78%; height:96%; overflow:visible;}
+
+  /* 캐릭터 애니메이션 — 빠른 삼바 '노 페' */
+  @keyframes sambaSway{0%,100%{transform:rotate(-4deg) translateX(-5px);}50%{transform:rotate(4deg) translateX(5px);}}
+  @keyframes sambaBounce{0%,100%{transform:translateY(-1px) scaleY(1);}25%{transform:translateY(3px) scaleY(.96);}50%{transform:translateY(-9px) scaleY(1.04);}75%{transform:translateY(3px) scaleY(.96);}}
+  @keyframes hipShift{0%,100%{transform:translateX(7px) rotate(3deg);}50%{transform:translateX(-7px) rotate(-3deg);}}
+  @keyframes armL{0%,100%{transform:rotate(20deg);}50%{transform:rotate(-58deg);}}
+  @keyframes armR{0%,100%{transform:rotate(-58deg);}50%{transform:rotate(20deg);}}
+  @keyframes stepL{0%,100%{transform:translateY(0) rotate(-7deg);}50%{transform:translateY(-15px) rotate(12deg);}}
+  @keyframes stepR{0%,100%{transform:translateY(-15px) rotate(12deg);}50%{transform:translateY(0) rotate(-7deg);}}
+  @keyframes feather{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-3px);}}
+  @keyframes noteUp{0%{transform:translateY(0) scale(.9); opacity:0;}20%{opacity:1;}100%{transform:translateY(-90px) scale(1.1); opacity:0;}}
+
+  #dancerRoot{animation:sambaSway 0.5s ease-in-out infinite; transform-origin:50% 100%;}
+  #dancerBody{animation:sambaBounce 0.25s ease-in-out infinite; transform-origin:50% 100%;}
+  #dancerHips{animation:hipShift 0.5s ease-in-out infinite; transform-origin:150px 230px;}
+  #armLeft{animation:armL 0.5s ease-in-out infinite; transform-origin:78px 150px;}
+  #armRight{animation:armR 0.5s ease-in-out infinite; transform-origin:222px 150px;}
+  #legLeft{animation:stepL 0.25s ease-in-out infinite; transform-origin:128px 250px;}
+  #legRight{animation:stepR 0.25s ease-in-out infinite; transform-origin:172px 250px;}
+  #feathers{animation:feather 0.5s ease-in-out infinite; transform-origin:150px 70px;}
+  .musicnote{animation:noteUp 1.6s ease-in infinite;}
+  .musicnote:nth-child(2){animation-delay:.5s;}
+  .musicnote:nth-child(3){animation-delay:1s;}
+
+  .ref-caption{
+    text-align:center; margin-top:10px; font-size:clamp(15px,2.4vw,19px);
+    font-weight:700; color:var(--purple); min-height:1.5em;
+  }
+  .ref-tools{display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;}
+
+  /* 참고 화면 탭 / 영상 */
+  .ref-tabs{display:flex; gap:8px; justify-content:center; margin:0 4px 12px;}
+  .ref-tab{
+    font-family:'Jua'; font-size:clamp(15px,2.4vw,19px); border:none; cursor:pointer;
+    padding:9px 20px; border-radius:14px 14px 0 0; background:#F0E6F8; color:var(--ink-soft);
+    border-bottom:4px solid transparent; min-height:46px;
+  }
+  .ref-tab.active{background:#fff; color:var(--purple); border-bottom-color:var(--purple); box-shadow:0 -3px 10px rgba(176,111,232,.15);}
+  .ref-tab:focus-visible{outline:3px solid rgba(91,200,255,.8); outline-offset:2px;}
+  .ref-view{position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center;}
+  #videoView{align-items:stretch;}
+  #ytFrame{width:100%; height:100%; border:0; border-radius:18px; background:#000;}
+  .clip-row{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:10px;}
+  .clip-label{font-weight:700; color:var(--ink-soft); font-size:15px;}
+  .chip{
+    font-family:'Gaegu'; font-weight:700; font-size:16px; border:2px solid var(--purple);
+    background:#fff; color:var(--purple); border-radius:999px; padding:7px 16px; cursor:pointer; min-height:42px;
+  }
+  .chip.active{background:var(--purple); color:#fff;}
+  .chip:focus-visible{outline:3px solid rgba(91,200,255,.8); outline-offset:2px;}
+
+  /* 카메라 */
+  .cam-stage{
+    position:relative; width:100%; aspect-ratio:4/3; border-radius:20px; overflow:hidden;
+    background:#23304a;
+  }
+  #video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:none;}
+  #canvas{position:absolute; inset:0; width:100%; height:100%; transform:scaleX(-1);}
+  .cam-placeholder{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; color:#fff; text-align:center; padding:20px;
+  }
+  .cam-placeholder .big{font-family:'Jua'; font-size:clamp(20px,3.4vw,28px);}
+  .cam-placeholder .small{font-size:clamp(14px,2.4vw,18px); opacity:.85; max-width:80%;}
+  .cam-hint{
+    position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
+    background:rgba(0,0,0,.55); color:#fff; padding:6px 16px; border-radius:999px;
+    font-size:clamp(13px,2.2vw,17px); font-weight:700; display:none; white-space:nowrap;
+  }
+  .energy-tag{
+    position:absolute; top:10px; left:10px; background:rgba(255,255,255,.92);
+    border-radius:14px; padding:5px 12px; font-weight:700; color:var(--ink);
+    font-size:clamp(13px,2.1vw,16px); display:none; box-shadow:0 4px 12px rgba(0,0,0,.18);
+  }
+  .energy-tag b{color:var(--orange);}
+
+  /* 진행 바 */
+  .progress-card{
+    margin-top:18px; background:var(--card); border-radius:var(--radius);
+    box-shadow:var(--shadow); border:3px solid #fff; padding:18px 18px 16px;
+  }
+  .progress-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:10px; flex-wrap:wrap;}
+  .progress-top .label{font-family:'Jua'; font-size:clamp(18px,3vw,26px);}
+  .progress-num{font-family:'Jua'; font-size:clamp(26px,5vw,40px); color:var(--pink-deep);}
+  .bar{
+    position:relative; height:38px; border-radius:999px; background:#FFE7D2;
+    overflow:hidden; border:3px solid #fff; box-shadow:inset 0 3px 8px rgba(0,0,0,.08);
+  }
+  .bar-fill{
+    position:absolute; inset:0 100% 0 0; width:0%;
+    background:linear-gradient(90deg, var(--green), var(--blue), var(--yellow), var(--orange), var(--pink));
+    background-size:300% 100%; border-radius:999px; transition:width .25s ease;
+    animation:rainbow 3s linear infinite;
+  }
+  @keyframes rainbow{0%{background-position:0 0;}100%{background-position:300% 0;}}
+  .bar-runner{
+    position:absolute; top:50%; transform:translate(-50%,-50%); font-size:30px;
+    transition:left .25s ease; left:0%;
+  }
+
+  /* 컨트롤 버튼 */
+  .controls{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:18px;}
+  button.btn{
+    font-family:'Jua', sans-serif; font-size:clamp(17px,2.8vw,22px); border:none; cursor:pointer;
+    color:#fff; padding:14px 26px; border-radius:20px; box-shadow:0 6px 0 rgba(0,0,0,.15);
+    transition:transform .08s ease, box-shadow .08s ease; min-height:58px; min-width:120px;
+    display:inline-flex; align-items:center; gap:8px; justify-content:center;
+  }
+  button.btn:active{transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,.15);}
+  button.btn:focus-visible{outline:4px solid rgba(91,200,255,.8); outline-offset:3px;}
+  .btn.start{background:linear-gradient(180deg,#46E29A,#2FB877);}
+  .btn.pause{background:linear-gradient(180deg,#FFC24B,#F2A11F);}
+  .btn.reset{background:linear-gradient(180deg,#FF8FBF,#E84C97);}
+  .btn.ghost{background:linear-gradient(180deg,#9FB0C9,#7E90AC); font-size:clamp(15px,2.4vw,18px); min-width:auto; padding:12px 18px;}
+  .btn[disabled]{opacity:.45; cursor:not-allowed; filter:grayscale(.3);}
+
+  /* 선생님 설정 */
+  details.teacher{
+    margin-top:18px; background:#FFFDF8; border:3px dashed rgba(176,111,232,.4);
+    border-radius:22px; padding:6px 18px;
+  }
+  details.teacher summary{
+    font-family:'Jua'; font-size:clamp(17px,2.6vw,21px); cursor:pointer; padding:12px 4px;
+    list-style:none; display:flex; align-items:center; gap:10px; color:var(--purple);
+  }
+  details.teacher summary::-webkit-details-marker{display:none;}
+  .teacher-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px;
+    padding:8px 0 18px;
+  }
+  .setting{background:#fff; border-radius:18px; padding:14px 16px; box-shadow:0 4px 14px rgba(90,70,50,.08);}
+  .setting .s-title{font-weight:700; font-size:18px; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .setting .s-desc{font-size:14px; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
+  input[type=range]{width:100%; accent-color:var(--pink); height:30px;}
+  .level-readout{font-weight:700; color:var(--pink-deep); font-size:18px;}
+  .toggle-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .switch{position:relative; display:inline-block; width:62px; height:34px;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{position:absolute; cursor:pointer; inset:0; background:#D8CFc2; border-radius:999px; transition:.2s;}
+  .slider:before{content:""; position:absolute; height:26px; width:26px; left:4px; top:4px; background:#fff; border-radius:50%; transition:.2s;}
+  .switch input:checked + .slider{background:var(--green);}
+  .switch input:checked + .slider:before{transform:translateX(28px);}
+  .switch input:focus-visible + .slider{outline:3px solid rgba(91,200,255,.8); outline-offset:2px;}
+
+  /* 통과 축하 오버레이 */
+  .celebrate{
+    position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+    background:rgba(90,70,50,.55); backdrop-filter:blur(3px); padding:20px;
+  }
+  .celebrate.show{display:flex; animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .celebrate-card{
+    background:var(--card); border-radius:34px; padding:34px 30px; text-align:center;
+    max-width:480px; width:100%; box-shadow:var(--shadow); border:5px solid var(--yellow);
+    animation:pop .5s cubic-bezier(.18,1.5,.4,1);
+  }
+  @keyframes pop{0%{transform:scale(.5); opacity:0;}100%{transform:scale(1); opacity:1;}}
+  .celebrate-card .trophy{font-size:clamp(60px,14vw,90px); animation:sambaBounce .5s ease-in-out infinite;}
+  .celebrate-card h2{font-family:'Jua'; font-size:clamp(34px,7vw,52px); margin:6px 0; color:var(--pink-deep);}
+  .celebrate-card p{font-size:clamp(18px,3.4vw,24px); color:var(--ink-soft); margin:6px 0 22px;}
+  #confetti{position:fixed; inset:0; z-index:49; pointer-events:none; display:none;}
+
+  footer{text-align:center; margin-top:26px; color:var(--ink-soft); font-size:15px;}
+  footer .mark{font-family:'Jua'; color:var(--purple);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
+    #dancerRoot,#dancerBody,#armLeft,#armRight,#legLeft,#legRight,#feathers{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="deco" id="deco" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <svg class="logo-mini" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="52" r="38" fill="#FFD23F"/>
+      <circle cx="38" cy="48" r="5" fill="#5A4632"/><circle cx="62" cy="48" r="5" fill="#5A4632"/>
+      <path d="M38 64 Q50 76 62 64" stroke="#5A4632" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="60" r="6" fill="#FF6FB5" opacity=".7"/><circle cx="70" cy="60" r="6" fill="#FF6FB5" opacity=".7"/>
+    </svg>
+    <h1>신나는 <span class="accent">삼바</span> 교실 🎉</h1>
+    <p class="subtitle">마음이를 따라 몸을 흔들어요! 삼바 에너지를 100%까지 채우면 통과!</p>
+  </header>
+
+  <div class="stage">
+    <!-- 참고 캐릭터 -->
+    <section class="panel" aria-label="삼바 참고 영상">
+      <div class="panel-title">👀 이렇게 춰요 <span class="pill ref">따라하기</span></div>
+      <div class="ref-tabs" role="tablist" aria-label="참고 화면 전환">
+        <button class="ref-tab active" id="tabVideo" type="button" role="tab" aria-selected="true">🎬 삼바 영상</button>
+        <button class="ref-tab" id="tabChar" type="button" role="tab" aria-selected="false">💃 마음이</button>
+      </div>
+      <div class="ref-stage">
+        <!-- 영상 보기 (음소거 자동 반복) -->
+        <div class="ref-view" id="videoView">
+          <iframe id="ytFrame" title="삼바 기초 스텝 영상"
+            src="https://www.youtube-nocookie.com/embed/CIlCzrt0Xo4?autoplay=1&mute=1&loop=1&playlist=CIlCzrt0Xo4&rel=0&modestbranding=1&playsinline=1"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen frameborder="0"></iframe>
+        </div>
+        <!-- 캐릭터 보기 -->
+        <div class="ref-view" id="charView" style="display:none;">
+          <div class="spotlight"></div>
+          <img class="ref-uploaded" id="refUploaded" alt="선생님이 올린 삼바 참고 영상" />
+          <!-- 삼바 추는 마음이 캐릭터 -->
+          <svg class="dancer" id="dancerSvg" viewBox="0 0 300 320" aria-label="삼바를 추는 마음이">
+          <!-- 음표 -->
+          <g fill="#FF6FB5">
+            <text class="musicnote" x="40" y="120" font-size="26">♪</text>
+            <text class="musicnote" x="240" y="140" font-size="30" fill="#5BC8FF">♫</text>
+            <text class="musicnote" x="150" y="60" font-size="22" fill="#FFD23F">♪</text>
+          </g>
+          <g id="dancerRoot">
+            <g id="dancerBody">
+              <!-- 깃털 머리장식 -->
+              <g id="feathers">
+                <path d="M150 80 Q120 10 100 50 Q130 40 150 80Z" fill="#FF6FB5"/>
+                <path d="M150 80 Q150 0 150 30 Q150 20 150 80Z" fill="#FFD23F" stroke="#FFD23F" stroke-width="10" stroke-linecap="round"/>
+                <path d="M150 80 Q180 10 200 50 Q170 40 150 80Z" fill="#5BC8FF"/>
+                <path d="M150 80 Q110 20 95 65 Q125 50 150 80Z" fill="#B06FE8" opacity=".85"/>
+                <path d="M150 80 Q190 20 205 65 Q175 50 150 80Z" fill="#3DD68C" opacity=".85"/>
+                <circle cx="150" cy="80" r="10" fill="#FFD23F" stroke="#fff" stroke-width="3"/>
+              </g>
+              <!-- 팔 (뒤) -->
+              <g id="armRight">
+                <rect x="212" y="150" width="20" height="70" rx="10" fill="#FFB17A"/>
+                <circle cx="222" cy="224" r="13" fill="#FFC79B"/>
+              </g>
+              <g id="armLeft">
+                <rect x="68" y="150" width="20" height="70" rx="10" fill="#FFB17A"/>
+                <circle cx="78" cy="224" r="13" fill="#FFC79B"/>
+              </g>
+              <!-- 하체(골반) : 다리 + 드레스 -->
+              <g id="dancerHips">
+                <g id="legLeft"><rect x="118" y="248" width="22" height="60" rx="11" fill="#E8A06A"/><ellipse cx="129" cy="312" rx="16" ry="8" fill="#FF6FB5"/></g>
+                <g id="legRight"><rect x="160" y="248" width="22" height="60" rx="11" fill="#E8A06A"/><ellipse cx="171" cy="312" rx="16" ry="8" fill="#5BC8FF"/></g>
+                <path d="M110 150 Q150 130 190 150 L205 255 Q150 275 95 255 Z" fill="#FF6FB5"/>
+                <path d="M110 150 Q150 130 190 150 L196 200 Q150 215 104 200 Z" fill="#FF8FC4"/>
+                <circle cx="135" cy="190" r="6" fill="#FFD23F"/><circle cx="165" cy="205" r="6" fill="#5BC8FF"/><circle cx="150" cy="170" r="6" fill="#3DD68C"/>
+              </g>
+              <!-- 얼굴 -->
+              <circle cx="150" cy="118" r="42" fill="#FFD23F"/>
+              <circle cx="135" cy="114" r="6" fill="#5A4632"/><circle cx="165" cy="114" r="6" fill="#5A4632"/>
+              <circle cx="124" cy="128" r="8" fill="#FF6FB5" opacity=".6"/><circle cx="176" cy="128" r="8" fill="#FF6FB5" opacity=".6"/>
+              <path d="M134 132 Q150 148 166 132" stroke="#5A4632" stroke-width="5" fill="none" stroke-linecap="round"/>
+            </g>
+          </g>
+        </svg>
+        </div>
+      </div>
+      <div class="clip-row" id="clipRow">
+        <span class="clip-label">영상 고르기:</span>
+        <button class="chip active" data-yt="CIlCzrt0Xo4" type="button">기초 스텝</button>
+        <button class="chip" data-yt="DqGSWYGiDjQ" type="button">브라질 삼바</button>
+        <button class="chip" data-yt="Yp_n6wcRLYM" type="button">7가지 스텝</button>
+      </div>
+      <div class="ref-caption" id="refCaption">엉덩이를 좌우로 흔들어요! 🪶</div>
+      <div class="ref-tools">
+        <button class="btn ghost" id="uploadBtn" type="button">🎬 우리 반 영상 올리기</button>
+        <button class="btn ghost" id="resetRefBtn" type="button" style="display:none;">↩️ 마음이로 되돌리기</button>
+        <input type="file" id="refFile" accept="image/*,.gif" hidden />
+      </div>
+    </section>
+
+    <!-- 카메라 -->
+    <section class="panel" aria-label="내 모습 카메라">
+      <div class="panel-title">📸 내 모습 <span class="pill cam">움직임 인식</span></div>
+      <div class="cam-stage">
+        <video id="video" playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="energy-tag" id="energyTag">에너지 <b id="energyVal">0</b></div>
+        <div class="cam-hint" id="camHint">신나게 흔들어 봐요! 🎶</div>
+        <div class="cam-placeholder" id="camPlaceholder">
+          <div style="font-size:46px;">📷</div>
+          <div class="big">아래 <b>시작</b> 버튼을 눌러요</div>
+          <div class="small">카메라가 켜지면 온몸이 화면에 보이게 한두 걸음 뒤로 가요.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 진행 바 -->
+  <div class="progress-card">
+    <div class="progress-top">
+      <span class="label">🌈 삼바 에너지</span>
+      <span class="progress-num"><span id="progressNum">0</span>%</span>
+    </div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+      <div class="bar-fill" id="barFill"></div>
+      <div class="bar-runner" id="barRunner">💃</div>
+    </div>
+  </div>
+
+  <!-- 컨트롤 -->
+  <div class="controls">
+    <button class="btn start" id="startBtn" type="button">▶️ 시작</button>
+    <button class="btn pause" id="pauseBtn" type="button" disabled>⏸️ 잠깐</button>
+    <button class="btn reset" id="resetBtn" type="button">🔄 다시</button>
+    <button class="btn ghost" id="fullBtn" type="button">⛶ 전체화면</button>
+  </div>
+
+  <!-- 선생님 설정 -->
+  <details class="teacher">
+    <summary>🧑‍🏫 선생님 설정</summary>
+    <div class="teacher-grid">
+      <div class="setting">
+        <div class="s-title">🎚️ 난이도 (채워지는 속도)</div>
+        <input type="range" id="sens" min="1" max="5" step="1" value="3" />
+        <div class="level-readout"><span id="sensLabel">보통</span></div>
+        <div class="s-desc">오른쪽일수록 조금만 움직여도 빨리 채워져요. 더 많이 움직이는 학생은 왼쪽으로요.</div>
+      </div>
+
+      <div class="setting">
+        <div class="s-title">🔊 소리 & 칭찬 음성</div>
+        <div class="toggle-row" style="margin-bottom:8px;">
+          <label class="switch"><input type="checkbox" id="soundToggle" checked /><span class="slider"></span></label>
+          <span>효과음 켜기</span>
+        </div>
+        <div class="toggle-row">
+          <label class="switch"><input type="checkbox" id="voiceToggle" checked /><span class="slider"></span></label>
+          <span>칭찬 음성 켜기</span>
+        </div>
+        <div class="s-desc">통과할 때와 응원할 때 소리/음성이 나와요.</div>
+      </div>
+
+      <div class="setting">
+        <div class="s-title">🦴 뼈대 표시</div>
+        <div class="toggle-row">
+          <label class="switch"><input type="checkbox" id="skelToggle" checked /><span class="slider"></span></label>
+          <span>몸 뼈대 보이기</span>
+        </div>
+        <div class="s-desc">움직임이 잘 잡히는지 확인할 때 켜 두면 좋아요.</div>
+      </div>
+
+      <div class="setting">
+        <div class="s-title">✅ 직접 통과시키기</div>
+        <button class="btn start" id="manualPass" type="button" style="width:100%; box-shadow:0 5px 0 rgba(0,0,0,.15);">바로 통과 도장 찍기</button>
+        <div class="s-desc">움직임이 어려운 학생도 선생님이 눌러서 통과시켜 줄 수 있어요.</div>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    <span class="mark">🎨 자연쌤의 웹 앱 공작소</span> · 발달장애 학생을 위한 신나는 삼바 체육 활동<br>
+    <span style="font-size:13px;">카메라는 이 기기 안에서만 사용되고 어디에도 저장·전송되지 않아요.</span>
+  </footer>
+</div>
+
+<!-- 통과 축하 -->
+<canvas id="confetti"></canvas>
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-card">
+    <div class="trophy">🏆</div>
+    <h2>통과! 삼바 마스터 🎉</h2>
+    <p id="celebrateMsg">정말 멋진 삼바였어요!<br>박수~ 👏👏👏</p>
+    <button class="btn start" id="againBtn" type="button" style="width:100%;">🔄 한 번 더!</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   신나는 삼바 교실 — 포즈 인식 로직
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+
+const video = $('video'), canvas = $('canvas'), ctx = canvas.getContext('2d');
+const barFill = $('barFill'), barRunner = $('barRunner'), bar = $('bar');
+const progressNum = $('progressNum'), energyTag = $('energyTag'), energyVal = $('energyVal');
+const camPlaceholder = $('camPlaceholder'), camHint = $('camHint');
+const refCaption = $('refCaption');
+
+let pose = null, camera = null;
+let running = false, finished = false;
+let progress = 0;
+
+// 움직임 추적용
+let prevLm = null;
+let smoothHipX = null, lastDir = 0, framesSinceDir = 0;
+
+// 설정값
+let sensitivity = 3;       // 1~5
+let soundOn = true, voiceOn = true, skeletonOn = true;
+
+// 튜닝 상수
+const KEYS = [11,12,13,14,15,16,23,24,25,26]; // 어깨/팔꿈치/손목/엉덩이/무릎
+const MOVE_THRESHOLD = 0.012;   // 이만큼은 움직여야 "춤추는 중"
+const ENERGY_CAP = 0.55;        // 한 프레임 에너지 상한(인식 튐 방지)
+const GAIN_E = 0.42;            // 에너지 → 진행도
+const BONUS_BEAT = 0.9;         // 좌우 스텝 한 번당 보너스
+const SWAY_DELTA = 0.006;       // 좌우 방향전환 인식 폭
+
+const sensFactor = () => ({1:0.4,2:0.7,3:1.0,4:1.4,5:2.0})[sensitivity];
+
+/* ---------- 코칭 문구 순환 ---------- */
+const coachMsgs = [
+  "엉덩이를 좌우로 흔들어요! 🪶",
+  "팔을 위로 올려 흔들어요! 🙌",
+  "무릎을 통통 굽혔다 펴요! 🦵",
+  "제자리에서 스텝 스텝! 👣",
+  "온몸으로 신나게 흔들어요! 🎶"
+];
+let coachIdx = 0;
+setInterval(() => {
+  if(!running || finished) return;
+  coachIdx = (coachIdx + 1) % coachMsgs.length;
+  refCaption.textContent = coachMsgs[coachIdx];
+}, 4000);
+
+/* ---------- 음성(TTS) — 한국어 보이스 우선 ---------- */
+function speak(text){
+  if(!voiceOn || !('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 1; u.pitch = 1.15;
+    const voices = window.speechSynthesis.getVoices();
+    const ko = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+    if(ko) u.voice = ko;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged = () => {}; }
+
+/* ---------- 효과음 (Web Audio) ---------- */
+let audioCtx = null;
+function ac(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return audioCtx; }
+function blip(freq=600, dur=0.12, type='sine', vol=0.18){
+  if(!soundOn) return; const a = ac(); if(!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime + dur);
+}
+function fanfare(){
+  if(!soundOn) return;
+  const notes = [523,659,784,1046];
+  notes.forEach((f,i)=> setTimeout(()=> blip(f,0.18,'triangle',0.22), i*140));
+}
+
+/* ---------- 진행도 표시 ---------- */
+let lastCheer = 0;
+function setProgress(p){
+  progress = Math.max(0, Math.min(100, p));
+  const r = Math.round(progress);
+  barFill.style.width = progress + '%';
+  barRunner.style.left = progress + '%';
+  progressNum.textContent = r;
+  bar.setAttribute('aria-valuenow', r);
+
+  // 단계별 응원
+  const milestones = [25,50,75];
+  for(const m of milestones){
+    if(progress >= m && lastCheer < m){
+      lastCheer = m;
+      blip(700 + m*4, 0.13, 'sine', 0.18);
+      if(m===25) speak("좋아요!");
+      else if(m===50) speak("반이나 채웠어요! 신난다!");
+      else if(m===75) speak("거의 다 왔어요!");
+    }
+  }
+  if(progress >= 100 && !finished) pass();
+}
+
+/* ---------- 통과 ---------- */
+function pass(){
+  finished = true;
+  $('celebrate').classList.add('show');
+  fanfare();
+  speak("참 잘했어요! 삼바 마스터!");
+  launchConfetti();
+}
+
+/* ---------- 포즈 결과 처리 ---------- */
+function onResults(results){
+  const w = canvas.width, h = canvas.height;
+  ctx.save();
+  ctx.clearRect(0,0,w,h);
+
+  const lm = results.poseLandmarks;
+  if(!lm){
+    if(running && !finished){ camHint.textContent = "화면 안에 온몸이 보이게 서 주세요 🙂"; camHint.style.display='block'; }
+    prevLm = null;
+    ctx.restore();
+    return;
+  }
+
+  // 뼈대 그리기
+  if(skeletonOn && window.drawConnectors && window.POSE_CONNECTIONS){
+    window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, {color:'#FFD23F', lineWidth:5});
+    window.drawLandmarks(ctx, lm, {color:'#FF6FB5', fillColor:'#FF6FB5', lineWidth:2, radius:5});
+  }
+  ctx.restore();
+
+  if(!running || finished) return;
+
+  // 에너지 계산
+  let energy = 0;
+  if(prevLm){
+    for(const k of KEYS){
+      const dx = lm[k].x - prevLm[k].x;
+      const dy = lm[k].y - prevLm[k].y;
+      energy += Math.hypot(dx, dy);
+    }
+  }
+  prevLm = lm.map(p => ({x:p.x, y:p.y}));
+  energy = Math.min(energy, ENERGY_CAP);
+
+  // 엉덩이 중심 좌우 흔들림 → 스텝 감지
+  const hipX = (lm[23].x + lm[24].x) / 2;
+  if(smoothHipX === null) smoothHipX = hipX;
+  const prevSmooth = smoothHipX;
+  smoothHipX = smoothHipX * 0.6 + hipX * 0.4;
+  const dx = smoothHipX - prevSmooth;
+  const dir = dx > SWAY_DELTA ? 1 : (dx < -SWAY_DELTA ? -1 : 0);
+  framesSinceDir++;
+  let beat = false;
+  if(dir !== 0){
+    if(lastDir !== 0 && dir !== lastDir && framesSinceDir > 4){
+      beat = true; framesSinceDir = 0;
+    }
+    lastDir = dir;
+  }
+
+  const moving = energy > MOVE_THRESHOLD;
+  if(moving){
+    let gain = energy * GAIN_E;
+    if(beat){ gain += BONUS_BEAT; blip(520 + Math.random()*120, 0.07, 'square', 0.10); }
+    setProgress(progress + gain * sensFactor());
+    camHint.textContent = beat ? "삼바 스텝! 멋져요 ✨" : "신나게 흔들어 봐요! 🎶";
+    camHint.style.display = 'block';
+  } else {
+    camHint.textContent = "조금 더 크게 움직여 볼까요? 💪";
+    camHint.style.display = 'block';
+  }
+
+  // 에너지 미터 표시
+  const ePct = Math.round((energy / ENERGY_CAP) * 100);
+  energyVal.textContent = ePct;
+  energyTag.style.display = 'block';
+}
+
+/* ---------- MediaPipe 초기화 ---------- */
+function initPose(){
+  if(pose) return;
+  pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+  pose.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    enableSegmentation: false,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+  pose.onResults(onResults);
+}
+
+function resizeCanvas(){
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+}
+
+async function startCamera(){
+  initPose();
+  if(camera) { camera.start(); return; }
+  camera = new Camera(video, {
+    onFrame: async () => {
+      if(video.videoWidth && canvas.width !== video.videoWidth) resizeCanvas();
+      await pose.send({ image: video });
+    },
+    width: 640, height: 480, facingMode: 'user'
+  });
+  try{
+    await camera.start();
+  }catch(err){
+    camPlaceholder.style.display = 'flex';
+    camPlaceholder.querySelector('.big').textContent = "카메라를 켤 수 없어요";
+    camPlaceholder.querySelector('.small').innerHTML =
+      "브라우저에서 카메라 사용을 <b>허용</b>해 주세요.<br>(주소가 https 이거나 파일을 직접 열었을 때 동작해요)";
+  }
+}
+
+/* ---------- 버튼 동작 ---------- */
+function start(){
+  if(ac() && audioCtx.state === 'suspended') audioCtx.resume();
+  running = true; finished = false;
+  camPlaceholder.style.display = 'none';
+  video.style.display = 'block';
+  $('startBtn').disabled = true;
+  $('pauseBtn').disabled = false;
+  $('pauseBtn').textContent = '⏸️ 잠깐';
+  startCamera();
+  speak("삼바 시작! 마음이를 따라 신나게 흔들어요!");
+}
+function togglePause(){
+  if(finished) return;
+  running = !running;
+  $('pauseBtn').textContent = running ? '⏸️ 잠깐' : '▶️ 다시 시작';
+  camHint.style.display = running ? 'block' : 'none';
+  if(running) speak("다시 시작해요!");
+}
+function resetAll(){
+  finished = false; running = false;
+  progress = 0; lastCheer = 0; prevLm = null; smoothHipX = null; lastDir = 0;
+  setProgress(0);
+  $('celebrate').classList.remove('show');
+  $('confetti').style.display = 'none';
+  $('startBtn').disabled = false;
+  $('pauseBtn').disabled = true; $('pauseBtn').textContent = '⏸️ 잠깐';
+  energyTag.style.display = 'none';
+  camHint.style.display = 'none';
+  refCaption.textContent = coachMsgs[0]; coachIdx = 0;
+}
+
+$('startBtn').addEventListener('click', start);
+$('pauseBtn').addEventListener('click', togglePause);
+$('resetBtn').addEventListener('click', resetAll);
+$('againBtn').addEventListener('click', () => { resetAll(); start(); });
+$('manualPass').addEventListener('click', () => { setProgress(100); });
+
+/* 전체화면 (전자칠판용) */
+$('fullBtn').addEventListener('click', () => {
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); }
+  else { document.exitFullscreen?.(); }
+});
+
+/* 난이도 */
+const sensLabels = {1:'아주 천천히',2:'천천히',3:'보통',4:'빠르게',5:'아주 빠르게'};
+$('sens').addEventListener('input', (e) => {
+  sensitivity = +e.target.value;
+  $('sensLabel').textContent = sensLabels[sensitivity];
+});
+
+/* 토글들 */
+$('soundToggle').addEventListener('change', e => soundOn = e.target.checked);
+$('voiceToggle').addEventListener('change', e => voiceOn = e.target.checked);
+$('skelToggle').addEventListener('change', e => skeletonOn = e.target.checked);
+
+/* 참고 화면 탭 전환 (영상 / 캐릭터) */
+function showRef(which){
+  const v = (which === 'video');
+  $('videoView').style.display = v ? 'flex' : 'none';
+  $('charView').style.display  = v ? 'none' : 'flex';
+  $('clipRow').style.display   = v ? 'flex' : 'none';
+  $('tabVideo').classList.toggle('active', v);
+  $('tabChar').classList.toggle('active', !v);
+  $('tabVideo').setAttribute('aria-selected', v);
+  $('tabChar').setAttribute('aria-selected', !v);
+}
+$('tabVideo').addEventListener('click', () => showRef('video'));
+$('tabChar').addEventListener('click', () => showRef('char'));
+
+/* 영상 고르기 (안 보이면 다른 영상으로) */
+document.querySelectorAll('.chip').forEach(ch => {
+  ch.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    ch.classList.add('active');
+    const id = ch.dataset.yt;
+    $('ytFrame').src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&rel=0&modestbranding=1&playsinline=1`;
+  });
+});
+
+/* 참고 영상 업로드 (→ 캐릭터 탭의 화면을 우리 반 영상으로) */
+$('uploadBtn').addEventListener('click', () => $('refFile').click());
+$('refFile').addEventListener('change', (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  const img = $('refUploaded');
+  img.src = url; img.style.display = 'block';
+  $('dancerSvg').style.display = 'none';
+  $('resetRefBtn').style.display = 'inline-flex';
+  showRef('char');
+});
+$('resetRefBtn').addEventListener('click', () => {
+  $('refUploaded').style.display = 'none';
+  $('refUploaded').removeAttribute('src');
+  $('dancerSvg').style.display = 'block';
+  $('resetRefBtn').style.display = 'none';
+  $('refFile').value = '';
+});
+
+/* ---------- 떠다니는 장식 ---------- */
+(function deco(){
+  const icons = ['🎵','🎶','⭐','🪶','🎉','💖','🌈'];
+  const c = $('deco');
+  for(let i=0;i<14;i++){
+    const s = document.createElement('span');
+    s.textContent = icons[i % icons.length];
+    s.style.left = Math.random()*100 + 'vw';
+    s.style.animationDuration = (10 + Math.random()*12) + 's';
+    s.style.animationDelay = (-Math.random()*20) + 's';
+    c.appendChild(s);
+  }
+})();
+
+/* ---------- 색종이(confetti) ---------- */
+function launchConfetti(){
+  const cv = $('confetti'); cv.style.display = 'block';
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cx = cv.getContext('2d');
+  const cols = ['#FF6FB5','#FFD23F','#3DD68C','#5BC8FF','#FF924C','#B06FE8'];
+  const parts = Array.from({length:140}, () => ({
+    x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*0.5,
+    r: 5 + Math.random()*8, c: cols[(Math.random()*cols.length)|0],
+    vy: 2 + Math.random()*4, vx: -2 + Math.random()*4,
+    rot: Math.random()*6, vr: -0.2 + Math.random()*0.4
+  }));
+  let t = 0;
+  (function frame(){
+    t++; cx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
+      cx.fillStyle = p.c; cx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6);
+      cx.restore();
+    });
+    if(t < 260 && $('celebrate').classList.contains('show')) requestAnimationFrame(frame);
+    else cx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+window.addEventListener('resize', () => {
+  const cv = $('confetti'); if(cv.style.display==='block'){ cv.width=innerWidth; cv.height=innerHeight; }
+});
+
+setProgress(0);
+</script>
+</body>
+</html>
