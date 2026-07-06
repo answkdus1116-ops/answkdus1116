@@ -152,6 +152,10 @@ main{flex:1;position:relative;overflow:hidden}
 .meter .m-label{width:64px;text-align:right;font-family:'Jua'}
 .meter .m-bar{flex:1;height:18px;border-radius:999px;background:var(--cream2);overflow:hidden}
 .meter .m-fill{height:100%;width:0%;border-radius:999px;transition:width .15s}
+.debug-box{
+  background:#3b3129;color:#B8F5D0;border-radius:16px;padding:10px 12px;
+  font-family:monospace;font-size:.85rem;line-height:1.5;white-space:pre;
+}
 
 /* ── 표정 따라하기 ────────────────── */
 #play .play-layout{
@@ -215,6 +219,10 @@ main{flex:1;position:relative;overflow:hidden}
   border:3px solid transparent;display:flex;align-items:center;gap:6px;
 }
 .emo-check button.on{background:#fff;border-color:var(--mint)}
+.sens-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:1.05rem}
+.sens-row .s-label{width:70px;font-family:'Jua'}
+.sens-row input[type=range]{flex:1;accent-color:var(--joy)}
+.sens-row .s-val{width:38px;text-align:right;font-family:monospace}
 .close-set{
   font-family:'Jua';font-size:1.25rem;padding:12px;border-radius:18px;
   background:var(--joy);box-shadow:0 4px 0 rgba(91,74,63,.2);
@@ -305,6 +313,8 @@ main{flex:1;position:relative;overflow:hidden}
           <div class="now-name" id="mirrorName">표정을 지어 봐요!</div>
         </div>
         <div class="meter-list" id="meterList"></div>
+        <button class="top-btn" id="mirrorCalib">🎯 무표정 기준 잡기</button>
+        <div class="debug-box" id="debugBox" hidden></div>
       </div>
     </div>
   </section>
@@ -318,6 +328,7 @@ main{flex:1;position:relative;overflow:hidden}
           <svg viewBox="0 0 100 100" id="targetFace"></svg>
           <div class="t-name" id="targetName"></div>
           <button class="top-btn" id="targetSpeak">🔊 다시 듣기</button>
+          <button class="top-btn" id="playCalib">🎯 무표정 기준 잡기</button>
         </div>
         <div class="star-row" id="starRow"></div>
       </div>
@@ -369,10 +380,21 @@ main{flex:1;position:relative;overflow:hidden}
       <div class="emo-check" id="emoCheck"></div>
     </div>
     <div class="set-group">
+      <div class="g-title">감정별 인식 민감도 (잘 안 되는 감정만 올려 주세요)</div>
+      <div id="sensSliders"></div>
+    </div>
+    <div class="set-group">
       <div class="g-title">음성 안내(TTS)</div>
       <div class="seg" id="segTts">
         <button data-v="on" class="on">켜기</button>
         <button data-v="off">끄기</button>
+      </div>
+    </div>
+    <div class="set-group">
+      <div class="g-title">인식 값 보기 (문제 확인용)</div>
+      <div class="seg" id="segDebug">
+        <button data-v="on">켜기</button>
+        <button data-v="off" class="on">끄기</button>
       </div>
     </div>
     <button class="close-set" id="closeSettings">저장하고 닫기</button>
@@ -600,9 +622,11 @@ const settings = {
   hold:2,                   // 초
   tts:true,
   enabled:new Set(PLAYABLE),
+  emoSens:{joy:1,sad:1,angry:1,surprise:1}, // 감정별 민감도 배율
+  debug:false,              // 인식 값 보기
 };
-const DIFF_MULT = {easy:1.6, normal:1.0, hard:0.75}; // 점수 배율
-const DIFF_THRESH = {easy:0.30, normal:0.42, hard:0.55};
+const DIFF_MULT = {easy:1.7, normal:1.15, hard:0.8}; // 점수 배율
+const DIFF_THRESH = {easy:0.25, normal:0.38, hard:0.52};
 
 /* ── TTS ──────────────────────────────── */
 let koVoice = null;
@@ -742,26 +766,72 @@ function bsMap(blendshapes){
   blendshapes.forEach(b=>m[b.categoryName]=b.score);
   return m;
 }
-function emotionScores(m){
+function rawFeatures(m){
   const g=k=>m[k]||0;
-  const mult=DIFF_MULT[settings.diff];
-  const smile=(g('mouthSmileLeft')+g('mouthSmileRight'))/2;
-  const frown=Math.max(g('mouthFrownLeft'),g('mouthFrownRight'));
-  const browDown=(g('browDownLeft')+g('browDownRight'))/2;
-  const browUp=g('browInnerUp');
-  const jaw=g('jawOpen');
-  const eyeWide=(g('eyeWideLeft')+g('eyeWideRight'))/2;
-
-  let s={
-    joy:      smile*1.15,
-    sad:      (frown*2.2 + browUp*0.55) * (1-jaw*0.8),
-    angry:    browDown*1.25 * (1-smile),
-    surprise: jaw*0.85 + eyeWide*0.5 + browUp*0.35,
+  return {
+    smile:(g('mouthSmileLeft')+g('mouthSmileRight'))/2,
+    frown:Math.max(g('mouthFrownLeft'),g('mouthFrownRight')),
+    shrug:g('mouthShrugLower'),
+    press:(g('mouthPressLeft')+g('mouthPressRight'))/2,
+    browDown:(g('browDownLeft')+g('browDownRight'))/2,
+    browUp:g('browInnerUp'),
+    jaw:g('jawOpen'),
+    eyeWide:(g('eyeWideLeft')+g('eyeWideRight'))/2,
+    squint:(g('eyeSquintLeft')+g('eyeSquintRight'))/2,
   };
-  for(const k in s) s[k]=Math.min(1,Math.max(0,s[k]*mult));
-  const top=Math.max(...Object.values(s));
-  s.neutral=Math.max(0,1-top*1.6);
-  return s;
+}
+
+/* 무표정 기준(개인 보정) + 스무딩 */
+let baseline=null, emaScores=null, lastRawF=null;
+let calibSamples=null, calibUntil=0, calibDoneCb=null;
+function startCalibration(done){
+  calibDoneCb=done;
+  speak('편안한 얼굴로 가만히 있어 주세요.');
+  setTimeout(()=>{calibSamples=[];calibUntil=performance.now()+1400;},1600);
+}
+function feedCalibration(f){
+  if(!calibUntil) return;
+  if(performance.now()<calibUntil){calibSamples.push({...f});return;}
+  // 수집 종료 → 평균을 기준으로 저장
+  if(calibSamples&&calibSamples.length){
+    baseline={};
+    for(const k in calibSamples[0]){
+      baseline[k]=calibSamples.reduce((a,s)=>a+s[k],0)/calibSamples.length;
+    }
+  }
+  calibUntil=0;calibSamples=null;emaScores=null;
+  tone(784,.15);tone(1047,.25,'sine',.12);
+  speak('기준 잡기 완료! 이제 표정을 지어 봐요.');
+  if(calibDoneCb){calibDoneCb();calibDoneCb=null;}
+}
+
+const clamp01=v=>Math.min(1,Math.max(0,v));
+function emotionScores(m){
+  let f=rawFeatures(m);
+  lastRawF=f;
+  feedCalibration(f);
+  if(baseline){
+    const c={};
+    for(const k in f)c[k]=Math.max(0,f[k]-baseline[k]);
+    f=c;
+  }
+  const mult=DIFF_MULT[settings.diff];
+  const per=settings.emoSens;
+  const noSmile=clamp01(1-f.smile*1.6);
+  let s={
+    joy:      f.smile*1.35,
+    sad:      (f.frown*3.2 + f.shrug*1.1 + f.browUp*0.7) * clamp01(1-f.jaw*0.9) * noSmile,
+    angry:    (f.browDown*1.8 + f.squint*0.4 + f.press*0.6) * noSmile * clamp01(1-f.jaw*0.6),
+    surprise: f.jaw*0.9 + f.eyeWide*0.7 + f.browUp*0.45,
+  };
+  for(const k in s) s[k]=clamp01(s[k]*mult*(per[k]||1));
+  // 스무딩(떨림 방지)
+  if(!emaScores) emaScores={...s};
+  else for(const k in s) emaScores[k]=emaScores[k]*0.6+s[k]*0.4;
+  const out={...emaScores};
+  const top=Math.max(...Object.values(out));
+  out.neutral=Math.max(0,1-top*1.6);
+  return out;
 }
 function topEmotion(s){
   let best='neutral',v=s.neutral;
@@ -838,6 +908,15 @@ function mirrorLoop(){
           mirrorLastSpoken=showKey; mirrorSpeakCooldown=now+2500;
         }
         if(!strong) mirrorLastSpoken='';
+        if(settings.debug && lastRawF){
+          const d=document.getElementById('debugBox');
+          d.hidden=false;
+          d.textContent=Object.entries(lastRawF)
+            .map(([k,v])=>`${k.padEnd(9)} ${v.toFixed(2)}${baseline?` (-${baseline[k].toFixed(2)})`:''}`)
+            .join('\n');
+        }else{
+          document.getElementById('debugBox').hidden=true;
+        }
       }else{
         document.getElementById('mirrorName').textContent='얼굴을 찾고 있어요…';
       }
@@ -847,6 +926,17 @@ function mirrorLoop(){
   run();
 }
 document.getElementById('mirrorStart').addEventListener('click',startMirror);
+function bindCalib(btnId){
+  const btn=document.getElementById(btnId);
+  btn.addEventListener('click',()=>{
+    clickSound();
+    btn.textContent='😐 편안한 얼굴로 잠깐만…';
+    startCalibration(()=>{btn.textContent='✅ 기준 잡기 완료';
+      setTimeout(()=>btn.textContent='🎯 무표정 기준 잡기',2500);});
+  });
+}
+bindCalib('mirrorCalib');
+bindCalib('playCalib');
 
 /* ══════════════════════════════════════════
    모드 3. 표정 따라하기
@@ -990,6 +1080,30 @@ function segBind(id,onPick){
 segBind('segDiff',v=>settings.diff=v);
 segBind('segHold',v=>settings.hold=+v);
 segBind('segTts', v=>settings.tts=(v==='on'));
+segBind('segDebug',v=>{
+  settings.debug=(v==='on');
+  if(!settings.debug) document.getElementById('debugBox').hidden=true;
+});
+
+(function buildSensSliders(){
+  const wrap=document.getElementById('sensSliders');
+  wrap.innerHTML=PLAYABLE.map(k=>`
+    <div class="sens-row">
+      <span class="s-label">${EMOTIONS[k].emoji} ${EMOTIONS[k].name}</span>
+      <input type="range" min="0.5" max="3" step="0.1" value="1" data-k="${k}" aria-label="${EMOTIONS[k].name} 민감도">
+      <span class="s-val" id="sv_${k}">1.0</span>
+    </div>`).join('');
+  wrap.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+    settings.emoSens[inp.dataset.k]=+inp.value;
+    document.getElementById('sv_'+inp.dataset.k).textContent=(+inp.value).toFixed(1);
+  }));
+})();
+function syncSensUI(){
+  document.querySelectorAll('#sensSliders input').forEach(inp=>{
+    inp.value=settings.emoSens[inp.dataset.k]||1;
+    document.getElementById('sv_'+inp.dataset.k).textContent=(+inp.value).toFixed(1);
+  });
+}
 
 (function buildEmoCheck(){
   const wrap=document.getElementById('emoCheck');
@@ -1007,7 +1121,8 @@ segBind('segTts', v=>settings.tts=(v==='on'));
 
 function saveSettings(){
   try{localStorage.setItem('maeumi_emotion_settings',JSON.stringify({
-    diff:settings.diff,hold:settings.hold,tts:settings.tts,enabled:[...settings.enabled]
+    diff:settings.diff,hold:settings.hold,tts:settings.tts,
+    enabled:[...settings.enabled],emoSens:settings.emoSens,debug:settings.debug
   }));}catch(e){}
 }
 (function loadSettings(){
@@ -1018,11 +1133,15 @@ function saveSettings(){
     if(d.diff)settings.diff=d.diff;
     if(d.hold)settings.hold=d.hold;
     if(typeof d.tts==='boolean')settings.tts=d.tts;
+    if(typeof d.debug==='boolean')settings.debug=d.debug;
+    if(d.emoSens)Object.assign(settings.emoSens,d.emoSens);
     if(Array.isArray(d.enabled)&&d.enabled.length)settings.enabled=new Set(d.enabled);
     document.querySelectorAll('#segDiff button').forEach(b=>b.classList.toggle('on',b.dataset.v===settings.diff));
     document.querySelectorAll('#segHold button').forEach(b=>b.classList.toggle('on',+b.dataset.v===settings.hold));
     document.querySelectorAll('#segTts button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='on')===settings.tts));
+    document.querySelectorAll('#segDebug button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='on')===settings.debug));
     document.querySelectorAll('#emoCheck button').forEach(b=>b.classList.toggle('on',settings.enabled.has(b.dataset.k)));
+    syncSensUI();
   }catch(e){}
 })();
 </script>
