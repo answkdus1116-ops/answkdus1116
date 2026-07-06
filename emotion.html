@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마음이의 감정 교실</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FFF9EF; --cream2:#FFF3DC; --ink:#5B4A3F; --ink-soft:#8A7466;
+  --joy:#FFD93D; --joy-soft:#FFF1B8;
+  --sad:#74B9FF; --sad-soft:#D6E9FF;
+  --angry:#FF7675; --angry-soft:#FFD9D8;
+  --surprise:#A29BFE; --surprise-soft:#E4E1FF;
+  --fear:#81ECEC; --fear-soft:#DDFBFB;
+  --neutral:#B2BEC3; --neutral-soft:#ECF0F1;
+  --mint:#55EFC4; --pink:#FD79A8;
+  --card-shadow:0 8px 0 rgba(91,74,63,.12);
+  --radius:28px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Gaegu',sans-serif; background:var(--cream); color:var(--ink);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+h1,h2,h3,.jua{font-family:'Jua',sans-serif;font-weight:400}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible{outline:4px solid var(--sad);outline-offset:3px;border-radius:16px}
+
+/* ── 상단 바 ───────────────────────── */
+header{
+  display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:var(--cream2);border-bottom:3px dashed rgba(91,74,63,.15);flex-shrink:0;
+}
+header .logo{display:flex;align-items:center;gap:10px}
+header .logo svg{width:44px;height:44px}
+header h1{font-size:1.5rem}
+header .spacer{flex:1}
+.top-btn{
+  font-family:'Jua';font-size:1.05rem;padding:8px 16px;border-radius:999px;
+  background:#fff;box-shadow:0 4px 0 rgba(91,74,63,.15);color:var(--ink);
+}
+.top-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(91,74,63,.15)}
+.top-btn.hidden{display:none}
+
+/* ── 화면 전환 ─────────────────────── */
+main{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;padding:16px;overflow:auto}
+.screen.active{display:flex}
+
+/* ── 홈 ───────────────────────────── */
+#home{align-items:center;justify-content:center;gap:22px;text-align:center}
+.mascot-hello{display:flex;align-items:center;gap:14px}
+.mascot-hello svg{width:110px;height:110px;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.bubble{
+  background:#fff;border-radius:24px;padding:14px 20px;font-size:1.35rem;
+  box-shadow:var(--card-shadow);position:relative;max-width:340px;
+}
+.bubble::before{
+  content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);
+  border:12px solid transparent;border-right-color:#fff;border-left:0;
+}
+.mode-grid{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+.mode-card{
+  width:230px;padding:24px 18px;border-radius:var(--radius);background:#fff;
+  box-shadow:var(--card-shadow);display:flex;flex-direction:column;align-items:center;gap:10px;
+  transition:transform .15s;
+}
+.mode-card:hover{transform:translateY(-4px)}
+.mode-card:active{transform:translateY(2px)}
+.mode-card .icon{font-size:3.4rem;line-height:1}
+.mode-card h2{font-size:1.5rem}
+.mode-card p{font-size:1.1rem;color:var(--ink-soft);line-height:1.35}
+.mode-card.m1{background:linear-gradient(180deg,#fff,var(--joy-soft))}
+.mode-card.m2{background:linear-gradient(180deg,#fff,var(--fear-soft))}
+.mode-card.m3{background:linear-gradient(180deg,#fff,var(--surprise-soft))}
+
+/* ── 감정 카드 배우기 ─────────────── */
+#learn{align-items:center;justify-content:center;gap:14px}
+.emo-card{
+  width:min(480px,92vw);border-radius:36px;background:#fff;box-shadow:var(--card-shadow);
+  display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 20px 22px;
+  border:6px solid transparent;
+}
+.emo-card svg.face{width:min(160px,38vw);height:auto}
+.emo-name{font-size:2.4rem;letter-spacing:.05em}
+.emo-desc{font-size:1.3rem;text-align:center;line-height:1.45;color:var(--ink-soft)}
+.ex-title{font-size:1.05rem;color:var(--ink-soft);font-family:'Jua';margin-top:4px}
+.example-row{display:flex;gap:12px;width:100%;justify-content:center}
+.ex-item{
+  flex:1;max-width:200px;background:var(--cream2);border-radius:20px;padding:10px 8px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;border:3px solid transparent;
+  transition:transform .12s;
+}
+.ex-item:active{transform:scale(.95)}
+.ex-item.playing{border-color:var(--joy);background:#fff}
+.ex-item svg{width:100%;height:auto;border-radius:12px}
+.ex-item .cap{font-size:1.08rem;text-align:center;line-height:1.3}
+.learn-controls{display:flex;align-items:center;gap:18px}
+.round-btn{
+  width:72px;height:72px;border-radius:50%;background:#fff;box-shadow:0 6px 0 rgba(91,74,63,.15);
+  font-size:2rem;display:flex;align-items:center;justify-content:center;
+}
+.round-btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(91,74,63,.15)}
+.round-btn.speak{background:var(--joy);width:86px;height:86px;font-size:2.4rem}
+.dots{display:flex;gap:8px;justify-content:center}
+.dots span{width:14px;height:14px;border-radius:50%;background:rgba(91,74,63,.18)}
+.dots span.on{background:var(--joy);transform:scale(1.25)}
+
+/* ── 카메라 공통 ─────────────────── */
+.cam-wrap{
+  position:relative;border-radius:var(--radius);overflow:hidden;background:#3b3129;
+  box-shadow:var(--card-shadow);aspect-ratio:4/3;width:100%;
+}
+.cam-wrap video,.cam-wrap canvas{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);
+}
+.cam-status{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;color:#fff;font-size:1.3rem;background:rgba(59,49,41,.85);text-align:center;padding:20px;
+  transition:opacity .3s;z-index:5;
+}
+.cam-status.hide{opacity:0;pointer-events:none}
+.cam-status .spin{
+  width:44px;height:44px;border-radius:50%;border:5px solid rgba(255,255,255,.25);
+  border-top-color:var(--joy);animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.start-cam-btn{
+  font-family:'Jua';font-size:1.4rem;padding:14px 28px;border-radius:999px;
+  background:var(--joy);color:var(--ink);box-shadow:0 5px 0 rgba(91,74,63,.25);
+}
+
+/* ── 표정 거울 ────────────────────── */
+#mirror .mirror-layout{
+  display:flex;gap:18px;flex:1;align-items:stretch;justify-content:center;
+  max-width:1100px;margin:0 auto;width:100%;
+}
+#mirror .cam-col{flex:1.4;display:flex;flex-direction:column;gap:12px;min-width:0}
+#mirror .result-col{flex:1;display:flex;flex-direction:column;gap:12px;min-width:230px}
+.now-face{
+  background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px;flex:1;justify-content:center;
+}
+.now-face svg{width:120px;height:120px;transition:transform .2s}
+.now-face .now-name{font-size:2.2rem;font-family:'Jua'}
+.meter-list{display:flex;flex-direction:column;gap:8px;background:#fff;border-radius:var(--radius);
+  box-shadow:var(--card-shadow);padding:16px}
+.meter{display:flex;align-items:center;gap:10px;font-size:1.15rem}
+.meter .m-label{width:64px;text-align:right;font-family:'Jua'}
+.meter .m-bar{flex:1;height:18px;border-radius:999px;background:var(--cream2);overflow:hidden}
+.meter .m-fill{height:100%;width:0%;border-radius:999px;transition:width .15s}
+
+/* ── 표정 따라하기 ────────────────── */
+#play .play-layout{
+  display:flex;gap:18px;flex:1;align-items:stretch;justify-content:center;
+  max-width:1100px;margin:0 auto;width:100%;
+}
+#play .target-col{flex:1;display:flex;flex-direction:column;gap:12px;min-width:240px}
+#play .cam-col{flex:1.4;display:flex;flex-direction:column;gap:12px;min-width:0}
+.target-card{
+  background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;
+  border:6px solid var(--joy);
+}
+.target-card .t-title{font-size:1.3rem;color:var(--ink-soft)}
+.target-card svg{width:min(170px,38vw);height:auto}
+.target-card .t-name{font-size:2.4rem;font-family:'Jua'}
+.progress-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);padding:16px 18px;
+  display:flex;flex-direction:column;gap:8px}
+.progress-wrap .p-label{font-size:1.2rem;display:flex;justify-content:space-between}
+.p-bar{height:30px;border-radius:999px;background:var(--cream2);overflow:hidden}
+.p-fill{height:100%;width:0%;border-radius:999px;
+  background:linear-gradient(90deg,var(--mint),var(--joy));transition:width .12s}
+.star-row{display:flex;gap:10px;justify-content:center;font-size:2rem;min-height:2.4rem}
+.star-row .got{animation:pop .4s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.4)}100%{transform:scale(1)}}
+
+/* 성공 오버레이 */
+#successOverlay{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+  gap:16px;background:rgba(255,249,239,.92);z-index:50;text-align:center;
+}
+#successOverlay.show{display:flex}
+#successOverlay .big{font-size:3rem;font-family:'Jua';animation:pop .5s}
+#successOverlay svg{width:150px;height:150px;animation:bob 1.6s ease-in-out infinite}
+.confetti{position:fixed;top:-20px;font-size:1.6rem;animation:fall linear forwards;z-index:51;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+/* ── 설정 ─────────────────────────── */
+#settingsModal{
+  position:fixed;inset:0;background:rgba(59,49,41,.45);display:none;
+  align-items:center;justify-content:center;z-index:60;padding:16px;
+}
+#settingsModal.show{display:flex}
+.settings-box{
+  background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);
+  padding:24px;width:min(440px,94vw);max-height:88vh;overflow:auto;
+  display:flex;flex-direction:column;gap:18px;
+}
+.settings-box h2{font-size:1.6rem;display:flex;align-items:center;gap:8px}
+.set-group{display:flex;flex-direction:column;gap:8px}
+.set-group .g-title{font-family:'Jua';font-size:1.15rem}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{
+  flex:1;min-width:80px;padding:10px;border-radius:16px;background:var(--cream2);
+  font-size:1.1rem;font-family:'Jua';border:3px solid transparent;
+}
+.seg button.on{background:var(--joy-soft);border-color:var(--joy)}
+.emo-check{display:flex;gap:8px;flex-wrap:wrap}
+.emo-check button{
+  padding:8px 14px;border-radius:999px;background:var(--cream2);font-size:1.1rem;
+  border:3px solid transparent;display:flex;align-items:center;gap:6px;
+}
+.emo-check button.on{background:#fff;border-color:var(--mint)}
+.close-set{
+  font-family:'Jua';font-size:1.25rem;padding:12px;border-radius:18px;
+  background:var(--joy);box-shadow:0 4px 0 rgba(91,74,63,.2);
+}
+
+/* ── 반응형 ───────────────────────── */
+@media (max-width:760px){
+  #mirror .mirror-layout,#play .play-layout{flex-direction:column}
+  #play .target-col{flex-direction:row;min-width:0}
+  .target-card svg{width:110px}
+  .target-card .t-name{font-size:1.8rem}
+  header h1{font-size:1.2rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 100 100" id="logoMaeumi"></svg>
+    <h1>마음이의 감정 교실</h1>
+  </div>
+  <div class="spacer"></div>
+  <button class="top-btn hidden" id="homeBtn">🏠 처음으로</button>
+  <button class="top-btn" id="settingsBtn">⚙️ 선생님 설정</button>
+</header>
+
+<main>
+  <!-- 홈 -->
+  <section class="screen active" id="home">
+    <div class="mascot-hello">
+      <svg viewBox="0 0 100 100" id="homeMaeumi"></svg>
+      <div class="bubble jua" id="homeBubble">안녕! 나는 마음이야.<br>오늘은 마음 공부를 해 보자!</div>
+    </div>
+    <div class="mode-grid">
+      <button class="mode-card m1" data-go="learn">
+        <span class="icon">🃏</span>
+        <h2>감정 카드 배우기</h2>
+        <p>여러 가지 마음을<br>그림으로 알아봐요</p>
+      </button>
+      <button class="mode-card m2" data-go="mirror">
+        <span class="icon">🪞</span>
+        <h2>표정 거울</h2>
+        <p>카메라가 내 표정을<br>알아맞혀요</p>
+      </button>
+      <button class="mode-card m3" data-go="play">
+        <span class="icon">🎯</span>
+        <h2>표정 따라하기</h2>
+        <p>마음이 표정을 따라 하면<br>별을 받아요</p>
+      </button>
+    </div>
+  </section>
+
+  <!-- 감정 카드 배우기 -->
+  <section class="screen" id="learn">
+    <div class="emo-card" id="emoCard">
+      <svg class="face" viewBox="0 0 100 100" id="learnFace"></svg>
+      <div class="emo-name" id="learnName"></div>
+      <div class="emo-desc" id="learnDesc"></div>
+      <div class="ex-title">👆 그림을 누르면 이야기를 들려줘요</div>
+      <div class="example-row" id="exampleRow"></div>
+    </div>
+    <div class="dots" id="learnDots"></div>
+    <div class="learn-controls">
+      <button class="round-btn" id="prevEmo" aria-label="이전 감정">◀</button>
+      <button class="round-btn speak" id="speakEmo" aria-label="설명 듣기">🔊</button>
+      <button class="round-btn" id="nextEmo" aria-label="다음 감정">▶</button>
+    </div>
+  </section>
+
+  <!-- 표정 거울 -->
+  <section class="screen" id="mirror">
+    <div class="mirror-layout">
+      <div class="cam-col">
+        <div class="cam-wrap">
+          <video id="mirrorVideo" playsinline muted></video>
+          <div class="cam-status" id="mirrorStatus">
+            <button class="start-cam-btn" id="mirrorStart">📷 카메라 켜기</button>
+          </div>
+        </div>
+      </div>
+      <div class="result-col">
+        <div class="now-face">
+          <svg viewBox="0 0 100 100" id="mirrorFace"></svg>
+          <div class="now-name" id="mirrorName">표정을 지어 봐요!</div>
+        </div>
+        <div class="meter-list" id="meterList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 표정 따라하기 -->
+  <section class="screen" id="play">
+    <div class="play-layout">
+      <div class="target-col">
+        <div class="target-card" id="targetCard">
+          <div class="t-title">이 표정을 따라 해 봐요!</div>
+          <svg viewBox="0 0 100 100" id="targetFace"></svg>
+          <div class="t-name" id="targetName"></div>
+          <button class="top-btn" id="targetSpeak">🔊 다시 듣기</button>
+        </div>
+        <div class="star-row" id="starRow"></div>
+      </div>
+      <div class="cam-col">
+        <div class="cam-wrap">
+          <video id="playVideo" playsinline muted></video>
+          <div class="cam-status" id="playStatus">
+            <button class="start-cam-btn" id="playStart">📷 카메라 켜고 시작!</button>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="p-label jua"><span id="pHint">얼굴을 보여 주세요</span><span id="pPercent">0%</span></div>
+          <div class="p-bar"><div class="p-fill" id="pFill"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 성공 오버레이 -->
+<div id="successOverlay">
+  <svg viewBox="0 0 100 100" id="successMaeumi"></svg>
+  <div class="big" id="successText">참 잘했어요! ⭐</div>
+  <div class="jua" style="font-size:1.4rem;color:var(--ink-soft)" id="successSub"></div>
+</div>
+
+<!-- 선생님 설정 -->
+<div id="settingsModal">
+  <div class="settings-box">
+    <h2>⚙️ 선생님 설정</h2>
+    <div class="set-group">
+      <div class="g-title">난이도 (표정 인식 민감도)</div>
+      <div class="seg" id="segDiff">
+        <button data-v="easy">쉬움</button>
+        <button data-v="normal" class="on">보통</button>
+        <button data-v="hard">어려움</button>
+      </div>
+    </div>
+    <div class="set-group">
+      <div class="g-title">따라하기 유지 시간</div>
+      <div class="seg" id="segHold">
+        <button data-v="1">1초</button>
+        <button data-v="2" class="on">2초</button>
+        <button data-v="3">3초</button>
+      </div>
+    </div>
+    <div class="set-group">
+      <div class="g-title">사용할 감정 (따라하기)</div>
+      <div class="emo-check" id="emoCheck"></div>
+    </div>
+    <div class="set-group">
+      <div class="g-title">음성 안내(TTS)</div>
+      <div class="seg" id="segTts">
+        <button data-v="on" class="on">켜기</button>
+        <button data-v="off">끄기</button>
+      </div>
+    </div>
+    <button class="close-set" id="closeSettings">저장하고 닫기</button>
+  </div>
+</div>
+
+<script type="module">
+/* ══════════════════════════════════════════
+   마음이의 감정 교실
+   - MediaPipe Face Landmarker(blendshapes) 기반 표정 인식
+   - 단일 파일 · GitHub Pages 배포용
+   ══════════════════════════════════════════ */
+
+/* ── 감정 정의 ─────────────────────────── */
+const EMOTIONS = {
+  joy:      {name:'기쁨',  color:'var(--joy)',      soft:'var(--joy-soft)',      emoji:'😄',
+             desc:'좋아하는 일이 생기면 기뻐요.\n입꼬리가 쓱 올라가요!',
+             tts:'기쁨. 좋아하는 일이 생기면 기뻐요. 활짝 웃어 볼까요?',
+             examples:[
+               {cap:'좋아하는 간식을 먹어요', tts:'좋아하는 간식을 먹으면 기뻐요. 냠냠, 맛있다!'},
+               {cap:'친구와 재미있게 놀아요', tts:'친구와 공놀이를 하면 기뻐요. 재미있다!'},
+             ]},
+  sad:      {name:'슬픔',  color:'var(--sad)',      soft:'var(--sad-soft)',      emoji:'😢',
+             desc:'속상한 일이 생기면 슬퍼요.\n입꼬리가 아래로 내려가요.',
+             tts:'슬픔. 속상한 일이 생기면 슬퍼요. 입꼬리가 아래로 내려가요.',
+             examples:[
+               {cap:'아끼는 곰인형을 잃어버렸어요', tts:'아끼는 곰인형을 잃어버려서 슬퍼요. 곰인형아, 어디 있니?'},
+               {cap:'친구와 헤어져서 아쉬워요', tts:'친구가 집에 가서 슬퍼요. 잘 가, 내일 또 만나자.'},
+             ]},
+  angry:    {name:'화남',  color:'var(--angry)',    soft:'var(--angry-soft)',    emoji:'😠',
+             desc:'싫은 일이 생기면 화가 나요.\n눈썹이 찌푸려져요.',
+             tts:'화남. 싫은 일이 생기면 화가 나요. 눈썹을 찡그려 볼까요?',
+             examples:[
+               {cap:'친구가 내 장난감을 말없이 가져갔어요', tts:'친구가 내 장난감을 말없이 가져가서 화가 나요. 물어보고 가져가야 해요.'},
+               {cap:'열심히 쌓은 블록이 무너졌어요', tts:'열심히 쌓은 블록이 와르르 무너져서 화가 나요.'},
+             ]},
+  surprise: {name:'놀람',  color:'var(--surprise)', soft:'var(--surprise-soft)', emoji:'😲',
+             desc:'갑자기 무슨 일이 생기면 놀라요.\n눈과 입이 동그래져요!',
+             tts:'놀람. 갑자기 무슨 일이 생기면 놀라요. 눈과 입을 크게 떠 볼까요?',
+             examples:[
+               {cap:'풍선이 펑! 하고 터졌어요', tts:'풍선이 펑 하고 터져서 깜짝 놀랐어요!'},
+               {cap:'깜짝 선물을 받았어요', tts:'상자를 열었더니 깜짝 선물이 있어서 놀랐어요! 우와!'},
+             ]},
+  neutral:  {name:'편안',  color:'var(--neutral)',  soft:'var(--neutral-soft)',  emoji:'😌',
+             desc:'아무 일도 없을 때는 편안해요.\n얼굴에 힘이 없어요.',
+             tts:'편안. 아무 일도 없을 때는 얼굴이 편안해요.',
+             examples:[
+               {cap:'푹신한 쿠션에서 쉬어요', tts:'푹신한 쿠션에 기대어 쉬면 마음이 편안해요.'},
+               {cap:'조용히 앉아 그림책을 봐요', tts:'조용히 앉아서 그림책을 보면 마음이 편안해요.'},
+             ]},
+};
+const PLAYABLE = ['joy','sad','angry','surprise'];   // 따라하기에 쓰는 감정
+const LEARN_ORDER = ['joy','sad','angry','surprise','neutral'];
+
+/* ── 감정 얼굴 SVG (마음이 스타일) ──────── */
+function faceSVG(key){
+  const base = (mouth, brows, eyes, extra='') => `
+    <circle cx="50" cy="52" r="38" fill="${faceFill(key)}" stroke="#5B4A3F" stroke-width="3"/>
+    <circle cx="30" cy="60" r="6" fill="#FDA7B7" opacity=".55"/>
+    <circle cx="70" cy="60" r="6" fill="#FDA7B7" opacity=".55"/>
+    ${brows}${eyes}${mouth}${extra}`;
+  switch(key){
+    case 'joy': return base(
+      `<path d="M36 62 Q50 76 64 62" fill="none" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`,
+      ``,
+      `<path d="M32 48 Q37 42 42 48" fill="none" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>
+       <path d="M58 48 Q63 42 68 48" fill="none" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`);
+    case 'sad': return base(
+      `<path d="M38 70 Q50 60 62 70" fill="none" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`,
+      `<path d="M30 40 Q36 44 42 42" fill="none" stroke="#5B4A3F" stroke-width="3.5" stroke-linecap="round"/>
+       <path d="M70 40 Q64 44 58 42" fill="none" stroke="#5B4A3F" stroke-width="3.5" stroke-linecap="round"/>`,
+      `<circle cx="37" cy="50" r="4" fill="#5B4A3F"/><circle cx="63" cy="50" r="4" fill="#5B4A3F"/>`,
+      `<path d="M66 56 q4 7 0 10 q-4 -3 0 -10" fill="#74B9FF" stroke="#5B8FCB" stroke-width="1"/>`);
+    case 'angry': return base(
+      `<path d="M40 70 Q50 64 60 70" fill="none" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`,
+      `<path d="M30 38 L44 46" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>
+       <path d="M70 38 L56 46" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`,
+      `<circle cx="38" cy="52" r="4" fill="#5B4A3F"/><circle cx="62" cy="52" r="4" fill="#5B4A3F"/>`,
+      `<path d="M72 30 l5 -5 M76 36 l6 -2 M68 26 l2 -6" stroke="#FF7675" stroke-width="3" stroke-linecap="round"/>`);
+    case 'surprise': return base(
+      `<ellipse cx="50" cy="68" rx="8" ry="10" fill="#5B4A3F"/>`,
+      `<path d="M30 36 Q37 31 44 36" fill="none" stroke="#5B4A3F" stroke-width="3.5" stroke-linecap="round"/>
+       <path d="M56 36 Q63 31 70 36" fill="none" stroke="#5B4A3F" stroke-width="3.5" stroke-linecap="round"/>`,
+      `<circle cx="37" cy="48" r="6" fill="#fff" stroke="#5B4A3F" stroke-width="3"/>
+       <circle cx="63" cy="48" r="6" fill="#fff" stroke="#5B4A3F" stroke-width="3"/>
+       <circle cx="37" cy="48" r="2.5" fill="#5B4A3F"/><circle cx="63" cy="48" r="2.5" fill="#5B4A3F"/>`,
+      `<path d="M20 22 l3 6 M26 16 l1 7 M14 30 l6 3" stroke="#A29BFE" stroke-width="3" stroke-linecap="round"/>`);
+    case 'neutral': default: return base(
+      `<path d="M40 67 L60 67" stroke="#5B4A3F" stroke-width="4" stroke-linecap="round"/>`,
+      ``,
+      `<circle cx="38" cy="50" r="4" fill="#5B4A3F"/><circle cx="62" cy="50" r="4" fill="#5B4A3F"/>`);
+  }
+}
+function faceFill(key){
+  return {joy:'#FFE99A',sad:'#CFE6FF',angry:'#FFC9C8',surprise:'#E0DCFF',neutral:'#F2EBE0'}[key]||'#FFE99A';
+}
+/* ── 예시 장면 일러스트 ──────────────── */
+function kid(cx,cy,r,mood,skin='#FFE3C8'){
+  const e=r*0.34, ey=cy-r*0.12;
+  let eyes=`<circle cx="${cx-e}" cy="${ey}" r="${r*0.1}" fill="#5B4A3F"/><circle cx="${cx+e}" cy="${ey}" r="${r*0.1}" fill="#5B4A3F"/>`;
+  let brows='', mouth='';
+  if(mood==='joy'){
+    eyes=`<path d="M${cx-e-r*0.13} ${ey} Q${cx-e} ${ey-r*0.2} ${cx-e+r*0.13} ${ey}" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M${cx+e-r*0.13} ${ey} Q${cx+e} ${ey-r*0.2} ${cx+e+r*0.13} ${ey}" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round"/>`;
+    mouth=`<path d="M${cx-r*0.4} ${cy+r*0.22} Q${cx} ${cy+r*0.6} ${cx+r*0.4} ${cy+r*0.22}" fill="none" stroke="#5B4A3F" stroke-width="2.5" stroke-linecap="round"/>`;
+  }else if(mood==='sad'){
+    brows=`<path d="M${cx-e-r*0.16} ${ey-r*0.34} Q${cx-e} ${ey-r*0.22} ${cx-e+r*0.12} ${ey-r*0.3}" fill="none" stroke="#5B4A3F" stroke-width="2" stroke-linecap="round"/>
+           <path d="M${cx+e+r*0.16} ${ey-r*0.34} Q${cx+e} ${ey-r*0.22} ${cx+e-r*0.12} ${ey-r*0.3}" fill="none" stroke="#5B4A3F" stroke-width="2" stroke-linecap="round"/>`;
+    mouth=`<path d="M${cx-r*0.35} ${cy+r*0.52} Q${cx} ${cy+r*0.2} ${cx+r*0.35} ${cy+r*0.52}" fill="none" stroke="#5B4A3F" stroke-width="2.5" stroke-linecap="round"/>
+           <path d="M${cx+r*0.62} ${cy+r*0.05} q${r*0.12} ${r*0.3} 0 ${r*0.42} q-${r*0.12} -${r*0.12} 0 -${r*0.42}" fill="#74B9FF"/>`;
+  }else if(mood==='angry'){
+    brows=`<path d="M${cx-e-r*0.18} ${ey-r*0.38} L${cx-e+r*0.12} ${ey-r*0.18}" stroke="#5B4A3F" stroke-width="2.4" stroke-linecap="round"/>
+           <path d="M${cx+e+r*0.18} ${ey-r*0.38} L${cx+e-r*0.12} ${ey-r*0.18}" stroke="#5B4A3F" stroke-width="2.4" stroke-linecap="round"/>`;
+    mouth=`<path d="M${cx-r*0.3} ${cy+r*0.48} Q${cx} ${cy+r*0.28} ${cx+r*0.3} ${cy+r*0.48}" fill="none" stroke="#5B4A3F" stroke-width="2.5" stroke-linecap="round"/>`;
+  }else if(mood==='surprise'){
+    brows=`<path d="M${cx-e-r*0.13} ${ey-r*0.34} Q${cx-e} ${ey-r*0.48} ${cx-e+r*0.13} ${ey-r*0.34}" fill="none" stroke="#5B4A3F" stroke-width="2" stroke-linecap="round"/>
+           <path d="M${cx+e-r*0.13} ${ey-r*0.34} Q${cx+e} ${ey-r*0.48} ${cx+e+r*0.13} ${ey-r*0.34}" fill="none" stroke="#5B4A3F" stroke-width="2" stroke-linecap="round"/>`;
+    eyes=`<circle cx="${cx-e}" cy="${ey}" r="${r*0.16}" fill="#fff" stroke="#5B4A3F" stroke-width="2"/>
+          <circle cx="${cx+e}" cy="${ey}" r="${r*0.16}" fill="#fff" stroke="#5B4A3F" stroke-width="2"/>
+          <circle cx="${cx-e}" cy="${ey}" r="${r*0.07}" fill="#5B4A3F"/><circle cx="${cx+e}" cy="${ey}" r="${r*0.07}" fill="#5B4A3F"/>`;
+    mouth=`<ellipse cx="${cx}" cy="${cy+r*0.42}" rx="${r*0.16}" ry="${r*0.22}" fill="#5B4A3F"/>`;
+  }else if(mood==='calm'){
+    eyes=`<path d="M${cx-e-r*0.13} ${ey} Q${cx-e} ${ey+r*0.16} ${cx-e+r*0.13} ${ey}" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M${cx+e-r*0.13} ${ey} Q${cx+e} ${ey+r*0.16} ${cx+e+r*0.13} ${ey}" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round"/>`;
+    mouth=`<path d="M${cx-r*0.28} ${cy+r*0.36} Q${cx} ${cy+r*0.52} ${cx+r*0.28} ${cy+r*0.36}" fill="none" stroke="#5B4A3F" stroke-width="2.4" stroke-linecap="round"/>`;
+  }else{ // neutral
+    mouth=`<line x1="${cx-r*0.28}" y1="${cy+r*0.4}" x2="${cx+r*0.28}" y2="${cy+r*0.4}" stroke="#5B4A3F" stroke-width="2.4" stroke-linecap="round"/>`;
+  }
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${skin}" stroke="#5B4A3F" stroke-width="2.5"/>
+    <circle cx="${cx-r*0.58}" cy="${cy+r*0.22}" r="${r*0.15}" fill="#FDA7B7" opacity=".6"/>
+    <circle cx="${cx+r*0.58}" cy="${cy+r*0.22}" r="${r*0.15}" fill="#FDA7B7" opacity=".6"/>
+    ${brows}${eyes}${mouth}`;
+}
+function sceneSVG(key,idx){
+  const S=(inner)=>`<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="120" height="90" rx="12" fill="#FFFDF6"/>
+    <ellipse cx="60" cy="84" rx="52" ry="5" fill="#F0E6D2"/>${inner}</svg>`;
+  const scenes={
+    joy0:S(`${kid(38,46,22,'joy')}
+      <path d="M80 46 L100 46 L90 78 Z" fill="#F0C689" stroke="#5B4A3F" stroke-width="2"/>
+      <path d="M83 55 L96 55 M85 62 L94 62" stroke="#D9A75F" stroke-width="1.5"/>
+      <circle cx="90" cy="38" r="10" fill="#FD79A8" stroke="#5B4A3F" stroke-width="2"/>
+      <circle cx="90" cy="26" r="8" fill="#FFF3DC" stroke="#5B4A3F" stroke-width="2"/>
+      <path d="M64 34 l4 -4 M68 42 l5 -1" stroke="#FFD93D" stroke-width="2.5" stroke-linecap="round"/>`),
+    joy1:S(`${kid(30,42,18,'joy')}${kid(90,42,18,'joy','#FFD9B8')}
+      <circle cx="60" cy="68" r="11" fill="#fff" stroke="#5B4A3F" stroke-width="2.5"/>
+      <path d="M52 61 Q60 68 68 61 M52 75 Q60 68 68 75" fill="none" stroke="#FF7675" stroke-width="2"/>
+      <path d="M56 22 c-3 -5 -10 -2 -8 3 c1 4 8 7 8 7 c0 0 7 -3 8 -7 c2 -5 -5 -8 -8 -3 Z" fill="#FD79A8" stroke="#E58AA0" stroke-width="1.5"/>`),
+    sad0:S(`${kid(40,52,22,'sad')}
+      <circle cx="88" cy="32" r="20" fill="#fff" stroke="#5B4A3F" stroke-width="2" stroke-dasharray="4 3"/>
+      <circle cx="68" cy="55" r="3" fill="#fff" stroke="#5B4A3F" stroke-width="1.5"/>
+      <circle cx="74" cy="47" r="2" fill="#fff" stroke="#5B4A3F" stroke-width="1.5"/>
+      <circle cx="84" cy="32" r="8" fill="#C89B6D" stroke="#5B4A3F" stroke-width="1.8"/>
+      <circle cx="78" cy="25" r="3.5" fill="#C89B6D" stroke="#5B4A3F" stroke-width="1.5"/>
+      <circle cx="90" cy="25" r="3.5" fill="#C89B6D" stroke="#5B4A3F" stroke-width="1.5"/>
+      <circle cx="81.5" cy="31" r="1.2" fill="#5B4A3F"/><circle cx="86.5" cy="31" r="1.2" fill="#5B4A3F"/>
+      <text x="98" y="40" font-size="14" font-family="Jua" fill="#5B4A3F">?</text>`),
+    sad1:S(`${kid(36,50,22,'sad')}
+      <path d="M56 44 Q64 34 60 28" fill="none" stroke="#5B4A3F" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="60" cy="26" r="4" fill="#FFE3C8" stroke="#5B4A3F" stroke-width="2"/>
+      ${kid(96,38,13,'neutral','#FFD9B8')}
+      <path d="M92 56 l-3 4 M98 58 l-3 4 M104 60 l-3 4" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 3"/>
+      <path d="M76 30 Q80 26 84 30" fill="none" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round"/>`),
+    angry0:S(`${kid(34,50,22,'angry')}
+      <path d="M20 26 l4 -6 l2 6 l5 -4" fill="none" stroke="#FF7675" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${kid(94,38,15,'neutral','#FFD9B8')}
+      <rect x="80" y="60" width="26" height="12" rx="5" fill="#74B9FF" stroke="#5B4A3F" stroke-width="2"/>
+      <circle cx="86" cy="74" r="4" fill="#5B4A3F"/><circle cx="100" cy="74" r="4" fill="#5B4A3F"/>
+      <rect x="87" y="54" width="12" height="7" rx="3" fill="#A7CFFF" stroke="#5B4A3F" stroke-width="2"/>`),
+    angry1:S(`${kid(36,44,20,'angry')}
+      <rect x="68" y="68" width="16" height="12" rx="3" fill="#FFD93D" stroke="#5B4A3F" stroke-width="2"/>
+      <rect x="88" y="70" width="15" height="11" rx="3" fill="#74B9FF" stroke="#5B4A3F" stroke-width="2" transform="rotate(18 95 75)"/>
+      <rect x="78" y="52" width="15" height="11" rx="3" fill="#55EFC4" stroke="#5B4A3F" stroke-width="2" transform="rotate(-24 85 57)"/>
+      <rect x="98" y="50" width="14" height="11" rx="3" fill="#FD79A8" stroke="#5B4A3F" stroke-width="2" transform="rotate(32 105 55)"/>
+      <path d="M88 40 l3 5 M96 38 l0 6 M104 42 l-3 5" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round"/>`),
+    surprise0:S(`${kid(38,52,22,'surprise')}
+      <path d="M88 30 l0 -12 M88 30 l10 -8 M88 30 l12 2 M88 30 l8 10 M88 30 l-2 13 M88 30 l-11 8 M88 30 l-12 -3 M88 30 l-8 -10" stroke="#FF7675" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="88" cy="30" r="4" fill="#FF7675"/>
+      <path d="M88 44 q-4 8 2 14" fill="none" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round"/>`),
+    surprise1:S(`${kid(36,50,22,'surprise')}
+      <rect x="76" y="56" width="30" height="22" rx="4" fill="#FD79A8" stroke="#5B4A3F" stroke-width="2"/>
+      <rect x="73" y="50" width="36" height="9" rx="3" fill="#FF9EBE" stroke="#5B4A3F" stroke-width="2" transform="rotate(-12 91 54)"/>
+      <path d="M91 56 L91 78 M76 66 L106 66" stroke="#FFF3DC" stroke-width="3"/>
+      <path d="M84 38 l2 5 M91 34 l0 6 M98 38 l-2 5" stroke="#FFD93D" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M78 30 l3 3 M104 30 l-3 3" stroke="#A29BFE" stroke-width="2.5" stroke-linecap="round"/>`),
+    neutral0:S(`
+      <rect x="26" y="62" width="68" height="18" rx="9" fill="#A7CFFF" stroke="#5B4A3F" stroke-width="2"/>
+      <rect x="34" y="56" width="52" height="12" rx="6" fill="#D6E9FF" stroke="#5B4A3F" stroke-width="2"/>
+      ${kid(60,38,20,'calm')}
+      <path d="M90 26 q3 -4 6 0 q3 4 6 0" fill="none" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round"/>
+      <path d="M22 32 q3 -4 6 0" fill="none" stroke="#B2BEC3" stroke-width="2" stroke-linecap="round"/>`),
+    neutral1:S(`${kid(42,40,19,'calm')}
+      <path d="M28 78 L60 70 L92 78 L92 82 L60 75 L28 82 Z" fill="#FFF" stroke="#5B4A3F" stroke-width="2"/>
+      <path d="M60 70 L60 75" stroke="#5B4A3F" stroke-width="2"/>
+      <path d="M34 74 L54 70 M66 70 L86 74" stroke="#D9C7A8" stroke-width="1.5"/>
+      <circle cx="76" cy="34" r="2" fill="#FFD93D"/><circle cx="84" cy="28" r="1.5" fill="#FFD93D"/>`),
+  };
+  return scenes[key+idx] || S(kid(60,45,24,key==='neutral'?'calm':key));
+}
+
+/* 마음이 (하트 요정) */
+function maeumiSVG(mood='happy'){
+  const mouth = mood==='cheer'
+    ? `<ellipse cx="50" cy="62" rx="7" ry="8" fill="#7A4A55"/>`
+    : `<path d="M40 58 Q50 68 60 58" fill="none" stroke="#7A4A55" stroke-width="4" stroke-linecap="round"/>`;
+  return `
+    <path d="M50 88 C20 66 10 46 22 30 C32 17 47 21 50 33 C53 21 68 17 78 30 C90 46 80 66 50 88 Z"
+      fill="#FFB3C1" stroke="#E58AA0" stroke-width="3"/>
+    <circle cx="38" cy="48" r="4.5" fill="#5B4A3F"/>
+    <circle cx="62" cy="48" r="4.5" fill="#5B4A3F"/>
+    <circle cx="39.5" cy="46.5" r="1.5" fill="#fff"/>
+    <circle cx="63.5" cy="46.5" r="1.5" fill="#fff"/>
+    <circle cx="30" cy="57" r="5" fill="#FF8FA8" opacity=".7"/>
+    <circle cx="70" cy="57" r="5" fill="#FF8FA8" opacity=".7"/>
+    ${mouth}
+    <path d="M24 20 l3 6 M76 20 l-3 6" stroke="#FFD93D" stroke-width="3" stroke-linecap="round"/>`;
+}
+document.getElementById('logoMaeumi').innerHTML = maeumiSVG();
+document.getElementById('homeMaeumi').innerHTML = maeumiSVG();
+document.getElementById('successMaeumi').innerHTML = maeumiSVG('cheer');
+
+/* ── 설정 상태 ─────────────────────────── */
+const settings = {
+  diff:'normal',            // easy | normal | hard
+  hold:2,                   // 초
+  tts:true,
+  enabled:new Set(PLAYABLE),
+};
+const DIFF_MULT = {easy:1.6, normal:1.0, hard:0.75}; // 점수 배율
+const DIFF_THRESH = {easy:0.30, normal:0.42, hard:0.55};
+
+/* ── TTS ──────────────────────────────── */
+let koVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  koVoice = vs.find(v=>v.lang.startsWith('ko')) || null;
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+function speak(text){
+  if(!settings.tts || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ko-KR'; u.rate=0.92; u.pitch=1.1;
+  if(koVoice) u.voice=koVoice;
+  speechSynthesis.speak(u);
+}
+
+/* ── 효과음 (Web Audio) ────────────────── */
+let audioCtx=null;
+function tone(freq,dur=0.15,type='sine',when=0,gain=0.18){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(gain,audioCtx.currentTime+when);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+when+dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(audioCtx.currentTime+when);o.stop(audioCtx.currentTime+when+dur);
+  }catch(e){}
+}
+function successSound(){ tone(523,.15);tone(659,.15,'sine',.12);tone(784,.2,'sine',.24);tone(1047,.35,'sine',.36); }
+function clickSound(){ tone(660,.08,'triangle'); }
+
+/* ── 화면 전환 ─────────────────────────── */
+const screens = ['home','learn','mirror','play'];
+let current='home';
+function goto(id){
+  screens.forEach(s=>document.getElementById(s).classList.toggle('active',s===id));
+  document.getElementById('homeBtn').classList.toggle('hidden',id==='home');
+  current=id;
+  speechSynthesis?.cancel();
+  if(id!=='mirror') stopLoop('mirror');
+  if(id!=='play')   stopLoop('play');
+  if(id==='learn')  renderLearn();
+  if(id==='play')   setupPlayRound(true);
+}
+document.querySelectorAll('.mode-card').forEach(b=>{
+  b.addEventListener('click',()=>{clickSound();goto(b.dataset.go);});
+});
+document.getElementById('homeBtn').addEventListener('click',()=>{clickSound();goto('home');});
+
+/* ══════════════════════════════════════════
+   모드 1. 감정 카드 배우기
+   ══════════════════════════════════════════ */
+let learnIdx=0;
+function renderLearn(){
+  const key=LEARN_ORDER[learnIdx], e=EMOTIONS[key];
+  document.getElementById('learnFace').innerHTML=faceSVG(key);
+  document.getElementById('learnName').textContent=e.name+' '+e.emoji;
+  document.getElementById('learnDesc').innerHTML=e.desc.replace('\n','<br>');
+  const row=document.getElementById('exampleRow');
+  row.innerHTML=e.examples.map((ex,i)=>`
+    <button class="ex-item" data-i="${i}" aria-label="${ex.cap} 듣기">
+      ${sceneSVG(key,i)}
+      <span class="cap">${ex.cap}</span>
+    </button>`).join('');
+  row.querySelectorAll('.ex-item').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      clickSound();
+      row.querySelectorAll('.ex-item').forEach(x=>x.classList.remove('playing'));
+      btn.classList.add('playing');
+      speak(e.examples[+btn.dataset.i].tts);
+      setTimeout(()=>btn.classList.remove('playing'),3000);
+    });
+  });
+  const card=document.getElementById('emoCard');
+  card.style.borderColor=e.color;
+  card.style.background=`linear-gradient(180deg,#fff 55%,${e.soft})`;
+  const dots=document.getElementById('learnDots');
+  dots.innerHTML=LEARN_ORDER.map((k,i)=>`<span class="${i===learnIdx?'on':''}"></span>`).join('');
+  speak(e.tts);
+}
+document.getElementById('prevEmo').addEventListener('click',()=>{
+  clickSound(); learnIdx=(learnIdx-1+LEARN_ORDER.length)%LEARN_ORDER.length; renderLearn();
+});
+document.getElementById('nextEmo').addEventListener('click',()=>{
+  clickSound(); learnIdx=(learnIdx+1)%LEARN_ORDER.length; renderLearn();
+});
+document.getElementById('speakEmo').addEventListener('click',()=>{
+  speak(EMOTIONS[LEARN_ORDER[learnIdx]].tts);
+});
+
+/* ══════════════════════════════════════════
+   MediaPipe Face Landmarker 로딩
+   ══════════════════════════════════════════ */
+let FaceLandmarkerCls=null, FilesetResolverCls=null, landmarker=null, loadingPromise=null;
+async function ensureLandmarker(statusEl){
+  if(landmarker) return landmarker;
+  if(!loadingPromise){
+    loadingPromise=(async()=>{
+      statusEl.innerHTML=`<div class="spin"></div><div>마음이가 준비하고 있어요…<br><span style="font-size:1rem;opacity:.8">(표정 인식 모델 내려받는 중)</span></div>`;
+      const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+      FaceLandmarkerCls=vision.FaceLandmarker; FilesetResolverCls=vision.FilesetResolver;
+      const fileset=await FilesetResolverCls.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+      landmarker=await FaceLandmarkerCls.createFromOptions(fileset,{
+        baseOptions:{
+          modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate:'GPU'
+        },
+        outputFaceBlendshapes:true,
+        runningMode:'VIDEO',
+        numFaces:1
+      });
+      return landmarker;
+    })().catch(err=>{loadingPromise=null;throw err;});
+  }
+  return loadingPromise;
+}
+
+/* ── 카메라 ───────────────────────────── */
+async function startCamera(video){
+  const stream=await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false
+  });
+  video.srcObject=stream;
+  await video.play();
+  return stream;
+}
+
+/* ── blendshape → 감정 점수 ────────────── */
+function bsMap(blendshapes){
+  const m={};
+  blendshapes.forEach(b=>m[b.categoryName]=b.score);
+  return m;
+}
+function emotionScores(m){
+  const g=k=>m[k]||0;
+  const mult=DIFF_MULT[settings.diff];
+  const smile=(g('mouthSmileLeft')+g('mouthSmileRight'))/2;
+  const frown=Math.max(g('mouthFrownLeft'),g('mouthFrownRight'));
+  const browDown=(g('browDownLeft')+g('browDownRight'))/2;
+  const browUp=g('browInnerUp');
+  const jaw=g('jawOpen');
+  const eyeWide=(g('eyeWideLeft')+g('eyeWideRight'))/2;
+
+  let s={
+    joy:      smile*1.15,
+    sad:      (frown*2.2 + browUp*0.55) * (1-jaw*0.8),
+    angry:    browDown*1.25 * (1-smile),
+    surprise: jaw*0.85 + eyeWide*0.5 + browUp*0.35,
+  };
+  for(const k in s) s[k]=Math.min(1,Math.max(0,s[k]*mult));
+  const top=Math.max(...Object.values(s));
+  s.neutral=Math.max(0,1-top*1.6);
+  return s;
+}
+function topEmotion(s){
+  let best='neutral',v=s.neutral;
+  for(const k of PLAYABLE) if(s[k]>v){best=k;v=s[k];}
+  return {key:best,score:v};
+}
+
+/* ── 인식 루프 관리 ────────────────────── */
+const loops={mirror:{raf:0,stream:null},play:{raf:0,stream:null}};
+function stopLoop(which){
+  const L=loops[which];
+  if(L.raf) cancelAnimationFrame(L.raf), L.raf=0;
+  if(L.stream){L.stream.getTracks().forEach(t=>t.stop());L.stream=null;}
+  const v=document.getElementById(which==='mirror'?'mirrorVideo':'playVideo');
+  if(v) v.srcObject=null;
+  const st=document.getElementById(which==='mirror'?'mirrorStatus':'playStatus');
+  if(st){st.classList.remove('hide');
+    st.innerHTML=`<button class="start-cam-btn" id="${which}Start">📷 카메라 켜기</button>`;
+    st.querySelector('button').addEventListener('click',which==='mirror'?startMirror:startPlay);
+  }
+}
+
+/* ══════════════════════════════════════════
+   모드 2. 표정 거울
+   ══════════════════════════════════════════ */
+const METER_KEYS=['joy','sad','angry','surprise','neutral'];
+(function buildMeters(){
+  const wrap=document.getElementById('meterList');
+  wrap.innerHTML=METER_KEYS.map(k=>`
+    <div class="meter">
+      <span>${EMOTIONS[k].emoji}</span>
+      <span class="m-label">${EMOTIONS[k].name}</span>
+      <div class="m-bar"><div class="m-fill" id="mf_${k}" style="background:${EMOTIONS[k].color}"></div></div>
+    </div>`).join('');
+})();
+
+let mirrorLastSpoken='', mirrorSpeakCooldown=0;
+async function startMirror(){
+  const status=document.getElementById('mirrorStatus');
+  try{
+    await ensureLandmarker(status);
+    status.innerHTML=`<div class="spin"></div><div>카메라를 켜고 있어요…</div>`;
+    loops.mirror.stream=await startCamera(document.getElementById('mirrorVideo'));
+    status.classList.add('hide');
+    speak('거울아 거울아! 얼굴을 보여 주세요.');
+    mirrorLoop();
+  }catch(err){
+    status.classList.remove('hide');
+    status.innerHTML=`<div>카메라를 켤 수 없어요 😢<br><span style="font-size:1rem">${camErrMsg(err)}</span></div>
+      <button class="start-cam-btn">다시 해 보기</button>`;
+    status.querySelector('button').addEventListener('click',startMirror);
+  }
+}
+function mirrorLoop(){
+  const video=document.getElementById('mirrorVideo');
+  const run=()=>{
+    if(current!=='mirror'){return;}
+    if(video.readyState>=2 && landmarker){
+      const res=landmarker.detectForVideo(video,performance.now());
+      if(res.faceBlendshapes && res.faceBlendshapes.length){
+        const s=emotionScores(bsMap(res.faceBlendshapes[0].categories));
+        METER_KEYS.forEach(k=>{
+          document.getElementById('mf_'+k).style.width=Math.round(s[k]*100)+'%';
+        });
+        const top=topEmotion(s);
+        const strong = top.key!=='neutral' && top.score>DIFF_THRESH[settings.diff];
+        const showKey = strong? top.key : 'neutral';
+        document.getElementById('mirrorFace').innerHTML=faceSVG(showKey);
+        document.getElementById('mirrorName').textContent=
+          strong? `${EMOTIONS[showKey].name} ${EMOTIONS[showKey].emoji}` : '편안한 얼굴이에요';
+        const now=performance.now();
+        if(strong && showKey!==mirrorLastSpoken && now>mirrorSpeakCooldown){
+          speak(`${EMOTIONS[showKey].name} 표정이에요!`);
+          mirrorLastSpoken=showKey; mirrorSpeakCooldown=now+2500;
+        }
+        if(!strong) mirrorLastSpoken='';
+      }else{
+        document.getElementById('mirrorName').textContent='얼굴을 찾고 있어요…';
+      }
+    }
+    loops.mirror.raf=requestAnimationFrame(run);
+  };
+  run();
+}
+document.getElementById('mirrorStart').addEventListener('click',startMirror);
+
+/* ══════════════════════════════════════════
+   모드 3. 표정 따라하기
+   ══════════════════════════════════════════ */
+let playTarget='joy', playProgress=0, playStars=0, playLock=false, lastTargets=[];
+function pickTarget(){
+  const pool=[...settings.enabled].filter(k=>PLAYABLE.includes(k));
+  if(!pool.length) pool.push('joy');
+  let cand=pool.filter(k=>k!==lastTargets[lastTargets.length-1]);
+  if(!cand.length) cand=pool;
+  const t=cand[Math.floor(Math.random()*cand.length)];
+  lastTargets.push(t); if(lastTargets.length>4)lastTargets.shift();
+  return t;
+}
+function setupPlayRound(resetStars=false){
+  if(resetStars){playStars=0;renderStars();}
+  playTarget=pickTarget(); playProgress=0; playLock=false;
+  const e=EMOTIONS[playTarget];
+  document.getElementById('targetFace').innerHTML=faceSVG(playTarget);
+  document.getElementById('targetName').textContent=e.name+' '+e.emoji;
+  document.getElementById('targetCard').style.borderColor=e.color;
+  document.getElementById('pFill').style.width='0%';
+  document.getElementById('pPercent').textContent='0%';
+  document.getElementById('pHint').textContent=`${e.name} 표정을 지어 봐요!`;
+  if(loops.play.stream) speak(`${e.name} 표정을 따라 해 봐요!`);
+}
+function renderStars(){
+  const row=document.getElementById('starRow');
+  row.innerHTML=Array.from({length:5},(_,i)=>
+    `<span class="${i<playStars?'got':''}">${i<playStars?'⭐':'☆'}</span>`).join('');
+}
+renderStars();
+
+async function startPlay(){
+  const status=document.getElementById('playStatus');
+  try{
+    await ensureLandmarker(status);
+    status.innerHTML=`<div class="spin"></div><div>카메라를 켜고 있어요…</div>`;
+    loops.play.stream=await startCamera(document.getElementById('playVideo'));
+    status.classList.add('hide');
+    setupPlayRound();
+    playLoop();
+  }catch(err){
+    status.classList.remove('hide');
+    status.innerHTML=`<div>카메라를 켤 수 없어요 😢<br><span style="font-size:1rem">${camErrMsg(err)}</span></div>
+      <button class="start-cam-btn">다시 해 보기</button>`;
+    status.querySelector('button').addEventListener('click',startPlay);
+  }
+}
+function playLoop(){
+  const video=document.getElementById('playVideo');
+  let lastT=performance.now();
+  const run=()=>{
+    if(current!=='play'){return;}
+    const now=performance.now(), dt=(now-lastT)/1000; lastT=now;
+    if(video.readyState>=2 && landmarker && !playLock){
+      const res=landmarker.detectForVideo(video,now);
+      if(res.faceBlendshapes && res.faceBlendshapes.length){
+        const s=emotionScores(bsMap(res.faceBlendshapes[0].categories));
+        const score=s[playTarget]||0;
+        const th=DIFF_THRESH[settings.diff];
+        if(score>th){
+          playProgress=Math.min(1,playProgress+dt/settings.hold);
+          document.getElementById('pHint').textContent='잘하고 있어요! 그대로 유지해요 👍';
+        }else{
+          playProgress=Math.max(0,playProgress-dt*0.5);
+          document.getElementById('pHint').textContent=`${EMOTIONS[playTarget].name} 표정을 지어 봐요!`;
+        }
+        document.getElementById('pFill').style.width=Math.round(playProgress*100)+'%';
+        document.getElementById('pPercent').textContent=Math.round(playProgress*100)+'%';
+        if(playProgress>=1) roundClear();
+      }else{
+        document.getElementById('pHint').textContent='얼굴을 화면에 보여 주세요';
+      }
+    }
+    loops.play.raf=requestAnimationFrame(run);
+  };
+  run();
+}
+function roundClear(){
+  playLock=true;
+  playStars=Math.min(5,playStars+1);
+  renderStars();
+  successSound();
+  confetti();
+  const overlay=document.getElementById('successOverlay');
+  const praises=['참 잘했어요!','최고예요!','멋진 표정이에요!','정말 잘했어요!','표정 박사님이네요!'];
+  const p=praises[Math.floor(Math.random()*praises.length)];
+  document.getElementById('successText').textContent=p+' ⭐';
+  document.getElementById('successSub').textContent=
+    playStars>=5? '별 다섯 개를 모두 모았어요! 🎉' : `별 ${playStars}개 모았어요!`;
+  overlay.classList.add('show');
+  speak(playStars>=5? p+' 별 다섯 개를 모두 모았어요! 정말 대단해요!' : p);
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    if(playStars>=5){playStars=0;renderStars();}
+    setupPlayRound();
+  }, 2600);
+}
+function confetti(){
+  const em=['🎉','⭐','💛','🌟','🎊','💖'];
+  for(let i=0;i<24;i++){
+    const s=document.createElement('span');
+    s.className='confetti';
+    s.textContent=em[Math.floor(Math.random()*em.length)];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(1.6+Math.random()*1.6)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),3400);
+  }
+}
+document.getElementById('playStart').addEventListener('click',startPlay);
+document.getElementById('targetSpeak').addEventListener('click',()=>{
+  speak(`${EMOTIONS[playTarget].name} 표정을 따라 해 봐요!`);
+});
+
+function camErrMsg(err){
+  if(err&&(err.name==='NotAllowedError'||err.name==='SecurityError'))
+    return '브라우저에서 카메라 사용을 허용해 주세요.';
+  if(err&&err.name==='NotFoundError') return '카메라를 찾지 못했어요.';
+  return '인터넷 연결과 카메라 상태를 확인해 주세요.';
+}
+
+/* ══════════════════════════════════════════
+   선생님 설정
+   ══════════════════════════════════════════ */
+const modal=document.getElementById('settingsModal');
+document.getElementById('settingsBtn').addEventListener('click',()=>{clickSound();modal.classList.add('show');});
+document.getElementById('closeSettings').addEventListener('click',()=>{
+  clickSound();modal.classList.remove('show');saveSettings();
+});
+modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.remove('show');saveSettings();}});
+
+function segBind(id,onPick){
+  const seg=document.getElementById(id);
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); onPick(b.dataset.v); clickSound();
+  }));
+}
+segBind('segDiff',v=>settings.diff=v);
+segBind('segHold',v=>settings.hold=+v);
+segBind('segTts', v=>settings.tts=(v==='on'));
+
+(function buildEmoCheck(){
+  const wrap=document.getElementById('emoCheck');
+  wrap.innerHTML=PLAYABLE.map(k=>
+    `<button data-k="${k}" class="on">${EMOTIONS[k].emoji} ${EMOTIONS[k].name}</button>`).join('');
+  wrap.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k;
+    if(settings.enabled.has(k)){
+      if(settings.enabled.size<=1) return; // 최소 1개
+      settings.enabled.delete(k); b.classList.remove('on');
+    }else{settings.enabled.add(k); b.classList.add('on');}
+    clickSound();
+  }));
+})();
+
+function saveSettings(){
+  try{localStorage.setItem('maeumi_emotion_settings',JSON.stringify({
+    diff:settings.diff,hold:settings.hold,tts:settings.tts,enabled:[...settings.enabled]
+  }));}catch(e){}
+}
+(function loadSettings(){
+  try{
+    const raw=localStorage.getItem('maeumi_emotion_settings');
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.diff)settings.diff=d.diff;
+    if(d.hold)settings.hold=d.hold;
+    if(typeof d.tts==='boolean')settings.tts=d.tts;
+    if(Array.isArray(d.enabled)&&d.enabled.length)settings.enabled=new Set(d.enabled);
+    document.querySelectorAll('#segDiff button').forEach(b=>b.classList.toggle('on',b.dataset.v===settings.diff));
+    document.querySelectorAll('#segHold button').forEach(b=>b.classList.toggle('on',+b.dataset.v===settings.hold));
+    document.querySelectorAll('#segTts button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='on')===settings.tts));
+    document.querySelectorAll('#emoCheck button').forEach(b=>b.classList.toggle('on',settings.enabled.has(b.dataset.k)));
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
