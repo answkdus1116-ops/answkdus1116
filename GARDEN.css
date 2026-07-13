@@ -45,30 +45,37 @@ body, html {
 }
 .btn-start:active { transform: translateY(5px); box-shadow: 0 3px 0 #d97218; }
 
-/* 🎀 3. 상단 UI 바 */
+/* 🎀 3. 상단 UI 바 (얇은 한 줄 · 좌측 정렬 · 접기 가능) */
 .ui-panel {
-    position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
-    background: rgba(255, 255, 255, 0.88); padding: 12px;
-    border-radius: 0 0 25px 25px; border-bottom: 3px solid #ff9e3d;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: fixed; top: 8px; left: 8px; z-index: 100;
+    max-width: calc(100% - 16px);
+    background: rgba(255, 255, 255, 0.9); padding: 6px 8px;
+    border-radius: 16px; border: 2px solid #ff9e3d;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    display: flex; flex-direction: row; align-items: center; gap: 6px;
     transition: opacity 0.5s ease;
 }
 
-.ui-header { font-size: 1.8rem; color: #f5842b; font-weight: bold; }
-
 .btn-cluster {
-    display: flex; flex-direction: row; justify-content: center;
-    align-items: center; gap: 8px; flex-wrap: wrap;
+    display: flex; flex-direction: row; justify-content: flex-start;
+    align-items: stretch; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; overflow-y: hidden; max-width: 100%;
+    scrollbar-width: none;
 }
+.btn-cluster::-webkit-scrollbar { display: none; }
+
+/* 접기/펴기 */
+.btn-bar-toggle { background: #fff3c4; box-shadow: 0 3px 0 #e6c84e; flex: 0 0 auto; }
+.ui-panel.collapsed .btn-cluster { display: none; }
 
 .btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-width: 62px; padding: 8px 14px; font-size: 1rem; border: none; border-radius: 14px;
+    flex: 0 0 auto;
+    min-width: 50px; padding: 6px 9px; font-size: 0.82rem; border: none; border-radius: 12px;
     cursor: pointer; font-family: 'Gaegu'; font-weight: bold; transition: 0.15s; color: #444;
-    line-height: 1.1;
+    line-height: 1.05; white-space: nowrap;
 }
-.btn .ico { font-size: 1.4rem; }
+.btn .ico { font-size: 1.35rem; }
 .btn:active { transform: translateY(3px); }
 
 .btn-primary  { background: #ffd166; box-shadow: 0 3px 0 #e0a83a; }   /* 촬영 */

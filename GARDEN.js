@@ -491,6 +491,11 @@ function toggleVoice() {
     if (voiceOn) speak('칭찬을 켰어요!'); else speechSynthesis.cancel();
 }
 function clearStage() { creatures = []; sparkles = []; }
+function toggleBar() {
+    const p = document.getElementById('uiPanel');
+    p.classList.toggle('collapsed');
+    document.getElementById('collapseLabel').innerText = p.classList.contains('collapsed') ? '열기' : '닫기';
+}
 function saveScene() {
     try {
         const link = document.createElement('a');
@@ -563,7 +568,7 @@ canvas.addEventListener('pointerdown', (e) => {
 const Garden = {
     startApp, chooseAdd, closeAddChoice, addByCamera, addByFile,
     openCamera, takeSnapshot, closeCamera, handleFileUpload,
-    saveScene, toggleAudio, toggleVoice, clearStage, toggleFullScreen
+    saveScene, toggleAudio, toggleVoice, clearStage, toggleBar, toggleFullScreen
 };
 window.Garden = Garden;
 

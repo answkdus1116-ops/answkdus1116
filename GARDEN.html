@@ -21,11 +21,11 @@
     </div>
   </div>
 
-  <!-- 상단 UI -->
+  <!-- 상단 UI (얇은 한 줄 · 좌측 정렬 · 접기 가능) -->
   <div class="ui-panel" id="uiPanel">
-    <div class="ui-header">🦋 여름 나비 꽃밭</div>
-    <div class="btn-cluster">
-      <button class="btn btn-bug" onclick="Garden.chooseAdd('fly')"><span class="ico">🦋</span><span>곤충 넣기</span></button>
+    <button class="btn btn-bar-toggle" id="collapseBtn" onclick="Garden.toggleBar()"><span class="ico">🦋</span><span id="collapseLabel">닫기</span></button>
+    <div class="btn-cluster" id="btnCluster">
+      <button class="btn btn-bug" onclick="Garden.chooseAdd('fly')"><span class="ico">🦋</span><span>곤충</span></button>
       <button class="btn btn-plant" onclick="Garden.chooseAdd('stay')"><span class="ico">🌻</span><span>꽃·수박</span></button>
       <button class="btn btn-ghost" onclick="Garden.saveScene()"><span class="ico">💾</span><span>저장</span></button>
       <button class="btn btn-ghost" id="audioBtn" onclick="Garden.toggleAudio()"><span class="ico">🔇</span><span>소리 끔</span></button>
