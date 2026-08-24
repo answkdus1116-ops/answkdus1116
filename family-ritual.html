@@ -299,6 +299,7 @@
           </g><!-- /bgVec -->
 
           <!-- 아이 (무릎 꿇은 자세) -->
+          <g class="figure">
           <path d="M320 500q80-34 160 0q6 26-80 26q-86 0-80-26z" fill="#2f5d8f"/>
           <g class="kneel-torso">
             <path d="M330 490q6-122 70-122q64 0 70 122z" fill="#3d7ebd"/>
@@ -326,6 +327,8 @@
               <circle cx="400" cy="206" r="9" fill="#f5c451"/>
             </g>
           </g>
+
+          </g><!-- /figure -->
 
           <!-- 세뱃돈 봉투 -->
           <g class="bgVec" transform="translate(660,470) rotate(-10)">
@@ -455,6 +458,7 @@
           </g>
 
           <!-- 아이 (하객석에서 축하 박수) -->
+          <g class="figure">
           <ellipse cx="250" cy="566" rx="66" ry="15" fill="#000" opacity=".1"/>
           <rect x="224" y="486" width="22" height="80" rx="10" fill="#4b4258"/>
           <rect x="256" y="486" width="22" height="80" rx="10" fill="#4b4258"/>
@@ -484,6 +488,8 @@
             <path d="M204 286q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#4a3a34"/>
             <circle cx="212" cy="260" r="10" fill="#f8c8d6"/>
           </g>
+
+          </g><!-- /figure -->
 
           <!-- 하객석 맨 앞 의자 -->
           <g class="bgVec">
@@ -582,6 +588,7 @@
           </g><!-- /bgVec -->
 
           <!-- 아이 (조문, 서 있는 자세) -->
+          <g class="figure">
           <g class="mourn-body">
             <ellipse cx="400" cy="562" rx="70" ry="16" fill="#000" opacity=".12"/>
             <rect x="372" y="452" width="22" height="92" rx="10" fill="#2b2b30"/>
@@ -615,6 +622,7 @@
               <path d="M354 254q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#3a3a44"/>
             </g>
           </g>
+          </g><!-- /figure -->
         </svg>
       </div>
       <p class="cap" style="--capbg:#f0eef2">장례식에서 함께 슬픔을 나눕니다.</p>
@@ -691,10 +699,12 @@
           </g><!-- /bgVec -->
 
           <!-- 아이 (무릎 꿇은 자세) -->
-          <g transform="translate(146,0)">
-          <rect x="256" y="486" width="288" height="62" rx="8" fill="#d9c08a"/>
-          <g stroke="#c2a66c" stroke-width="3">
-            <path d="M256 502h288M256 518h288M256 534h288"/>
+          <g class="figure" transform="translate(146,0)">
+          <g class="bgVec">
+            <rect x="256" y="486" width="288" height="62" rx="8" fill="#d9c08a"/>
+            <g stroke="#c2a66c" stroke-width="3">
+              <path d="M256 502h288M256 518h288M256 534h288"/>
+            </g>
           </g>
           <path d="M320 504q80-34 160 0q6 26-80 26q-86 0-80-26z" fill="#5a5f7a"/>
           <g class="kneel-torso">
@@ -1150,12 +1160,28 @@ const XLINK = 'http://www.w3.org/1999/xlink';
 const BGKEY = 'ritual-bg-';
 const SCENE_IDS = ['s1','s2','s3','s4'];
 
+/* 사진 배경을 쓸 때 인물이 설 자리 (그림 배경일 때와 위치가 다릅니다)
+   translate(x,y) scale(s) — 숫자만 바꾸면 인물 위치·크기가 조정됩니다 */
+const FIG = {
+  s1:{ plain:'',                  photo:'translate(68,179) scale(0.78)' },
+  s2:{ plain:'',                  photo:'translate(15,95) scale(0.86)'  },
+  s3:{ plain:'',                  photo:'translate(64,110) scale(0.84)' },
+  s4:{ plain:'translate(146,0)',  photo:'translate(265,234) scale(0.70)'}
+};
+function placeFigure(id, usingPhoto){
+  const fig = document.querySelector('#' + id + ' .figure');
+  if(!fig) return;
+  const t = usingPhoto ? FIG[id].photo : FIG[id].plain;
+  if(t) fig.setAttribute('transform', t); else fig.removeAttribute('transform');
+}
+
 function setBg(id, url, persist){
   const scene = document.getElementById(id);
   const img = scene.querySelector('.bgImg');
   img.setAttribute('href', url);
   img.setAttributeNS(XLINK, 'xlink:href', url);
   scene.classList.add('has-bg');
+  placeFigure(id, true);
   if(persist){
     try{ localStorage.setItem(BGKEY+id, url); }
     catch(e){ alert('배경을 기기에 저장할 공간이 부족합니다.\n이번 수업 동안만 적용됩니다.'); }
@@ -1167,6 +1193,7 @@ function clearBg(id){
   img.removeAttribute('href');
   img.removeAttributeNS(XLINK, 'href');
   scene.classList.remove('has-bg');
+  placeFigure(id, false);
   try{ localStorage.removeItem(BGKEY+id); }catch(e){}
 }
 
