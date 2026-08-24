@@ -91,13 +91,32 @@
   button.sm{font-size:15px;padding:9px 16px;border-radius:13px;}
 
   /* ---------------- 장면 카드 ---------------- */
-  .scenes{display:none;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:20px;}
-  .scenes.on{display:grid;}
+  /* 한 장면씩 크게 보여 주고 넘깁니다 */
+  .scenes{display:none;}
+  .scenes.on{display:block;max-width:760px;margin:0 auto;}
   .card{
     background:#fff;border-radius:var(--radius);overflow:hidden;
     box-shadow:0 14px 30px rgba(60,40,70,.12);
-    display:flex;flex-direction:column;
+    display:none;flex-direction:column;
   }
+  .card.active{display:flex;animation:cardIn .28s ease-out;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    max-width:760px;margin:18px auto 12px;
+  }
+  .navbtn{
+    width:52px;height:52px;padding:0;border-radius:50%;font-size:20px;flex:none;
+  }
+  .navmid{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:0;}
+  .navname{font-family:'Jua';font-size:19px;color:var(--accent);}
+  .dots{display:flex;gap:8px;}
+  .dot{
+    width:11px;height:11px;border-radius:50%;background:#e0d5dd;border:0;padding:0;
+    box-shadow:none;cursor:pointer;transition:transform .2s,background .2s;
+  }
+  .dot.on{background:var(--accent);transform:scale(1.35);}
   .stage{background:#f2eee9;line-height:0;}
   .scene{width:100%;height:auto;display:block;}
   .cap{
@@ -199,6 +218,15 @@
   </section>
 
   <!-- ============ 2단계 : 네 가지 장면 ============ -->
+  <div class="nav" id="nav" hidden>
+    <button class="navbtn" id="prevBtn" title="이전 장면">◀</button>
+    <div class="navmid">
+      <span class="navname" id="navName">설날 세배</span>
+      <div class="dots" id="dots"></div>
+    </div>
+    <button class="navbtn" id="nextBtn" title="다음 장면">▶</button>
+  </div>
+
   <div class="scenes" id="scenes">
 
     <!-- ───────── 장면 1 : 설날 세배 ───────── -->
@@ -705,7 +733,6 @@
 
   <div class="toolbar" id="toolbar">
     <button class="ghost" id="btnRetake">📷 다시 찍기</button>
-    <button id="btnPlayAll">▶️ 모두 움직이기</button>
     <button id="btnSaveAll">🖼️ 네 장면 모아 저장</button>
     <button class="ghost" id="btnBgReset">🧹 배경 되돌리기</button>
   </div>
@@ -937,9 +964,11 @@ document.getElementById('btnOk').addEventListener('click', () => {
   document.querySelectorAll('.scene').forEach(s => s.classList.add('has-face'));
   scenesEl.classList.add('on');
   toolbar.classList.add('on');
+  nav.hidden = false;
+  show(0);
   stopCamera();
   shoot.style.display = 'none';
-  scenesEl.scrollIntoView({behavior:'smooth', block:'start'});
+  nav.scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 function stopCamera(){
@@ -951,6 +980,7 @@ function stopCamera(){
 document.getElementById('btnRetake').addEventListener('click', () => {
   scenesEl.classList.remove('on');
   toolbar.classList.remove('on');
+  nav.hidden = true;
   shoot.style.display = '';
   camwrap.hidden = false; rowShoot.hidden = false;
   pvwrap.hidden  = true;  tune.hidden     = true;
@@ -974,11 +1004,47 @@ function play(id, dur){
 document.querySelectorAll('.play').forEach(b => {
   b.addEventListener('click', () => play(b.dataset.scene, +b.dataset.dur));
 });
-document.getElementById('btnPlayAll').addEventListener('click', () => {
-  document.querySelectorAll('.play').forEach((b,i) => {
-    setTimeout(() => play(b.dataset.scene, +b.dataset.dur), i*350);
-  });
+/* ---------- 한 장면씩 넘겨 보기 ---------- */
+const NAMES = ['설날 세배', '결혼식', '장례식', '차례'];
+const cards   = [...document.querySelectorAll('.card')];
+const nav     = document.getElementById('nav');
+const navName = document.getElementById('navName');
+const dots    = document.getElementById('dots');
+let cur = 0;
+
+cards.forEach((_, i) => {
+  const d = document.createElement('button');
+  d.className = 'dot';
+  d.title = (i+1) + '번째 장면';
+  d.addEventListener('click', () => show(i));
+  dots.appendChild(d);
 });
+
+function show(i){
+  cur = (i + cards.length) % cards.length;
+  cards.forEach((c, k) => c.classList.toggle('active', k === cur));
+  navName.textContent = (cur+1) + '. ' + NAMES[cur];
+  [...dots.children].forEach((d, k) => d.classList.toggle('on', k === cur));
+}
+document.getElementById('prevBtn').addEventListener('click', () => show(cur-1));
+document.getElementById('nextBtn').addEventListener('click', () => show(cur+1));
+
+/* 키보드 화살표 */
+document.addEventListener('keydown', e => {
+  if(nav.hidden) return;
+  if(e.key === 'ArrowLeft')  show(cur-1);
+  if(e.key === 'ArrowRight') show(cur+1);
+});
+
+/* 손가락으로 밀어 넘기기 */
+let touchX = null;
+scenesEl.addEventListener('touchstart', e => { touchX = e.changedTouches[0].clientX; }, {passive:true});
+scenesEl.addEventListener('touchend', e => {
+  if(touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  if(Math.abs(dx) > 60) show(cur + (dx < 0 ? 1 : -1));
+  touchX = null;
+}, {passive:true});
 
 /* ---------- 장면을 그림 파일로 ---------- */
 const CAP = { s1:'설날에 온 가족이 모여 세배를 합니다.', s2:'결혼을 축하합니다.',
