@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#c8496a">
+<title>우리 가족의 특별한 날</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
+
+  :root{
+    --ink:#2b2438;
+    --muted:#7c7490;
+    --line:#e7e2ef;
+    --accent:#c8496a;
+    --accent-dark:#a83a57;
+    --bg:#f6f1ea;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Gaegu',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 560px at 110% -10%, #ffe3ea 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 105%, #e6f0e2 0%, transparent 55%),
+      var(--bg);
+    min-height:100dvh;
+    padding:16px 14px 40px;
+  }
+
+  header{text-align:center;margin:6px 0 18px;}
+  header h1{
+    font-family:'Jua',sans-serif;font-size:clamp(22px,5vw,30px);
+    color:var(--accent);margin:0 0 6px;letter-spacing:.5px;
+  }
+  header p{margin:0;color:var(--muted);font-size:clamp(15px,3.4vw,17px);font-weight:700;}
+
+  .wrap{width:min(1080px,100%);margin:0 auto;}
+
+  /* ---------------- 촬영 패널 ---------------- */
+  .shoot{
+    background:#fff;border-radius:26px;padding:18px;
+    box-shadow:0 20px 44px rgba(60,40,70,.13);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+  }
+  .camwrap{
+    position:relative;width:min(340px,84vw);aspect-ratio:1/1;
+    border-radius:50%;overflow:hidden;background:#1d1b26;
+    box-shadow:0 0 0 6px #fff, 0 0 0 10px var(--accent-dark);
+  }
+  #video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;}
+  .guide{
+    position:absolute;inset:12%;border-radius:50%;
+    border:3px dashed rgba(255,255,255,.75);pointer-events:none;
+  }
+  .camwrap.ready .guide{border-color:#7ee0a8;border-style:solid;}
+  .camstate{
+    position:absolute;left:0;right:0;bottom:14px;text-align:center;
+    font-family:'Jua';font-size:15px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);
+  }
+  .shoot h2{font-family:'Jua';font-size:19px;margin:0;color:var(--ink);}
+  .privacy{
+    font-size:14px;color:var(--muted);text-align:center;margin:0;line-height:1.6;
+    background:#f6f4fb;border-radius:14px;padding:8px 14px;
+  }
+
+  button{
+    font-family:'Jua',sans-serif;font-size:16px;padding:12px 22px;border:0;
+    border-radius:15px;background:var(--accent);color:#fff;cursor:pointer;
+    box-shadow:0 4px 0 var(--accent-dark);transition:transform .06s;
+  }
+  button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-dark);}
+  button:disabled{opacity:.5;cursor:default;box-shadow:0 4px 0 #cbc3d6;background:#b9b1c6;}
+  button.ghost{background:#fff;color:var(--accent);box-shadow:0 0 0 2px #f2c8d3 inset;}
+  button.ghost:active{transform:translateY(2px);}
+  button.sm{font-size:15px;padding:9px 16px;border-radius:13px;}
+
+  /* ---------------- 장면 카드 ---------------- */
+  .scenes{display:none;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:20px;}
+  .scenes.on{display:grid;}
+  .card{
+    background:#fff;border-radius:var(--radius);overflow:hidden;
+    box-shadow:0 14px 30px rgba(60,40,70,.12);
+    display:flex;flex-direction:column;
+  }
+  .stage{background:#f2eee9;line-height:0;}
+  .scene{width:100%;height:auto;display:block;}
+  .cap{
+    font-family:'Jua';font-size:16px;text-align:center;margin:0;
+    padding:12px 14px;color:#4a4358;background:var(--capbg,#eef2ff);
+  }
+  .row{display:flex;gap:8px;justify-content:center;padding:12px;flex-wrap:wrap;}
+
+  .toolbar{
+    display:none;position:sticky;bottom:0;margin-top:22px;padding:14px;
+    background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+    border-radius:20px;box-shadow:0 -6px 24px rgba(60,40,70,.12);
+    justify-content:center;gap:10px;flex-wrap:wrap;
+  }
+  .toolbar.on{display:flex;}
+
+  /* ---------------- 얼굴 자리 안내 ---------------- */
+  .slot-hint{transition:opacity .3s;}
+  .has-face .slot-hint{opacity:0;}
+
+  /* 사진 배경을 넣으면 그려 둔 벡터 배경은 감춥니다 */
+  .has-bg .bgVec{display:none;}
+
+  /* ---------------- 동작 애니메이션 ---------------- */
+  /* 세배 · 차례 : 상체를 숙인다 */
+  .kneel-torso{transition:transform .85s cubic-bezier(.4,0,.3,1);}
+  .kneel-head{transition:transform .85s cubic-bezier(.4,0,.3,1);}
+  #s1 .kneel-torso{transform-origin:400px 480px;}
+  #s1 .kneel-head{transform-origin:400px 300px;}
+  #s4 .kneel-torso{transform-origin:400px 480px;}
+  #s4 .kneel-head{transform-origin:400px 300px;}
+  #s1.playing .kneel-torso,
+  #s4.playing .kneel-torso{transform:translate(0,60px) scaleY(.70);}
+  #s1.playing .kneel-head,
+  #s4.playing .kneel-head{transform:translate(0,28px) scaleY(.55);}
+
+  /* 결혼식 : 하객석에서 축하 박수를 친다 */
+  #s2 .clap-l{transform-origin:206px 378px;}
+  #s2 .clap-r{transform-origin:294px 378px;}
+  #s2.playing .clap-l{animation:clapL .32s ease-in-out 6 alternate;}
+  #s2.playing .clap-r{animation:clapR .32s ease-in-out 6 alternate;}
+  @keyframes clapL{from{transform:rotate(0deg);}to{transform:rotate(13deg);}}
+  @keyframes clapR{from{transform:rotate(0deg);}to{transform:rotate(-13deg);}}
+  .petal{opacity:0;}
+  #s2.playing .petal{animation:petalFall 2.3s ease-in forwards;}
+  @keyframes petalFall{
+    0%{opacity:0;transform:translate(0,0) rotate(0deg);}
+    12%{opacity:1;}
+    100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(420deg);}
+  }
+
+  /* 장례식 : 고개를 숙여 묵념한다 */
+  .mourn-body{transition:transform 1s ease-in-out;}
+  #s3 .mourn-body{transform-origin:400px 452px;}
+  #s3.playing .mourn-body{transform:rotate(9deg) translate(0,10px);}
+  #s3 .chrys{transition:transform 1s ease-in-out .3s, opacity .6s ease-in-out 1.1s;}
+  #s3.playing .chrys{transform:translate(-118px,-56px) scale(.9);opacity:0;}
+
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏮 우리 가족의 특별한 날</h1>
+  <p>가족마다 오래전부터 함께해 오던 특별한 일들이 있습니다</p>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ 1단계 : 얼굴 촬영 ============ -->
+  <section class="shoot" id="shoot">
+    <h2>① 동그라미 안에 얼굴을 맞춰 주세요</h2>
+    <div class="camwrap" id="camwrap">
+      <video id="video" playsinline autoplay muted></video>
+      <div class="guide"></div>
+      <div class="camstate" id="camstate">카메라를 준비하고 있어요…</div>
+    </div>
+    <div class="row">
+      <button id="btnStart">📷 카메라 켜기</button>
+      <button id="btnShot" disabled>✨ 찰칵! 찍기</button>
+    </div>
+    <p class="privacy">🔒 사진은 이 기기 안에서만 처리되며, 인터넷 어디로도 전송되지 않습니다.</p>
+  </section>
+
+  <!-- ============ 2단계 : 네 가지 장면 ============ -->
+  <div class="scenes" id="scenes">
+
+    <!-- ───────── 장면 1 : 설날 세배 ───────── -->
+    <article class="card">
+      <div class="stage">
+        <svg class="scene" id="s1" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g1wall" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fbf3e2"/><stop offset="1" stop-color="#f3e6cd"/>
+            </linearGradient>
+            <linearGradient id="g1floor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#dcb98d"/><stop offset="1" stop-color="#c99e6d"/>
+            </linearGradient>
+            <clipPath id="clip1"><circle cx="400" cy="300" r="46"/></clipPath>
+          </defs>
+
+          <image class="bgImg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice"/>
+          <g class="bgVec">
+          <rect width="800" height="600" fill="url(#g1wall)"/>
+          <rect y="392" width="800" height="208" fill="url(#g1floor)"/>
+          <path d="M0 392H800" stroke="#b98a58" stroke-width="4"/>
+
+          <!-- 창호지 문 -->
+          <g stroke="#c9a227" stroke-width="5" fill="#fdf8ea">
+            <rect x="96" y="86" width="216" height="270" rx="4"/>
+            <rect x="488" y="86" width="216" height="270" rx="4"/>
+          </g>
+          <g stroke="#d8b45a" stroke-width="3" opacity=".85">
+            <path d="M168 86V356M240 86V356M96 176H312M96 266H312"/>
+            <path d="M560 86V356M632 86V356M488 176H704M488 266H704"/>
+          </g>
+
+          <!-- 복주머니 -->
+          <g transform="translate(400,74)">
+            <path d="M-26 8q26-30 52 0q10 34-26 44q-36-10-26-44z" fill="#e05263"/>
+            <path d="M-26 8h52" stroke="#f5c451" stroke-width="6" stroke-linecap="round"/>
+            <path d="M0-22v24" stroke="#8b5e34" stroke-width="4"/>
+          </g>
+
+          <!-- 할아버지 -->
+          <g transform="translate(212,300) scale(.86)">
+            <ellipse cy="128" rx="96" ry="26" fill="#000" opacity=".08"/>
+            <path d="M-78 128q10-96 78-96q68 0 78 96z" fill="#7c93c9"/>
+            <path d="M-40 60q40 22 80 0" stroke="#5b71a8" stroke-width="6" fill="none"/>
+            <rect x="-14" y="14" width="28" height="26" fill="#e8b98f"/>
+            <circle cy="-14" r="42" fill="#f2c9a0"/>
+            <path d="M-42-22q42-46 84 0q4-50-42-50q-46 0-42 50z" fill="#5b6472"/>
+            <path d="M-16-12q6-6 12 0M4-12q6-6 12 0" stroke="#3f4653" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M-12 8q12 10 24 0" stroke="#c98a63" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M-18 22q18 26 36 0" fill="#e9edf5"/>
+          </g>
+          <!-- 할머니 -->
+          <g transform="translate(588,300) scale(.86)">
+            <ellipse cy="128" rx="96" ry="26" fill="#000" opacity=".08"/>
+            <path d="M-78 128q10-96 78-96q68 0 78 96z" fill="#f0a8bd"/>
+            <path d="M-40 60q40 22 80 0" stroke="#d98aa4" stroke-width="6" fill="none"/>
+            <rect x="-14" y="14" width="28" height="26" fill="#e8b98f"/>
+            <circle cy="-14" r="42" fill="#f7d2b0"/>
+            <path d="M-42-18q0-54 42-54q42 0 42 54q-42-30-84 0z" fill="#6b6f7a"/>
+            <circle cy="-58" r="13" fill="#5f636e"/>
+            <path d="M-16-12q6-6 12 0M4-12q6-6 12 0" stroke="#3f4653" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M-11 8q11 12 22 0" stroke="#c98a63" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- 방석 -->
+          <ellipse cx="400" cy="516" rx="150" ry="34" fill="#000" opacity=".1"/>
+          <rect x="268" y="480" width="264" height="56" rx="16" fill="#c8496a"/>
+          <rect x="268" y="480" width="264" height="18" rx="9" fill="#dd6486"/>
+          <path d="M300 480v56M500 480v56" stroke="#a83a57" stroke-width="4"/>
+          </g><!-- /bgVec -->
+
+          <!-- 아이 (무릎 꿇은 자세) -->
+          <path d="M320 500q80-34 160 0q6 26-80 26q-86 0-80-26z" fill="#2f5d8f"/>
+          <g class="kneel-torso">
+            <path d="M330 490q6-122 70-122q64 0 70 122z" fill="#3d7ebd"/>
+            <path d="M400 372l-30 40l30 22l30-22z" fill="#fdfdfd"/>
+            <path d="M400 372l-30 40M400 372l30 40" stroke="#dfe6ee" stroke-width="3"/>
+            <path d="M336 400q-34 24-26 70q30 16 54-8z" fill="#3d7ebd"/>
+            <path d="M464 400q34 24 26 70q-30 16-54-8z" fill="#3d7ebd"/>
+            <path d="M312 434q-8 16-4 30l26 8q4-20 0-32z" fill="#f5c451"/>
+            <path d="M488 434q8 16 4 30l-26 8q-4-20 0-32z" fill="#f5c451"/>
+            <path d="M306 452q-6 12-2 22l26 8q3-14 0-24z" fill="#5cb894"/>
+            <path d="M494 452q6 12 2 22l-26 8q-3-14 0-24z" fill="#5cb894"/>
+            <path d="M400 416q-18 30-8 62" stroke="#e05263" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <rect x="384" y="330" width="32" height="44" rx="10" fill="#eab98f"/>
+            <g class="kneel-head">
+              <path d="M400 236q68 0 68 74q0 30-14 46H346q-14-16-14-46q0-74 68-74z" fill="#3a3a44"/>
+              <circle cx="400" cy="300" r="46" fill="#fae0c8"/>
+              <image class="faceImg" clip-path="url(#clip1)" x="354" y="254" width="92" height="92" preserveAspectRatio="xMidYMid slice"/>
+              <g class="slot-hint">
+                <circle cx="400" cy="300" r="46" fill="none" stroke="#c8496a" stroke-width="3" stroke-dasharray="7 6"/>
+                <text x="400" y="307" text-anchor="middle" font-family="Jua,sans-serif" font-size="17" fill="#c8496a">얼굴</text>
+              </g>
+              <path d="M354 286q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#3a3a44"/>
+              <path d="M352 264q48-54 96 0q-12-62-48-62q-36 0-48 62z" fill="#4a5db0"/>
+              <path d="M352 264q48-54 96 0" fill="none" stroke="#8fa0e0" stroke-width="6"/>
+              <circle cx="400" cy="206" r="9" fill="#f5c451"/>
+            </g>
+          </g>
+
+          <!-- 세뱃돈 봉투 -->
+          <g class="bgVec" transform="translate(660,470) rotate(-10)">
+            <rect width="76" height="50" rx="6" fill="#fdf6e6" stroke="#e0cba0" stroke-width="3"/>
+            <path d="M0 0l38 28l38-28" fill="none" stroke="#e0cba0" stroke-width="3"/>
+            <text x="38" y="42" text-anchor="middle" font-family="serif" font-size="15" fill="#c8496a">福</text>
+          </g>
+        </svg>
+      </div>
+      <p class="cap" style="--capbg:#e3f0fb">설날에 온 가족이 모여 세배를 합니다.</p>
+      <div class="row">
+        <button class="sm play" data-scene="s1" data-dur="1500">🙇 세배하기</button>
+        <button class="sm ghost save" data-scene="s1" data-name="세배">💾 저장</button>
+        <button class="sm ghost bg" data-scene="s1">🖼️ 배경</button>
+      </div>
+    </article>
+
+    <!-- ───────── 장면 2 : 결혼식 축하 ───────── -->
+    <article class="card">
+      <div class="stage">
+        <svg class="scene" id="s2" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g2wall" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff8f2"/><stop offset="1" stop-color="#f7e9e4"/>
+            </linearGradient>
+            <clipPath id="clip2"><circle cx="250" cy="300" r="46"/></clipPath>
+          </defs>
+
+          <image class="bgImg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice"/>
+          <g class="bgVec">
+            <rect width="800" height="600" fill="url(#g2wall)"/>
+            <rect y="404" width="800" height="196" fill="#eadfd8"/>
+            <path d="M0 404H800" stroke="#dbcdc4" stroke-width="3"/>
+
+            <!-- 샹들리에 -->
+            <g stroke="#f0c56a" stroke-width="4" fill="#ffeec2">
+              <path d="M140 0v30"/><ellipse cx="140" cy="40" rx="32" ry="11"/>
+              <path d="M118 43l-6 18M140 50v16M162 43l6 18"/>
+              <circle cx="112" cy="68" r="7"/><circle cx="140" cy="73" r="7"/><circle cx="168" cy="68" r="7"/>
+              <path d="M660 0v22"/><ellipse cx="660" cy="32" rx="28" ry="10"/>
+              <path d="M640 35l-5 16M660 41v14M680 35l5 16"/>
+              <circle cx="635" cy="58" r="6"/><circle cx="660" cy="62" r="6"/><circle cx="685" cy="58" r="6"/>
+            </g>
+
+            <!-- 축하 현수막 -->
+            <g>
+              <path d="M236 104h328v58H236z" fill="#f8c8d6"/>
+              <path d="M236 104l-22 12 22 12zM564 104l22 12-22 12z" fill="#e0a5b8"/>
+              <path d="M236 162l18 16 18-16zM528 162l18 16 18-16z" fill="#f4a6bb"/>
+              <text x="400" y="142" text-anchor="middle" font-family="Jua,sans-serif" font-size="34" fill="#a83a57">축 결혼</text>
+            </g>
+
+            <!-- 단상 -->
+            <rect x="392" y="368" width="300" height="16" rx="5" fill="#f3e6e0"/>
+            <rect x="372" y="384" width="340" height="20" rx="5" fill="#e6d4cd"/>
+
+            <!-- 꽃 아치 -->
+            <path d="M428 372V276q0-84 114-84t114 84v96" fill="none" stroke="#8fbf85" stroke-width="14" stroke-linecap="round"/>
+            <g>
+              <circle cx="428" cy="300" r="14" fill="#f4a6bb"/><circle cx="440" cy="256" r="11" fill="#fff0f4"/>
+              <circle cx="468" cy="222" r="14" fill="#f8c8d6"/><circle cx="508" cy="200" r="11" fill="#fff0f4"/>
+              <circle cx="552" cy="194" r="14" fill="#f4a6bb"/><circle cx="596" cy="202" r="11" fill="#fff0f4"/>
+              <circle cx="632" cy="228" r="14" fill="#f8c8d6"/><circle cx="652" cy="266" r="11" fill="#fff0f4"/>
+              <circle cx="656" cy="310" r="14" fill="#f4a6bb"/><circle cx="428" cy="344" r="11" fill="#fff0f4"/>
+              <circle cx="656" cy="350" r="12" fill="#f8c8d6"/>
+            </g>
+
+            <!-- 신랑 -->
+            <g transform="translate(506,252) scale(.58)">
+              <path d="M-46 200q0-116 46-116q46 0 46 116z" fill="#2f3446"/>
+              <path d="M0 84l-20 30l20 62l20-62z" fill="#fff"/>
+              <path d="M0 114l-9 14l9 12l9-12z" fill="#c8496a"/>
+              <path d="M-46 108q-26 34-20 88q18 10 30-6z" fill="#2f3446"/>
+              <rect x="-13" y="58" width="26" height="30" fill="#e8b98f"/>
+              <circle cy="24" r="36" fill="#f5cba7"/>
+              <path d="M-36 12q6-44 36-44q30 0 36 44q-30-22-72 0z" fill="#3a3a44"/>
+              <circle cx="-13" cy="24" r="4" fill="#3a3a44"/><circle cx="13" cy="24" r="4" fill="#3a3a44"/>
+              <path d="M-10 40q10 10 20 0" stroke="#c98a63" stroke-width="4" fill="none" stroke-linecap="round"/>
+            </g>
+            <!-- 신부 -->
+            <g transform="translate(588,252) scale(.58)">
+              <path d="M-58 200q4-118 58-118q54 0 58 118z" fill="#fff"/>
+              <path d="M-58 200q4-118 58-118q54 0 58 118z" fill="none" stroke="#ece4ee" stroke-width="3"/>
+              <path d="M-30 128q30 16 60 0" stroke="#ece4ee" stroke-width="4" fill="none"/>
+              <path d="M46 108q26 34 20 88q-18 10-30-6z" fill="#fff" stroke="#ece4ee" stroke-width="2"/>
+              <rect x="-13" y="58" width="26" height="30" fill="#e8b98f"/>
+              <path d="M-44 28q0 96 44 96q44 0 44-96z" fill="#fdf6fa" opacity=".85"/>
+              <circle cy="24" r="36" fill="#f7d2b0"/>
+              <path d="M-38 20q-4-52 38-52q42 0 38 52q-6-30-38-30q-32 0-38 30z" fill="#4a3a34"/>
+              <circle cx="-13" cy="24" r="4" fill="#3a3a44"/><circle cx="13" cy="24" r="4" fill="#3a3a44"/>
+              <path d="M-10 40q10 10 20 0" stroke="#c98a63" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <circle cy="-28" r="9" fill="#f8c8d6"/>
+              <g transform="translate(-54,132)">
+                <circle r="13" fill="#f4a6bb"/><circle cx="-13" cy="6" r="10" fill="#fff0f4"/>
+                <circle cx="13" cy="7" r="10" fill="#f8c8d6"/><path d="M0 12v20" stroke="#8fbf85" stroke-width="5"/>
+              </g>
+            </g>
+
+            <!-- 함께 온 하객들 -->
+            <g>
+              <g transform="translate(96,470)">
+                <path d="M-52 90q0-58 52-58q52 0 52 58z" fill="#7f6f8e"/>
+                <circle cy="-4" r="34" fill="#3f3a46"/>
+              </g>
+              <g transform="translate(430,486)">
+                <path d="M-56 88q0-58 56-58q56 0 56 58z" fill="#8f8296"/>
+                <circle cy="-6" r="36" fill="#5a4a42"/>
+                <circle cx="-30" cy="-28" r="10" fill="#e8c9d6"/>
+              </g>
+              <g transform="translate(700,462)">
+                <path d="M-50 92q0-58 50-58q50 0 50 58z" fill="#6f7f96"/>
+                <circle cy="-6" r="33" fill="#453f38"/>
+              </g>
+            </g>
+          </g><!-- /bgVec -->
+
+          <!-- 축하 색종이 -->
+          <g>
+            <rect class="petal" x="180" y="120" width="14" height="9" rx="2" fill="#f4a6bb" style="--dx:-30px;--dy:300px;animation-delay:.05s"/>
+            <rect class="petal" x="300" y="96" width="13" height="9" rx="2" fill="#8fd0f0" style="--dx:26px;--dy:360px;animation-delay:.2s"/>
+            <rect class="petal" x="430" y="130" width="14" height="9" rx="2" fill="#f5d76e" style="--dx:-40px;--dy:280px;animation-delay:.35s"/>
+            <rect class="petal" x="560" y="104" width="13" height="9" rx="2" fill="#a8e6a3" style="--dx:34px;--dy:340px;animation-delay:.5s"/>
+            <rect class="petal" x="680" y="126" width="14" height="9" rx="2" fill="#f4a6bb" style="--dx:-24px;--dy:300px;animation-delay:.62s"/>
+            <rect class="petal" x="240" y="88" width="13" height="9" rx="2" fill="#c9a8f0" style="--dx:40px;--dy:380px;animation-delay:.78s"/>
+            <rect class="petal" x="500" y="150" width="13" height="9" rx="2" fill="#8fd0f0" style="--dx:-36px;--dy:260px;animation-delay:.9s"/>
+            <rect class="petal" x="620" y="80" width="14" height="9" rx="2" fill="#f5d76e" style="--dx:30px;--dy:400px;animation-delay:1.02s"/>
+          </g>
+
+          <!-- 아이 (하객석에서 축하 박수) -->
+          <ellipse cx="250" cy="566" rx="66" ry="15" fill="#000" opacity=".1"/>
+          <rect x="224" y="486" width="22" height="80" rx="10" fill="#4b4258"/>
+          <rect x="256" y="486" width="22" height="80" rx="10" fill="#4b4258"/>
+          <rect x="218" y="556" width="30" height="20" rx="8" fill="#39324a"/>
+          <rect x="254" y="556" width="30" height="20" rx="8" fill="#39324a"/>
+          <path d="M198 500q4-132 52-132q48 0 52 132z" fill="#e8a0b4"/>
+          <path d="M198 500q4-132 52-132q48 0 52 132z" fill="none" stroke="#d98aa4" stroke-width="3"/>
+          <path d="M214 448q36 14 72 0" stroke="#d98aa4" stroke-width="5" fill="none"/>
+          <path d="M250 368l-16 24l16 18l16-18z" fill="#fff"/>
+          <g class="clap-l">
+            <path d="M206 378q-22 34-8 68q18 10 30-6z" fill="#e8a0b4"/>
+            <ellipse cx="234" cy="446" rx="15" ry="12" fill="#eab98f"/>
+          </g>
+          <g class="clap-r">
+            <path d="M294 378q22 34 8 68q-18 10-30-6z" fill="#e8a0b4"/>
+            <ellipse cx="266" cy="446" rx="15" ry="12" fill="#eab98f"/>
+          </g>
+          <rect x="236" y="338" width="28" height="30" rx="9" fill="#eab98f"/>
+          <g>
+            <path d="M250 236q68 0 68 76q0 32-16 44H198q-16-12-16-44q0-76 68-76z" fill="#4a3a34"/>
+            <circle cx="250" cy="300" r="46" fill="#fae0c8"/>
+            <image class="faceImg" clip-path="url(#clip2)" x="204" y="254" width="92" height="92" preserveAspectRatio="xMidYMid slice"/>
+            <g class="slot-hint">
+              <circle cx="250" cy="300" r="46" fill="none" stroke="#c8496a" stroke-width="3" stroke-dasharray="7 6"/>
+              <text x="250" y="307" text-anchor="middle" font-family="Jua,sans-serif" font-size="17" fill="#c8496a">얼굴</text>
+            </g>
+            <path d="M204 286q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#4a3a34"/>
+            <circle cx="212" cy="260" r="10" fill="#f8c8d6"/>
+          </g>
+
+          <!-- 하객석 맨 앞 의자 -->
+          <g class="bgVec">
+            <g fill="#fdf7f2" stroke="#e3d2c8" stroke-width="4">
+              <rect x="-12" y="516" width="150" height="130" rx="12"/>
+              <rect x="330" y="530" width="164" height="120" rx="12"/>
+              <rect x="620" y="508" width="164" height="136" rx="12"/>
+            </g>
+            <g fill="none" stroke="#f0c56a" stroke-width="5">
+              <path d="M6 552h116M348 566h128M638 544h128"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="cap" style="--capbg:#eef7e6">결혼을 축하합니다.</p>
+      <div class="row">
+        <button class="sm play" data-scene="s2" data-dur="2500">👏 축하 박수</button>
+        <button class="sm ghost save" data-scene="s2" data-name="결혼축하">💾 저장</button>
+        <button class="sm ghost bg" data-scene="s2">🖼️ 배경</button>
+      </div>
+    </article>
+
+    <!-- ───────── 장면 3 : 장례식 조문 ───────── -->
+    <article class="card">
+      <div class="stage">
+        <svg class="scene" id="s3" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g3wall" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f4f5f7"/><stop offset="1" stop-color="#e6e8ec"/>
+            </linearGradient>
+            <clipPath id="clip3"><circle cx="400" cy="268" r="46"/></clipPath>
+          </defs>
+
+          <image class="bgImg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice"/>
+          <g class="bgVec">
+          <rect width="800" height="600" fill="url(#g3wall)"/>
+          <rect y="470" width="800" height="130" fill="#d8d5d0"/>
+          <path d="M0 470H800" stroke="#c2bfba" stroke-width="4"/>
+
+          <!-- 제단 -->
+          <rect x="60" y="300" width="360" height="26" rx="6" fill="#efefef" stroke="#d5d5d5" stroke-width="2"/>
+          <rect x="86" y="326" width="308" height="144" fill="#f7f7f7"/>
+          <path d="M86 470h308" stroke="#dcdcdc" stroke-width="3"/>
+          <!-- 국화 무더기 -->
+          <g fill="#fff" stroke="#e2e2e2" stroke-width="2">
+            <circle cx="120" cy="292" r="20"/><circle cx="172" cy="286" r="24"/><circle cx="228" cy="290" r="21"/>
+            <circle cx="282" cy="285" r="24"/><circle cx="336" cy="291" r="20"/><circle cx="384" cy="294" r="17"/>
+            <circle cx="146" cy="266" r="17"/><circle cx="256" cy="264" r="18"/><circle cx="312" cy="268" r="16"/>
+          </g>
+          <g fill="#f2d98a">
+            <circle cx="172" cy="286" r="7"/><circle cx="282" cy="285" r="7"/><circle cx="120" cy="292" r="6"/>
+            <circle cx="228" cy="290" r="6"/><circle cx="336" cy="291" r="6"/>
+          </g>
+
+          <!-- 영정 액자 (사람 얼굴은 넣지 않습니다) -->
+          <g transform="translate(240,120)">
+            <rect x="-86" y="-8" width="172" height="150" rx="6" fill="#3a3a3f"/>
+            <rect x="-76" y="2" width="152" height="130" rx="3" fill="#e9e9ec"/>
+            <g fill="#fff" stroke="#dcdcdc" stroke-width="2">
+              <circle cx="0" cy="70" r="30"/><circle cx="-34" cy="88" r="20"/><circle cx="34" cy="88" r="20"/>
+            </g>
+            <circle cy="70" r="10" fill="#f2d98a"/>
+            <path d="M-40 40q40-30 80 0" stroke="#c9c9cf" stroke-width="4" fill="none"/>
+            <!-- 검은 리본 -->
+            <path d="M-86-8h58l-58 58z" fill="#2f2f34"/>
+          </g>
+
+          <!-- 향로 -->
+          <g transform="translate(232,438)">
+            <rect x="-26" y="0" width="52" height="30" rx="8" fill="#8d8378"/>
+            <rect x="-32" y="-6" width="64" height="10" rx="5" fill="#a3988b"/>
+            <path d="M-8-6v-26M8-6v-30" stroke="#efe7dc" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="-8" cy="-34" r="3" fill="#e8a15c"/><circle cx="8" cy="-38" r="3" fill="#e8a15c"/>
+          </g>
+
+          <!-- 함께 온 어른 -->
+          <g transform="translate(590,192) scale(1.12)">
+            <ellipse cy="330" rx="62" ry="16" fill="#000" opacity=".1"/>
+            <rect x="-30" y="212" width="24" height="98" rx="11" fill="#2b2b30"/>
+            <rect x="8" y="212" width="24" height="98" rx="11" fill="#2b2b30"/>
+            <rect x="-38" y="300" width="34" height="22" rx="9" fill="#1f1f24"/>
+            <rect x="4" y="300" width="34" height="22" rx="9" fill="#1f1f24"/>
+            <path d="M-52 216q4-120 52-120q48 0 52 120z" fill="#33333a"/>
+            <path d="M0 96l-18 26l18 20l18-20z" fill="#f2f2f4"/>
+            <path d="M-52 112q-30 34-20 82q18 10 32-6z" fill="#33333a"/>
+            <path d="M52 112q30 34 20 82q-18 10-32-6z" fill="#33333a"/>
+            <ellipse cx="-15" cy="196" rx="16" ry="13" fill="#eab98f"/>
+            <ellipse cx="15" cy="196" rx="16" ry="13" fill="#eab98f"/>
+            <rect x="-13" y="66" width="26" height="32" fill="#e8b98f"/>
+            <circle cy="34" r="36" fill="#f5cba7"/>
+            <path d="M-36 22q6-44 36-44q30 0 36 44q-30-24-72 0z" fill="#43434c"/>
+            <circle cx="-13" cy="34" r="3.5" fill="#3a3a44"/><circle cx="13" cy="34" r="3.5" fill="#3a3a44"/>
+            <path d="M-9 52h18" stroke="#c98a63" stroke-width="3.5" stroke-linecap="round"/>
+          </g>
+
+          </g><!-- /bgVec -->
+
+          <!-- 아이 (조문, 서 있는 자세) -->
+          <g class="mourn-body">
+            <ellipse cx="400" cy="562" rx="70" ry="16" fill="#000" opacity=".12"/>
+            <rect x="372" y="452" width="22" height="92" rx="10" fill="#2b2b30"/>
+            <rect x="406" y="452" width="22" height="92" rx="10" fill="#2b2b30"/>
+            <rect x="366" y="536" width="30" height="20" rx="8" fill="#1f1f24"/>
+            <rect x="404" y="536" width="30" height="20" rx="8" fill="#1f1f24"/>
+            <path d="M350 452q4-118 50-118q46 0 50 118z" fill="#33333a"/>
+            <path d="M400 334l-18 28l18 20l18-20z" fill="#f2f2f4"/>
+            <path d="M356 344q-24 32-16 76q14 10 28-2z" fill="#33333a"/>
+            <path d="M444 344q24 32 16 76q-14 10-28-2z" fill="#33333a"/>
+            <!-- 두 손 -->
+            <ellipse cx="386" cy="424" rx="13" ry="11" fill="#eab98f"/>
+            <ellipse cx="414" cy="424" rx="13" ry="11" fill="#eab98f"/>
+            <!-- 흰 국화 한 송이 -->
+            <g class="chrys" transform="translate(400,416)">
+              <path d="M0 0v34" stroke="#8fbf85" stroke-width="5" stroke-linecap="round"/>
+              <g fill="#fff" stroke="#e2e2e2" stroke-width="2">
+                <circle r="17"/><circle cx="-14" cy="8" r="11"/><circle cx="14" cy="8" r="11"/>
+              </g>
+              <circle r="6" fill="#f2d98a"/>
+            </g>
+            <rect x="386" y="306" width="28" height="30" rx="9" fill="#eab98f"/>
+            <g>
+              <path d="M400 204q68 0 68 76q0 32-16 44H348q-16-12-16-44q0-76 68-76z" fill="#3a3a44"/>
+              <circle cx="400" cy="268" r="46" fill="#fae0c8"/>
+              <image class="faceImg" clip-path="url(#clip3)" x="354" y="222" width="92" height="92" preserveAspectRatio="xMidYMid slice"/>
+              <g class="slot-hint">
+                <circle cx="400" cy="268" r="46" fill="none" stroke="#c8496a" stroke-width="3" stroke-dasharray="7 6"/>
+                <text x="400" y="275" text-anchor="middle" font-family="Jua,sans-serif" font-size="17" fill="#c8496a">얼굴</text>
+              </g>
+              <path d="M354 254q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#3a3a44"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="cap" style="--capbg:#f0eef2">장례식에서 함께 슬픔을 나눕니다.</p>
+      <div class="row">
+        <button class="sm play" data-scene="s3" data-dur="2600">🕯️ 헌화하고 묵념하기</button>
+        <button class="sm ghost save" data-scene="s3" data-name="장례식">💾 저장</button>
+        <button class="sm ghost bg" data-scene="s3">🖼️ 배경</button>
+      </div>
+    </article>
+
+    <!-- ───────── 장면 4 : 차례 ───────── -->
+    <article class="card">
+      <div class="stage">
+        <svg class="scene" id="s4" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g4wall" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f3ead7"/><stop offset="1" stop-color="#e8dbc0"/>
+            </linearGradient>
+            <clipPath id="clip4"><circle cx="400" cy="300" r="46"/></clipPath>
+          </defs>
+
+          <image class="bgImg" x="0" y="0" width="800" height="600" preserveAspectRatio="xMidYMid slice"/>
+          <g class="bgVec">
+          <rect width="800" height="600" fill="url(#g4wall)"/>
+          <rect y="430" width="800" height="170" fill="#cfae82"/>
+          <path d="M0 430H800" stroke="#b48f60" stroke-width="4"/>
+
+          <!-- 병풍 -->
+          <g>
+            <rect x="70" y="40" width="660" height="300" fill="#2f2b28"/>
+            <rect x="82" y="52" width="636" height="276" fill="#f7f0dd"/>
+            <g stroke="#2f2b28" stroke-width="6">
+              <path d="M294 52v276M506 52v276"/>
+            </g>
+            <!-- 산수화 -->
+            <g fill="#9aab8e" opacity=".9">
+              <path d="M100 300q60-120 116 0z"/><path d="M176 300q56-88 108 0z"/>
+              <path d="M320 300q58-104 112 0z"/><path d="M400 300q52-80 100 0z"/>
+              <path d="M528 300q60-116 114 0z"/><path d="M614 300q52-84 100 0z"/>
+            </g>
+            <circle cx="230" cy="120" r="30" fill="#e8d9a8"/>
+            <g stroke="#6f7c66" stroke-width="4" fill="none" opacity=".7">
+              <path d="M560 118q22-16 44 0M580 140q22-16 44 0"/>
+            </g>
+          </g>
+
+          <!-- 차례상 -->
+          <rect x="104" y="360" width="396" height="24" rx="5" fill="#a8703c"/>
+          <rect x="104" y="384" width="396" height="14" fill="#8d5c30"/>
+          <rect x="130" y="398" width="20" height="76" fill="#8d5c30"/>
+          <rect x="454" y="398" width="20" height="76" fill="#8d5c30"/>
+          <!-- 상 위 음식 -->
+          <g>
+            <ellipse cx="212" cy="344" rx="44" ry="19" fill="#3f7a44"/>
+            <path d="M168 344a44 19 0 0 1 88 0a44 32 0 0 1-88 0z" fill="#4f9a52"/>
+            <path d="M186 331q13 17 0 32M212 327q13 19 0 36M238 331q13 17 0 32" stroke="#2f6b39" stroke-width="4" fill="none"/>
+            <circle cx="296" cy="338" r="19" fill="#e2504f"/><path d="M296 319v-9" stroke="#7a5230" stroke-width="4"/>
+            <circle cx="334" cy="342" r="16" fill="#e2504f"/>
+            <ellipse cx="382" cy="340" rx="20" ry="18" fill="#d8b45a"/>
+            <ellipse cx="418" cy="344" rx="17" ry="15" fill="#d8b45a"/>
+            <circle cx="452" cy="340" r="17" fill="#e08a3c"/><path d="M452 323v-8" stroke="#6f5a3a" stroke-width="4"/>
+          </g>
+          <!-- 촛대 -->
+          <g>
+            <rect x="122" y="318" width="16" height="42" rx="4" fill="#b9a06a"/>
+            <rect x="116" y="310" width="28" height="10" rx="4" fill="#cbb37c"/>
+            <rect x="126" y="278" width="8" height="34" rx="4" fill="#fdf6e6"/>
+            <path d="M130 268q10 8 0 14q-10-6 0-14z" fill="#f0a93c"/>
+            <rect x="474" y="318" width="16" height="42" rx="4" fill="#b9a06a"/>
+            <rect x="468" y="310" width="28" height="10" rx="4" fill="#cbb37c"/>
+            <rect x="478" y="278" width="8" height="34" rx="4" fill="#fdf6e6"/>
+            <path d="M482 268q10 8 0 14q-10-6 0-14z" fill="#f0a93c"/>
+          </g>
+          </g><!-- /bgVec -->
+
+          <!-- 아이 (무릎 꿇은 자세) -->
+          <g transform="translate(146,0)">
+          <rect x="256" y="486" width="288" height="62" rx="8" fill="#d9c08a"/>
+          <g stroke="#c2a66c" stroke-width="3">
+            <path d="M256 502h288M256 518h288M256 534h288"/>
+          </g>
+          <path d="M320 504q80-34 160 0q6 26-80 26q-86 0-80-26z" fill="#5a5f7a"/>
+          <g class="kneel-torso">
+            <path d="M330 492q6-124 70-124q64 0 70 124z" fill="#6f7594"/>
+            <path d="M400 372l-30 40l30 22l30-22z" fill="#fdfdfd"/>
+            <path d="M400 372l-30 40M400 372l30 40" stroke="#e2e5ee" stroke-width="3"/>
+            <path d="M338 404q-32 26-24 68q28 14 52-8z" fill="#6f7594"/>
+            <path d="M462 404q32 26 24 68q-28 14-52-8z" fill="#6f7594"/>
+            <ellipse cx="386" cy="462" rx="15" ry="12" fill="#eab98f"/>
+            <ellipse cx="414" cy="462" rx="15" ry="12" fill="#eab98f"/>
+            <path d="M400 418q-16 28-8 56" stroke="#3f4460" stroke-width="8" fill="none" stroke-linecap="round"/>
+            <rect x="384" y="330" width="32" height="44" rx="10" fill="#eab98f"/>
+            <g class="kneel-head">
+              <path d="M400 236q68 0 68 74q0 30-14 46H346q-14-16-14-46q0-74 68-74z" fill="#3a3a44"/>
+              <circle cx="400" cy="300" r="46" fill="#fae0c8"/>
+              <image class="faceImg" clip-path="url(#clip4)" x="354" y="254" width="92" height="92" preserveAspectRatio="xMidYMid slice"/>
+              <g class="slot-hint">
+                <circle cx="400" cy="300" r="46" fill="none" stroke="#c8496a" stroke-width="3" stroke-dasharray="7 6"/>
+                <text x="400" y="307" text-anchor="middle" font-family="Jua,sans-serif" font-size="17" fill="#c8496a">얼굴</text>
+              </g>
+              <path d="M354 286q10-44 46-44q36 0 46 44q-24-22-46-22q-22 0-46 22z" fill="#3a3a44"/>
+            </g>
+          </g>
+          </g>
+        </svg>
+      </div>
+      <p class="cap" style="--capbg:#f7ecd9">차례를 지냅니다.</p>
+      <div class="row">
+        <button class="sm play" data-scene="s4" data-dur="1500">🙏 절하기</button>
+        <button class="sm ghost save" data-scene="s4" data-name="차례">💾 저장</button>
+        <button class="sm ghost bg" data-scene="s4">🖼️ 배경</button>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <button class="ghost" id="btnRetake">📷 다시 찍기</button>
+    <button id="btnPlayAll">▶️ 모두 움직이기</button>
+    <button id="btnSaveAll">🖼️ 네 장면 모아 저장</button>
+    <button class="ghost" id="btnBgReset">🧹 배경 되돌리기</button>
+  </div>
+
+  <input type="file" id="bgFile" accept="image/*" hidden>
+
+</div>
+
+<canvas id="work" hidden></canvas>
+
+<script>
+/* =========================================================
+   우리 가족의 특별한 날
+   - 카메라로 찍은 얼굴을 네 가지 의례 장면에 합성합니다.
+   - 얼굴 정렬에 MediaPipe FaceMesh를 쓰고, 실패하면 가운데를 오려 씁니다.
+   - 모든 처리는 브라우저 안에서만 이루어집니다.
+   ========================================================= */
+
+const video    = document.getElementById('video');
+const camwrap  = document.getElementById('camwrap');
+const camstate = document.getElementById('camstate');
+const btnStart = document.getElementById('btnStart');
+const btnShot  = document.getElementById('btnShot');
+const scenesEl = document.getElementById('scenes');
+const toolbar  = document.getElementById('toolbar');
+
+let stream = null;      // 카메라 스트림
+let faceMesh = null;    // FaceMesh 인스턴스
+let landmarks = null;   // 최근 프레임의 얼굴 랜드마크
+let rafId = null;
+
+/* ---------- 카메라 켜기 ---------- */
+btnStart.addEventListener('click', async () => {
+  btnStart.disabled = true;
+  camstate.textContent = '카메라를 여는 중…';
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false
+    });
+    video.srcObject = stream;
+    await video.play();
+    camstate.textContent = '얼굴을 찾는 중…';
+    btnShot.disabled = false;
+    initFaceMesh();
+  }catch(err){
+    camstate.textContent = '카메라를 열 수 없어요';
+    btnStart.disabled = false;
+    alert('카메라를 사용할 수 없습니다.\n브라우저 주소창의 카메라 권한을 확인해 주세요.\n\n(' + err.name + ')');
+  }
+});
+
+/* ---------- FaceMesh 준비 ---------- */
+function initFaceMesh(){
+  if(typeof FaceMesh === 'undefined'){
+    camstate.textContent = '동그라미에 얼굴을 맞춰 주세요';
+    return; // 라이브러리를 못 불러오면 가운데 오리기로 진행
+  }
+  try{
+    faceMesh = new FaceMesh({
+      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+    });
+    faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:false,
+                          minDetectionConfidence:.5, minTrackingConfidence:.5 });
+    faceMesh.onResults(res => {
+      landmarks = (res.multiFaceLandmarks && res.multiFaceLandmarks[0]) || null;
+      camwrap.classList.toggle('ready', !!landmarks);
+      camstate.textContent = landmarks ? '좋아요! 찍어 볼까요?' : '동그라미에 얼굴을 맞춰 주세요';
+    });
+    const loop = async () => {
+      if(video.readyState >= 2){
+        try{ await faceMesh.send({image: video}); }catch(e){ /* 프레임 건너뜀 */ }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    loop();
+  }catch(e){
+    camstate.textContent = '동그라미에 얼굴을 맞춰 주세요';
+  }
+}
+
+/* ---------- 얼굴 오려내기 ----------
+   눈꼬리 두 점(33·263)으로 가운데·크기·기울기를 잡아 정사각형으로 오립니다. */
+const FACE_SIZE = 400;
+function cropFace(){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const c  = document.createElement('canvas');
+  c.width = c.height = FACE_SIZE;
+  const ctx = c.getContext('2d');
+
+  let cx, cy, size, ang = 0;
+  if(landmarks && landmarks[33] && landmarks[263]){
+    const L = landmarks[33], R = landmarks[263];
+    const lx = L.x*vw, ly = L.y*vh, rx = R.x*vw, ry = R.y*vh;
+    const d  = Math.hypot(rx-lx, ry-ly);
+    ang  = Math.atan2(ry-ly, rx-lx);
+    size = d * 4.1;                        // 이마부터 턱까지 넉넉히
+    cx   = (lx+rx)/2 + Math.sin(ang)*d*0.42;
+    cy   = (ly+ry)/2 + Math.cos(ang)*d*0.42; // 눈보다 조금 아래가 얼굴 중심
+  }else{
+    size = Math.min(vw, vh) * 0.62;        // 얼굴을 못 찾으면 가운데를 오림
+    cx = vw/2; cy = vh/2;
+  }
+
+  ctx.save();
+  ctx.translate(FACE_SIZE/2, FACE_SIZE/2);
+  ctx.scale(-1, 1);                        // 거울처럼 보이게 좌우 반전
+  ctx.rotate(-ang);
+  ctx.scale(FACE_SIZE/size, FACE_SIZE/size);
+  ctx.translate(-cx, -cy);
+  ctx.drawImage(video, 0, 0, vw, vh);
+  ctx.restore();
+  return c.toDataURL('image/png');
+}
+
+/* ---------- 찰칵 ---------- */
+btnShot.addEventListener('click', () => {
+  const url = cropFace();
+  document.querySelectorAll('.faceImg').forEach(img => {
+    img.setAttribute('href', url);
+    img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url); // 저장할 때를 대비
+  });
+  document.querySelectorAll('.scene').forEach(s => s.classList.add('has-face'));
+  scenesEl.classList.add('on');
+  toolbar.classList.add('on');
+  stopCamera();
+  document.getElementById('shoot').style.display = 'none';
+  scenesEl.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function stopCamera(){
+  if(rafId) cancelAnimationFrame(rafId), rafId = null;
+  if(stream) stream.getTracks().forEach(t => t.stop()), stream = null;
+}
+
+/* ---------- 다시 찍기 ---------- */
+document.getElementById('btnRetake').addEventListener('click', () => {
+  scenesEl.classList.remove('on');
+  toolbar.classList.remove('on');
+  const shoot = document.getElementById('shoot');
+  shoot.style.display = '';
+  btnStart.disabled = false;
+  btnShot.disabled = true;
+  camwrap.classList.remove('ready');
+  camstate.textContent = '카메라를 준비하고 있어요…';
+  landmarks = null;
+  shoot.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+/* ---------- 동작 재생 ---------- */
+function play(id, dur){
+  const el = document.getElementById(id);
+  el.classList.remove('playing');
+  void el.offsetWidth;              // 애니메이션 다시 시작시키기
+  el.classList.add('playing');
+  setTimeout(() => el.classList.remove('playing'), dur);
+}
+document.querySelectorAll('.play').forEach(b => {
+  b.addEventListener('click', () => play(b.dataset.scene, +b.dataset.dur));
+});
+document.getElementById('btnPlayAll').addEventListener('click', () => {
+  document.querySelectorAll('.play').forEach((b,i) => {
+    setTimeout(() => play(b.dataset.scene, +b.dataset.dur), i*350);
+  });
+});
+
+/* ---------- 장면을 그림 파일로 ---------- */
+const CAP = { s1:'설날에 온 가족이 모여 세배를 합니다.', s2:'결혼을 축하합니다.',
+              s3:'장례식에서 함께 슬픔을 나눕니다.', s4:'차례를 지냅니다.' };
+
+function sceneToImage(id){
+  return new Promise((resolve, reject) => {
+    const src = document.getElementById(id);
+    const clone = src.cloneNode(true);
+    clone.classList.remove('playing');
+    clone.querySelectorAll('.slot-hint').forEach(g => g.remove());
+    // 내보낸 SVG에는 이 문서의 CSS가 따라가지 않으므로 직접 지웁니다
+    if(src.classList.contains('has-bg')){
+      clone.querySelectorAll('.bgVec').forEach(g => g.remove());
+    }
+    clone.setAttribute('width', 800);
+    clone.setAttribute('height', 600);
+    const svg = new XMLSerializer().serializeToString(clone);
+    const img = new Image();
+    img.onload  = () => resolve(img);
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+
+function drawCaption(ctx, text, x, y, w, h, size){
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#4a4358';
+  ctx.font = `${size}px Jua, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + w/2, y + h/2);
+}
+
+function download(canvas, filename){
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
+}
+
+document.querySelectorAll('.save').forEach(b => {
+  b.addEventListener('click', async () => {
+    const id = b.dataset.scene;
+    b.disabled = true;
+    try{
+      const img = await sceneToImage(id);
+      const c = document.getElementById('work');
+      c.width = 800; c.height = 672;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,800,672);
+      ctx.drawImage(img, 0, 0, 800, 600);
+      drawCaption(ctx, CAP[id], 0, 600, 800, 72, 30);
+      download(c, `가족의례_${b.dataset.name}.png`);
+    }catch(e){
+      alert('그림으로 만들지 못했습니다. 다시 시도해 주세요.');
+    }finally{ b.disabled = false; }
+  });
+});
+
+document.getElementById('btnSaveAll').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const old = btn.textContent; btn.textContent = '만드는 중…';
+  try{
+    const ids = ['s1','s2','s3','s4'];
+    const imgs = await Promise.all(ids.map(sceneToImage));
+    const c = document.getElementById('work');
+    const W = 800, H = 600, CAPH = 66, PAD = 20, TITLE = 90;
+    c.width  = PAD*3 + W*2;
+    c.height = TITLE + PAD*3 + (H+CAPH)*2;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#f6f1ea'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle = '#c8496a';
+    ctx.font = '56px Jua, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('우리 가족의 특별한 날', c.width/2, TITLE/2 + 10);
+    imgs.forEach((img, i) => {
+      const x = PAD + (i%2) * (W + PAD);
+      const y = TITLE + PAD + Math.floor(i/2) * (H + CAPH + PAD);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x, y, W, H + CAPH);
+      ctx.drawImage(img, x, y, W, H);
+      drawCaption(ctx, CAP[ids[i]], x, y + H, W, CAPH, 30);
+    });
+    download(c, '가족의례_네장면.png');
+  }catch(err){
+    alert('그림으로 만들지 못했습니다. 다시 시도해 주세요.');
+  }finally{ btn.disabled = false; btn.textContent = old; }
+});
+
+/* =========================================================
+   배경 바꾸기
+   - 인물(얼굴·몸)은 그대로 두고 뒤쪽 그림만 사진으로 바꿉니다.
+   - 얼굴 위치는 손댈 필요가 없습니다.
+   - bg/ 폴더에 파일이 있으면 자동으로, 없으면 직접 골라 넣습니다.
+   ========================================================= */
+const XLINK = 'http://www.w3.org/1999/xlink';
+const BGKEY = 'ritual-bg-';
+const SCENE_IDS = ['s1','s2','s3','s4'];
+
+function setBg(id, url, persist){
+  const scene = document.getElementById(id);
+  const img = scene.querySelector('.bgImg');
+  img.setAttribute('href', url);
+  img.setAttributeNS(XLINK, 'xlink:href', url);
+  scene.classList.add('has-bg');
+  if(persist){
+    try{ localStorage.setItem(BGKEY+id, url); }
+    catch(e){ alert('배경을 기기에 저장할 공간이 부족합니다.\n이번 수업 동안만 적용됩니다.'); }
+  }
+}
+function clearBg(id){
+  const scene = document.getElementById(id);
+  const img = scene.querySelector('.bgImg');
+  img.removeAttribute('href');
+  img.removeAttributeNS(XLINK, 'href');
+  scene.classList.remove('has-bg');
+  try{ localStorage.removeItem(BGKEY+id); }catch(e){}
+}
+
+/* 큰 사진은 줄여서 담습니다(저장 공간·속도) */
+function fileToDataURL(file, maxW = 1280, maxH = 960){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const r = Math.min(1, maxW/im.width, maxH/im.height);
+        const c = document.createElement('canvas');
+        c.width  = Math.round(im.width  * r);
+        c.height = Math.round(im.height * r);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', .85));
+      };
+      im.onerror = reject;
+      im.src = fr.result;
+    };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+
+const bgFile = document.getElementById('bgFile');
+let bgTarget = null;
+document.querySelectorAll('.bg').forEach(b => {
+  b.addEventListener('click', () => {
+    const id = b.dataset.scene;
+    if(document.getElementById(id).classList.contains('has-bg')){
+      if(confirm('이 장면의 배경 사진을 지우고 그림 배경으로 되돌릴까요?\n(취소를 누르면 다른 사진으로 바꿉니다)')){
+        clearBg(id); return;
+      }
+    }
+    bgTarget = id;
+    bgFile.value = '';
+    bgFile.click();
+  });
+});
+bgFile.addEventListener('change', async () => {
+  const f = bgFile.files && bgFile.files[0];
+  if(!f || !bgTarget) return;
+  try{ setBg(bgTarget, await fileToDataURL(f), true); }
+  catch(e){ alert('사진을 불러오지 못했습니다.'); }
+});
+
+document.getElementById('btnBgReset').addEventListener('click', () => {
+  if(confirm('네 장면의 배경 사진을 모두 지우고 그림 배경으로 되돌릴까요?')){
+    SCENE_IDS.forEach(clearBg);
+  }
+});
+
+/* 배경 불러오기 : ① 이 기기에 저장해 둔 사진 ② bg/backgrounds.json 에 적힌 파일 */
+(async function loadBackgrounds(){
+  // ① 기기에 저장된 배경
+  const left = [];
+  for(const id of SCENE_IDS){
+    let saved = null;
+    try{ saved = localStorage.getItem(BGKEY+id); }catch(e){}
+    if(saved) setBg(id, saved, false); else left.push(id);
+  }
+  if(!left.length) return;
+
+  // ② 공용 배경 목록 (없으면 그림 배경 그대로 씁니다)
+  let list = null;
+  try{
+    const res = await fetch('bg/backgrounds.json');
+    if(res.ok) list = await res.json();
+  }catch(e){ return; }
+  if(!list) return;
+
+  for(const id of left){
+    if(!list[id]) continue;
+    try{
+      const res = await fetch('bg/' + list[id]);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      const url  = await new Promise((ok, no) => {
+        const fr = new FileReader();
+        fr.onload = () => ok(fr.result); fr.onerror = no;
+        fr.readAsDataURL(blob);      // 저장(내보내기)까지 되도록 통째로 담아 둡니다
+      });
+      setBg(id, url, false);
+    }catch(e){ /* 이 장면은 그림 배경으로 */ }
+  }
+})();
+
+window.addEventListener('pagehide', stopCamera);
+</script>
+</body>
+</html>
