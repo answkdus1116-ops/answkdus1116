@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#c8496a">
 <title>우리 가족의 특별한 날</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
 
@@ -20,6 +21,7 @@
     --radius:20px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  [hidden]{display:none!important;}   /* .row 등에 display 가 있어서 꼭 필요합니다 */
   html,body{margin:0;padding:0;}
   body{
     font-family:'Gaegu',system-ui,sans-serif;
@@ -63,6 +65,15 @@
     font-family:'Jua';font-size:15px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6);
   }
   .shoot h2{font-family:'Jua';font-size:19px;margin:0;color:var(--ink);}
+  /* 오려낸 얼굴 미리보기 : 그림 얼굴색 위에 올려 실제 모습대로 보여 줍니다 */
+  .pvwrap{
+    width:min(300px,74vw);aspect-ratio:1/1;border-radius:50%;background:#fae0c8;
+    box-shadow:0 0 0 6px #fff, 0 0 0 10px var(--accent-dark);overflow:hidden;
+  }
+  #pvImg{width:100%;height:100%;object-fit:cover;display:block;}
+  .tune{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .tune label{font-family:'Jua';font-size:16px;display:flex;align-items:center;gap:10px;color:var(--muted);}
+  input[type=range]{width:min(240px,64vw);accent-color:var(--accent);}
   .privacy{
     font-size:14px;color:var(--muted);text-align:center;margin:0;line-height:1.6;
     background:#f6f4fb;border-radius:14px;padding:8px 14px;
@@ -159,16 +170,31 @@
 
   <!-- ============ 1단계 : 얼굴 촬영 ============ -->
   <section class="shoot" id="shoot">
-    <h2>① 동그라미 안에 얼굴을 맞춰 주세요</h2>
+    <h2 id="shootTitle">① 동그라미 안에 얼굴을 맞춰 주세요</h2>
+
     <div class="camwrap" id="camwrap">
       <video id="video" playsinline autoplay muted></video>
       <div class="guide"></div>
       <div class="camstate" id="camstate">카메라를 준비하고 있어요…</div>
     </div>
-    <div class="row">
+
+    <div class="pvwrap" id="pvwrap" hidden>
+      <img id="pvImg" alt="오려낸 얼굴 미리보기">
+    </div>
+
+    <div class="row" id="rowShoot">
       <button id="btnStart">📷 카메라 켜기</button>
       <button id="btnShot" disabled>✨ 찰칵! 찍기</button>
     </div>
+
+    <div class="tune" id="tune" hidden>
+      <label>얼굴 크기 <input type="range" id="zoom" min="70" max="150" value="100"></label>
+      <div class="row">
+        <button id="btnOk">✅ 이대로 할래요</button>
+        <button class="ghost" id="btnAgain">↩︎ 다시 찍기</button>
+      </div>
+    </div>
+
     <p class="privacy">🔒 사진은 이 기기 안에서만 처리되며, 인터넷 어디로도 전송되지 않습니다.</p>
   </section>
 
@@ -694,7 +720,8 @@
 /* =========================================================
    우리 가족의 특별한 날
    - 카메라로 찍은 얼굴을 네 가지 의례 장면에 합성합니다.
-   - 얼굴 정렬에 MediaPipe FaceMesh를 쓰고, 실패하면 가운데를 오려 씁니다.
+   - FaceMesh 로 두 눈을 찾아 기울기·크기를 맞춰 오리고,
+     SelfieSegmentation 으로 뒤 배경을 지웁니다(누끼).
    - 모든 처리는 브라우저 안에서만 이루어집니다.
    ========================================================= */
 
@@ -705,11 +732,30 @@ const btnStart = document.getElementById('btnStart');
 const btnShot  = document.getElementById('btnShot');
 const scenesEl = document.getElementById('scenes');
 const toolbar  = document.getElementById('toolbar');
+const shoot     = document.getElementById('shoot');
+const shootTitle= document.getElementById('shootTitle');
+const rowShoot  = document.getElementById('rowShoot');
+const pvwrap    = document.getElementById('pvwrap');
+const pvImg     = document.getElementById('pvImg');
+const tune      = document.getElementById('tune');
+const zoom      = document.getElementById('zoom');
 
-let stream = null;      // 카메라 스트림
-let faceMesh = null;    // FaceMesh 인스턴스
-let landmarks = null;   // 최근 프레임의 얼굴 랜드마크
-let rafId = null;
+let stream    = null;   // 카메라 스트림
+let faceMesh  = null;   // 얼굴 랜드마크
+let seg       = null;   // 사람/배경 분리
+let landmarks = null;   // 최근 프레임의 얼굴 점들
+let rafId     = null;
+let frameNo   = 0;
+
+const segCanvas = document.createElement('canvas');   // 최근 배경분리 마스크
+let segReady = false;
+
+/* 찍은 순간을 그대로 얼려 둡니다(슬라이더로 다시 오릴 수 있게) */
+const shot = {
+  w:0, h:0, lm:null, hasMask:false,
+  frame: document.createElement('canvas'),
+  mask : document.createElement('canvas')
+};
 
 /* ---------- 카메라 켜기 ---------- */
 btnStart.addEventListener('click', async () => {
@@ -723,108 +769,197 @@ btnStart.addEventListener('click', async () => {
     await video.play();
     camstate.textContent = '얼굴을 찾는 중…';
     btnShot.disabled = false;
-    initFaceMesh();
+    initMediaPipe();
   }catch(err){
     camstate.textContent = '카메라를 열 수 없어요';
     btnStart.disabled = false;
-    alert('카메라를 사용할 수 없습니다.\n브라우저 주소창의 카메라 권한을 확인해 주세요.\n\n(' + err.name + ')');
+    alert('카메라를 사용할 수 없습니다.\n브라우저의 카메라 권한을 확인해 주세요.\n\n(' + err.name + ')');
   }
 });
 
-/* ---------- FaceMesh 준비 ---------- */
-function initFaceMesh(){
-  if(typeof FaceMesh === 'undefined'){
-    camstate.textContent = '동그라미에 얼굴을 맞춰 주세요';
-    return; // 라이브러리를 못 불러오면 가운데 오리기로 진행
+/* ---------- 얼굴 인식 · 배경 분리 준비 ---------- */
+function initMediaPipe(){
+  const cdn = n => f => `https://cdn.jsdelivr.net/npm/@mediapipe/${n}/${f}`;
+
+  if(typeof FaceMesh === 'function' && !faceMesh){
+    try{
+      faceMesh = new FaceMesh({ locateFile: cdn('face_mesh') });
+      faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:false,
+                            minDetectionConfidence:.5, minTrackingConfidence:.5 });
+      faceMesh.onResults(res => {
+        landmarks = (res.multiFaceLandmarks && res.multiFaceLandmarks[0]) || null;
+        camwrap.classList.toggle('ready', !!landmarks);
+        camstate.textContent = landmarks ? '좋아요! 찍어 볼까요?' : '동그라미에 얼굴을 맞춰 주세요';
+      });
+    }catch(e){ faceMesh = null; }
   }
-  try{
-    faceMesh = new FaceMesh({
-      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
-    });
-    faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:false,
-                          minDetectionConfidence:.5, minTrackingConfidence:.5 });
-    faceMesh.onResults(res => {
-      landmarks = (res.multiFaceLandmarks && res.multiFaceLandmarks[0]) || null;
-      camwrap.classList.toggle('ready', !!landmarks);
-      camstate.textContent = landmarks ? '좋아요! 찍어 볼까요?' : '동그라미에 얼굴을 맞춰 주세요';
-    });
-    const loop = async () => {
-      if(video.readyState >= 2){
-        try{ await faceMesh.send({image: video}); }catch(e){ /* 프레임 건너뜀 */ }
+  if(typeof SelfieSegmentation === 'function' && !seg){
+    try{
+      seg = new SelfieSegmentation({ locateFile: cdn('selfie_segmentation') });
+      seg.setOptions({ modelSelection:1 });
+      seg.onResults(res => {
+        const m = res.segmentationMask;
+        if(!m) return;
+        segCanvas.width = m.width; segCanvas.height = m.height;
+        const c = segCanvas.getContext('2d');
+        c.clearRect(0, 0, m.width, m.height);
+        c.drawImage(m, 0, 0);
+        segReady = true;
+      });
+    }catch(e){ seg = null; }
+  }
+  if(!faceMesh) camstate.textContent = '동그라미에 얼굴을 맞춰 주세요';
+  startLoop();
+}
+
+/* 한쪽이 늦어져도 화면이 멈추지 않도록 기다리지 않고 넘깁니다 */
+let fmBusy = false, segBusy = false;
+function startLoop(){
+  if(rafId) return;
+  const tick = () => {
+    if(video.readyState >= 2){
+      frameNo++;
+      if(faceMesh && !fmBusy){
+        fmBusy = true;
+        try{ faceMesh.send({image: video}).catch(()=>{}).finally(()=>{ fmBusy = false; }); }
+        catch(e){ fmBusy = false; }
       }
-      rafId = requestAnimationFrame(loop);
-    };
-    loop();
-  }catch(e){
-    camstate.textContent = '동그라미에 얼굴을 맞춰 주세요';
+      // 배경 분리는 조금 무거워서 세 프레임에 한 번만 돌립니다
+      if(seg && !segBusy && frameNo % 3 === 0){
+        segBusy = true;
+        try{ seg.send({image: video}).catch(()=>{}).finally(()=>{ segBusy = false; }); }
+        catch(e){ segBusy = false; }
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stopLoop(){ if(rafId){ cancelAnimationFrame(rafId); rafId = null; } }
+
+/* ---------- 찍은 순간 얼리기 ---------- */
+function freeze(){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  shot.w = vw; shot.h = vh;
+  shot.frame.width = vw; shot.frame.height = vh;
+  shot.frame.getContext('2d').drawImage(video, 0, 0, vw, vh);
+
+  shot.hasMask = segReady;
+  if(segReady){
+    shot.mask.width = vw; shot.mask.height = vh;
+    const mc = shot.mask.getContext('2d');
+    mc.clearRect(0, 0, vw, vh);
+    try{ mc.filter = 'blur(2px)'; }catch(e){}   // 오려낸 가장자리를 부드럽게
+    mc.drawImage(segCanvas, 0, 0, vw, vh);
+    mc.filter = 'none';
   }
+  shot.lm = landmarks ? landmarks.map(p => ({x:p.x, y:p.y})) : null;
 }
 
 /* ---------- 얼굴 오려내기 ----------
-   눈꼬리 두 점(33·263)으로 가운데·크기·기울기를 잡아 정사각형으로 오립니다. */
-const FACE_SIZE = 400;
-function cropFace(){
-  const vw = video.videoWidth, vh = video.videoHeight;
-  const c  = document.createElement('canvas');
-  c.width = c.height = FACE_SIZE;
+   ① 두 눈(33·263)으로 가운데·크기·기울기를 맞춰 정사각형으로 오리고
+   ② 배경분리 마스크로 뒤쪽을 지운 뒤
+   ③ 가장자리를 부드러운 원으로 다듬습니다. */
+const FACE_SIZE = 420;
+function makeFace(zoomPct){
+  const S = FACE_SIZE, vw = shot.w, vh = shot.h;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
   const ctx = c.getContext('2d');
+  if(!vw || !vh) return c.toDataURL('image/png');
 
+  const lm = shot.lm;
   let cx, cy, size, ang = 0;
-  if(landmarks && landmarks[33] && landmarks[263]){
-    const L = landmarks[33], R = landmarks[263];
-    const lx = L.x*vw, ly = L.y*vh, rx = R.x*vw, ry = R.y*vh;
+  if(lm && lm[33] && lm[263]){
+    const lx = lm[33].x*vw,  ly = lm[33].y*vh;
+    const rx = lm[263].x*vw, ry = lm[263].y*vh;
     const d  = Math.hypot(rx-lx, ry-ly);
     ang  = Math.atan2(ry-ly, rx-lx);
-    size = d * 4.1;                        // 이마부터 턱까지 넉넉히
-    cx   = (lx+rx)/2 + Math.sin(ang)*d*0.42;
-    cy   = (ly+ry)/2 + Math.cos(ang)*d*0.42; // 눈보다 조금 아래가 얼굴 중심
+    size = d * 4.1;                              // 머리가 들어갈 만큼 넉넉히
+    cx = (lx+rx)/2 - Math.sin(ang)*d*0.45;       // 눈보다 조금 아래가 얼굴 한가운데
+    cy = (ly+ry)/2 + Math.cos(ang)*d*0.45;
   }else{
-    size = Math.min(vw, vh) * 0.62;        // 얼굴을 못 찾으면 가운데를 오림
+    size = Math.min(vw, vh) * 0.78;              // 못 찾으면 안내 동그라미만큼 오립니다
     cx = vw/2; cy = vh/2;
   }
+  size *= 100 / (zoomPct || 100);                // 슬라이더: 크게 = 좁게 오리기
 
   ctx.save();
-  ctx.translate(FACE_SIZE/2, FACE_SIZE/2);
-  ctx.scale(-1, 1);                        // 거울처럼 보이게 좌우 반전
+  ctx.translate(S/2, S/2);
+  ctx.scale(-1, 1);                              // 거울처럼 보이게 좌우 반전
   ctx.rotate(-ang);
-  ctx.scale(FACE_SIZE/size, FACE_SIZE/size);
+  ctx.scale(S/size, S/size);
   ctx.translate(-cx, -cy);
-  ctx.drawImage(video, 0, 0, vw, vh);
+  if(shot.hasMask){
+    ctx.drawImage(shot.mask, 0, 0, vw, vh);      // 사람 부분에만 알파가 있습니다
+    ctx.globalCompositeOperation = 'source-in';  // 겹치는 곳만 남기기
+  }
+  ctx.drawImage(shot.frame, 0, 0, vw, vh);
   ctx.restore();
+
+  ctx.globalCompositeOperation = 'destination-in';
+  const g = ctx.createRadialGradient(S/2, S/2, S*0.34, S/2, S/2, S*0.5);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(0.88, 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  ctx.globalCompositeOperation = 'source-over';
   return c.toDataURL('image/png');
 }
 
-/* ---------- 찰칵 ---------- */
+/* ---------- 찰칵 → 확인 화면 ---------- */
 btnShot.addEventListener('click', () => {
-  const url = cropFace();
+  freeze();
+  stopLoop();
+  zoom.value = 100;
+  pvImg.src = makeFace(100);
+  camwrap.hidden = true;  rowShoot.hidden = true;
+  pvwrap.hidden  = false; tune.hidden     = false;
+  shootTitle.textContent = '② 이렇게 넣을까요?';
+});
+
+zoom.addEventListener('input', () => { pvImg.src = makeFace(+zoom.value); });
+
+document.getElementById('btnAgain').addEventListener('click', () => {
+  camwrap.hidden = false; rowShoot.hidden = false;
+  pvwrap.hidden  = true;  tune.hidden     = true;
+  shootTitle.textContent = '① 동그라미 안에 얼굴을 맞춰 주세요';
+  startLoop();
+});
+
+document.getElementById('btnOk').addEventListener('click', () => {
+  const url = pvImg.src;
   document.querySelectorAll('.faceImg').forEach(img => {
     img.setAttribute('href', url);
-    img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url); // 저장할 때를 대비
+    img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
   });
   document.querySelectorAll('.scene').forEach(s => s.classList.add('has-face'));
   scenesEl.classList.add('on');
   toolbar.classList.add('on');
   stopCamera();
-  document.getElementById('shoot').style.display = 'none';
+  shoot.style.display = 'none';
   scenesEl.scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 function stopCamera(){
-  if(rafId) cancelAnimationFrame(rafId), rafId = null;
-  if(stream) stream.getTracks().forEach(t => t.stop()), stream = null;
+  stopLoop();
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
 }
 
 /* ---------- 다시 찍기 ---------- */
 document.getElementById('btnRetake').addEventListener('click', () => {
   scenesEl.classList.remove('on');
   toolbar.classList.remove('on');
-  const shoot = document.getElementById('shoot');
   shoot.style.display = '';
+  camwrap.hidden = false; rowShoot.hidden = false;
+  pvwrap.hidden  = true;  tune.hidden     = true;
+  shootTitle.textContent = '① 동그라미 안에 얼굴을 맞춰 주세요';
   btnStart.disabled = false;
   btnShot.disabled = true;
   camwrap.classList.remove('ready');
   camstate.textContent = '카메라를 준비하고 있어요…';
-  landmarks = null;
+  landmarks = null; segReady = false;
   shoot.scrollIntoView({behavior:'smooth', block:'center'});
 });
 
