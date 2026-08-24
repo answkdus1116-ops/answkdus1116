@@ -190,14 +190,9 @@
             .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
         }
     </style>
+  <script src="guard.js"></script>
 </head>
 <body>
-
-    <div id="lock-screen">
-        <h2>🔒 비밀번호를 입력하세요</h2>
-        <input type="password" id="pw-input" placeholder="비밀번호 입력...">
-        <button onclick="checkPassword()">입장하기</button>
-    </div>
 
     <header>
         <h1>✨ 자연쌤의 웹 앱 공작소 ✨</h1>
@@ -230,7 +225,7 @@
                 <span class="line"></span>
             </div>
             <div class="grid">
-                <a href="AQUARIUM.html" class="app-card">
+                <a href="aquarium.html" class="app-card">
                     <div class="app-icon">🐠</div>
                     <div class="app-title">수족관 놀이터</div>
                     <p>물고기들과 함께 놀아요!</p>
@@ -240,7 +235,7 @@
                     <div class="app-title">숲속 놀이터</div>
                     <p>새들이 훨훨~ 숲속을 날아요!</p>
                 </a>
-                <a href="ORCHARD.html" class="app-card">
+                <a href="orchard.html" class="app-card">
                     <div class="app-icon">🍎</div>
                     <div class="app-title">햇살 과수원</div>
                     <p>나뭇가지에 열매가 대롱대롱!</p>
@@ -354,19 +349,7 @@
 
     </div>
 
-    <script>
-        function checkPassword() {
-            const correctPassword = "03jayeon";
-            const input = document.getElementById('pw-input').value;
-            if (input === correctPassword) {
-                document.getElementById('lock-screen').style.display = 'none';
-            } else {
-                alert("비밀번호가 틀렸습니다!");
-            }
-        }
-        document.getElementById('pw-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') { checkPassword(); }
-        });
-    </script>
+    <!-- 잠금은 guard.js 가 모든 페이지에서 공통으로 처리합니다 -->
+
 </body>
 </html>
