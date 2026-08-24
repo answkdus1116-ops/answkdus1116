@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>마음이의 이웃 탐험대</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF9F0;
+    --cream2:#FFF1DD;
+    --peach:#FFD8B8;
+    --pink:#FFC9D4;
+    --rose:#FF8FA3;
+    --mint:#BDEAD3;
+    --sky:#BFE3FF;
+    --lav:#D9CCF5;
+    --sun:#FFE08A;
+    --ink:#5A4636;
+    --ink2:#7A6450;
+    --good:#5BB97A;
+    --soft:#E9C9A8;
+    --shadow:rgba(120,90,60,.18);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Gaegu',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, var(--cream2), transparent),
+      linear-gradient(180deg, var(--cream), #FFF4E4);
+    min-height:100dvh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.big{font-size:1.18em;}
+  h1,h2,.jua,.btn,.name-tag{font-family:'Jua',sans-serif;font-weight:400;}
+
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 40px;min-height:100dvh;display:flex;flex-direction:column;}
+
+  /* ---- 상단 바 ---- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .logo{display:flex;align-items:center;gap:8px;font-family:'Jua';font-size:1.25rem;color:var(--ink);}
+  .logo .mascot-mini{width:38px;height:38px;}
+  .hearts{
+    display:flex;align-items:center;gap:6px;background:#fff;border:3px solid var(--peach);
+    border-radius:999px;padding:6px 14px;font-family:'Jua';font-size:1.15rem;color:var(--rose);
+    box-shadow:0 4px 0 var(--soft);
+  }
+  .gear{
+    width:46px;height:46px;border:none;background:#fff;border:3px solid var(--lav);
+    border-radius:50%;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 0 #cfbff0;color:var(--ink);
+  }
+  .gear:active{transform:translateY(3px);box-shadow:0 1px 0 #cfbff0;}
+
+  /* ---- 화면 공통 ---- */
+  .screen{flex:1;display:none;flex-direction:column;}
+  .screen.on{display:flex;animation:pop .35s ease;}
+  @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+
+  /* ---- 시작 화면 ---- */
+  #start{align-items:center;justify-content:center;text-align:center;gap:6px;}
+  #start h1{font-size:2.5rem;margin:6px 0 0;color:var(--ink);letter-spacing:1px;line-height:1.2;}
+  #start .subtitle{font-size:1.3rem;color:var(--ink2);margin:0 0 6px;}
+  .mascot-big{width:170px;height:170px;animation:float 3.2s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+  .btn{
+    border:none;cursor:pointer;border-radius:24px;font-size:1.5rem;color:#fff;
+    padding:18px 34px;box-shadow:0 6px 0 var(--shadow);transition:transform .08s, box-shadow .08s;
+    display:inline-flex;align-items:center;gap:12px;justify-content:center;
+  }
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--shadow);}
+  .btn-explore{background:linear-gradient(180deg,#FFB36B,#FF8E59);box-shadow:0 7px 0 #d9742f;font-size:1.7rem;padding:22px 44px;margin-top:10px;}
+  .btn-explore .ico{font-size:1.9rem;}
+  .btn:focus-visible,.gear:focus-visible,.choice:focus-visible{outline:4px solid var(--sky);outline-offset:3px;}
+
+  /* ---- 탐색 애니메이션 ---- */
+  #explore{align-items:center;justify-content:center;text-align:center;}
+  .townview{
+    width:100%;max-width:520px;height:300px;border-radius:30px;overflow:hidden;position:relative;
+    border:6px solid #fff;box-shadow:0 10px 0 var(--soft);
+    background:linear-gradient(180deg,var(--sky) 0%,#E7F6FF 55%,var(--mint) 55%,#D5F0E0 100%);
+  }
+  .townstrip{position:absolute;top:38%;left:0;display:flex;gap:26px;font-size:62px;will-change:transform;}
+  .townstrip.run{animation:slide 1.7s cubic-bezier(.2,.7,.25,1) forwards;}
+  @keyframes slide{0%{transform:translateX(0)}100%{transform:translateX(-1400px)}}
+  .road{position:absolute;bottom:0;left:0;right:0;height:44%;background:repeating-linear-gradient(90deg,#CDE9D6 0 60px,#C2E4CC 60px 120px);}
+  .explore-cap{font-family:'Jua';font-size:1.7rem;color:var(--ink);margin-top:22px;}
+  .dots span{animation:blink 1s infinite;}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+  /* ---- 만남 화면 ---- */
+  #meet{gap:14px;}
+  .meet-banner{font-family:'Jua';text-align:center;font-size:1.5rem;color:var(--rose);}
+  .stage{
+    position:relative;width:100%;height:280px;border-radius:30px;overflow:hidden;
+    border:6px solid #fff;box-shadow:0 10px 0 var(--soft);margin-top:2px;
+  }
+  .stage .ground{position:absolute;inset:0;}
+  .layer{position:absolute;transform:translate(-50%,-50%);line-height:1;filter:drop-shadow(0 6px 4px rgba(0,0,0,.12));}
+  .layer.enter{animation:enter .5s ease both;}
+  @keyframes enter{from{opacity:0;transform:translate(-50%,-30%) scale(.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .name-tag{
+    position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+    background:#fff;border:3px solid var(--peach);border-radius:999px;
+    padding:6px 18px;font-size:1.2rem;color:var(--ink);white-space:nowrap;box-shadow:0 4px 0 var(--soft);
+  }
+  .bubble{
+    position:relative;background:#fff;border:4px solid var(--sun);border-radius:24px;
+    padding:18px 20px;font-size:1.45rem;text-align:center;color:var(--ink);
+    box-shadow:0 6px 0 #e9c96a;line-height:1.4;
+  }
+  .bubble::after{content:"";position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+    border:11px solid transparent;border-bottom-color:var(--sun);}
+  .bubble .speak{
+    margin-left:8px;border:none;background:var(--sun);color:var(--ink);border-radius:50%;
+    width:40px;height:40px;font-size:1.2rem;cursor:pointer;vertical-align:middle;box-shadow:0 3px 0 #e0bd55;
+  }
+  .question{font-family:'Jua';text-align:center;font-size:1.55rem;color:var(--ink);margin:2px 0 -2px;}
+
+  /* ---- 선택지 ---- */
+  .choices{display:grid;gap:12px;}
+  .choices.two{grid-template-columns:1fr 1fr;}
+  .choices.three{grid-template-columns:1fr;}
+  @media(min-width:560px){.choices.three{grid-template-columns:1fr 1fr 1fr;}}
+  .choice{
+    border:5px solid var(--peach);background:#fff;border-radius:24px;cursor:pointer;
+    padding:18px 14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;
+    box-shadow:0 6px 0 var(--soft);transition:transform .1s, box-shadow .1s, border-color .15s;
+    font-family:'Gaegu';font-weight:700;
+  }
+  .choice .face{font-size:3.1rem;line-height:1;}
+  .choice .label{font-size:1.3rem;color:var(--ink);line-height:1.3;}
+  .choice:active{transform:translateY(4px);box-shadow:0 2px 0 var(--soft);}
+  .choice.correct{border-color:var(--good);background:#EAFBF0;animation:cheer .5s ease;}
+  .choice.wrong{border-color:#F3C7C7;background:#FFF0F0;animation:shake .35s;}
+  .choice.dim{opacity:.45;}
+  @keyframes cheer{0%,100%{transform:scale(1)}40%{transform:scale(1.07)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+  /* ---- 피드백 줄 ---- */
+  .feedback{
+    min-height:30px;text-align:center;font-family:'Jua';font-size:1.4rem;margin-top:4px;
+  }
+  .feedback.good{color:var(--good);}
+  .feedback.try{color:#E08A5A;}
+
+  .next-row{display:flex;justify-content:center;margin-top:6px;}
+  .btn-next{background:linear-gradient(180deg,#9FD8B0,#5BB97A);box-shadow:0 6px 0 #3f8e5b;}
+  .btn-home{background:#fff;color:var(--ink2);border:3px solid var(--soft);box-shadow:0 5px 0 var(--soft);font-size:1.1rem;padding:12px 20px;}
+
+  /* 정답 별가루 */
+  .sparkles{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden;}
+  .spk{position:absolute;font-size:1.8rem;animation:rise 1.3s ease-out forwards;}
+  @keyframes rise{0%{transform:translateY(20px) scale(.4);opacity:0}20%{opacity:1}100%{transform:translateY(-220px) scale(1.2) rotate(40deg);opacity:0}}
+
+  /* 완료 화면 */
+  #done{align-items:center;justify-content:center;text-align:center;gap:10px;}
+  #done h2{font-size:2.2rem;color:var(--rose);margin:6px 0 0;}
+  #done .summary{font-size:1.4rem;color:var(--ink2);}
+
+  /* ---- 설정 패널 ---- */
+  .overlay{position:fixed;inset:0;background:rgba(90,70,54,.4);display:none;align-items:center;justify-content:center;z-index:50;padding:18px;}
+  .overlay.on{display:flex;}
+  .panel{background:var(--cream);border:5px solid var(--peach);border-radius:28px;max-width:380px;width:100%;padding:22px;box-shadow:0 14px 0 var(--shadow);}
+  .panel h3{font-family:'Jua';font-size:1.5rem;margin:0 0 6px;text-align:center;color:var(--ink);}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 4px;border-bottom:2px dashed var(--soft);font-size:1.2rem;}
+  .row:last-of-type{border-bottom:none;}
+  .seg{display:flex;gap:6px;}
+  .seg button{font-family:'Jua';border:3px solid var(--soft);background:#fff;border-radius:14px;padding:8px 14px;cursor:pointer;font-size:1rem;color:var(--ink2);}
+  .seg button.sel{background:var(--sun);border-color:#e9c96a;color:var(--ink);}
+  .toggle{width:64px;height:34px;border-radius:999px;border:none;background:var(--soft);position:relative;cursor:pointer;}
+  .toggle.on{background:var(--good);}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:28px;height:28px;background:#fff;border-radius:50%;transition:left .15s;box-shadow:0 2px 4px rgba(0,0,0,.2);}
+  .toggle.on::after{left:33px;}
+  .panel .close{margin-top:14px;width:100%;}
+  .teacher-pass{margin-top:10px;width:100%;background:#fff;border:3px dashed var(--soft);color:var(--ink2);box-shadow:none;font-size:1.05rem;padding:12px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001s !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo"><span class="mascot-mini" id="logoM"></span>이웃 탐험대</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="hearts">💖 <span id="heartCount">0</span></div>
+      <button class="gear" id="gearBtn" aria-label="설정">⚙️</button>
+    </div>
+  </div>
+
+  <!-- 시작 화면 -->
+  <section class="screen on" id="start">
+    <span class="mascot-big" id="mascotStart"></span>
+    <h1>마음이의 이웃 탐험대</h1>
+    <p class="subtitle">우리 동네 이웃을 만나러 가요!<br>이웃을 도와주는 마음을 골라보아요 🌷</p>
+    <button class="btn btn-explore" id="goExplore"><span class="ico">🔍</span>이웃 탐색하기</button>
+  </section>
+
+  <!-- 탐색 애니메이션 -->
+  <section class="screen" id="explore">
+    <div class="townview">
+      <div class="townstrip" id="strip"></div>
+      <div class="road"></div>
+    </div>
+    <div class="explore-cap">동네를 둘러보는 중<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+  </section>
+
+  <!-- 만남 + 상황 + 선택 -->
+  <section class="screen" id="meet">
+    <div class="meet-banner" id="meetBanner">이웃을 만났어요!</div>
+    <div class="stage" id="stage">
+      <div class="ground" id="ground"></div>
+      <div class="name-tag" id="nameTag">이웃</div>
+    </div>
+    <div class="bubble" id="bubble">
+      <span id="situationText">상황</span>
+      <button class="speak" id="speakSit" aria-label="다시 듣기">🔊</button>
+    </div>
+    <p class="question">어떻게 하면 좋을까요?</p>
+    <div class="choices three" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="next-row" id="nextRow" style="display:none;">
+      <button class="btn btn-next" id="nextBtn">다음 이웃 만나기 👉</button>
+    </div>
+  </section>
+
+  <!-- 완료 화면 -->
+  <section class="screen" id="done">
+    <span class="mascot-big" id="mascotDone"></span>
+    <h2>이웃 탐험 완성!</h2>
+    <p class="summary">동네 이웃 <b id="metCount">0</b>명을 모두 만났어요.<br>💖 마음 하트 <b id="finalHearts">0</b>개를 모았어요!</p>
+    <button class="btn btn-explore" id="restartBtn">🏠 다시 탐험하기</button>
+  </section>
+
+</div>
+
+<!-- 설정 -->
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h3>⚙️ 선생님 설정</h3>
+    <div class="row"><span>🔊 소리로 읽어주기</span><button class="toggle on" id="tTts"></button></div>
+    <div class="row"><span>🔤 글자 크게</span><button class="toggle" id="tBig"></button></div>
+    <div class="row"><span>🃏 선택지 개수</span>
+      <div class="seg" id="segCount">
+        <button data-n="2">2개</button>
+        <button data-n="3" class="sel">3개</button>
+      </div>
+    </div>
+    <button class="btn teacher-pass" id="passBtn">⏭️ 이 이웃 넘어가기 (선생님)</button>
+    <button class="btn btn-home close" id="closePanel">닫기</button>
+  </div>
+</div>
+
+<div class="sparkles" id="sparkles"></div>
+
+<script>
+/* ===================== 마음이 마스코트 (SVG) ===================== */
+function mascotSVG(){
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <ellipse cx="60" cy="110" rx="30" ry="6" fill="rgba(120,90,60,.12)"/>
+    <path d="M60 30 C50 14 22 18 22 42 C22 66 60 92 60 92 C60 92 98 66 98 42 C98 18 70 14 60 30 Z" fill="#FF8FA3" stroke="#fff" stroke-width="4"/>
+    <circle cx="48" cy="48" r="5.5" fill="#5A4636"/>
+    <circle cx="72" cy="48" r="5.5" fill="#5A4636"/>
+    <circle cx="46" cy="46" r="1.8" fill="#fff"/><circle cx="70" cy="46" r="1.8" fill="#fff"/>
+    <circle cx="40" cy="58" r="5" fill="#FFC9D4" opacity=".8"/>
+    <circle cx="80" cy="58" r="5" fill="#FFC9D4" opacity=".8"/>
+    <path d="M52 60 Q60 68 68 60" fill="none" stroke="#5A4636" stroke-width="3.2" stroke-linecap="round"/>
+  </svg>`;
+}
+document.getElementById('mascotStart').innerHTML = mascotSVG();
+document.getElementById('mascotDone').innerHTML  = mascotSVG();
+document.getElementById('logoM').innerHTML       = mascotSVG();
+
+/* ===================== 이웃 + 상황 데이터 ===================== */
+const NEIGHBORS = [
+  {
+    name:'장바구니 할머니', bg:'linear-gradient(180deg,#FFE7C2,#FFD2A8 60%,#E9C28A 60%,#E0B47A)',
+    layers:[{e:'👵',x:50,y:46,s:120},{e:'🛍️',x:33,y:64,s:58},{e:'🛍️',x:67,y:64,s:58}],
+    sit:'할머니가 무거운 장바구니를 들고 계세요.',
+    choices:[
+      {e:'🤝', t:'"제가 들어드릴게요!"', ok:true},
+      {e:'🏃', t:'그냥 빠르게 지나가요.', ok:false},
+      {e:'🙈', t:'못 본 척 딴 곳을 봐요.', ok:false},
+    ],
+    praise:'무거운 짐을 함께 들어드렸어요. 정말 친절해요! 💪'
+  },
+  {
+    name:'넘어진 친구', bg:'linear-gradient(180deg,#CDEBFF,#D9F3E4 60%,#BFE6CC 60%,#AEDCBD)',
+    layers:[{e:'🧒',x:50,y:52,s:120},{e:'😣',x:62,y:36,s:46},{e:'🩹',x:38,y:64,s:44}],
+    sit:'친구가 넘어져서 아파하고 있어요.',
+    choices:[
+      {e:'🤗', t:'"괜찮아? 같이 일어나자."', ok:true},
+      {e:'😆', t:'손가락질하며 웃어요.', ok:false},
+      {e:'🚶', t:'모른 척 지나가요.', ok:false},
+    ],
+    praise:'다친 친구를 위로하고 일으켜 주었어요. 따뜻한 마음이에요! 🌟'
+  },
+  {
+    name:'아기와 엄마', bg:'linear-gradient(180deg,#F0E2FF,#E6D6FB 60%,#D9CCF5 60%,#CBBDEE)',
+    layers:[{e:'👩',x:42,y:48,s:108},{e:'👶',x:58,y:56,s:74},{e:'💤',x:70,y:36,s:46}],
+    sit:'아기가 엄마 품에서 새근새근 자고 있어요.',
+    choices:[
+      {e:'🤫', t:'조용조용 지나가요.', ok:true},
+      {e:'📢', t:'큰 소리로 떠들어요.', ok:false},
+      {e:'🏃', t:'쿵쿵 뛰어다녀요.', ok:false},
+    ],
+    praise:'자는 아기를 위해 조용히 해주었어요. 배려심이 가득해요! 🌙'
+  },
+  {
+    name:'택배 아저씨', bg:'linear-gradient(180deg,#FFE0B8,#FFCF98 60%,#E9BE84 60%,#DBAF77)',
+    layers:[{e:'🧑‍🦱',x:42,y:50,s:112},{e:'📦',x:60,y:58,s:62},{e:'📦',x:60,y:40,s:50}],
+    sit:'택배 아저씨가 무거운 상자를 들고 문 앞에 오셨어요.',
+    choices:[
+      {e:'🚪', t:'문을 열어드려요.', ok:true},
+      {e:'🙅', t:'길을 막고 서 있어요.', ok:false},
+      {e:'🤷', t:'그냥 쳐다만 봐요.', ok:false},
+    ],
+    praise:'문을 열어드려서 아저씨가 편하게 들어오셨어요. 멋져요! 👏'
+  },
+  {
+    name:'옆집 아저씨', bg:'linear-gradient(180deg,#CFE9D6,#BFE3FF 55%,#A9D6F0 55%,#97CAE6)',
+    layers:[{e:'🧔',x:50,y:48,s:118},{e:'🛗',x:24,y:60,s:50},{e:'👋',x:70,y:40,s:48}],
+    sit:'엘리베이터에서 옆집 아저씨를 만났어요.',
+    choices:[
+      {e:'😊', t:'"안녕하세요!" 인사해요.', ok:true},
+      {e:'😶', t:'고개를 푹 숙여요.', ok:false},
+      {e:'📱', t:'못 본 척 휴대폰만 봐요.', ok:false},
+    ],
+    praise:'먼저 반갑게 인사했어요. 인사는 배려의 시작이에요! 🌸'
+  },
+  {
+    name:'청소하시는 분', bg:'linear-gradient(180deg,#FFF0C2,#FCE6A6 60%,#EDD68C 60%,#E0C97D)',
+    layers:[{e:'🧹',x:38,y:54,s:70},{e:'🧑‍🔧',x:54,y:48,s:110},{e:'✨',x:30,y:38,s:44}],
+    sit:'아주머니가 우리 복도를 깨끗이 청소하고 계세요.',
+    choices:[
+      {e:'🙏', t:'"고맙습니다!" 인사해요.', ok:true},
+      {e:'🥤', t:'쓰레기를 또 버려요.', ok:false},
+      {e:'👟', t:'젖은 바닥을 막 밟아요.', ok:false},
+    ],
+    praise:'고마운 마음을 전했어요. 감사 인사는 큰 배려예요! 💛'
+  },
+  {
+    name:'심심한 동생', bg:'linear-gradient(180deg,#FFD9E2,#FFC9D4 60%,#F4B6C4 60%,#E8A6B6)',
+    layers:[{e:'🧒',x:38,y:50,s:104},{e:'🧸',x:58,y:58,s:60},{e:'❓',x:64,y:34,s:44}],
+    sit:'동생이 혼자 심심해서 같이 놀고 싶어 해요.',
+    choices:[
+      {e:'🎲', t:'"같이 놀자!" 함께해요.', ok:true},
+      {e:'🚫', t:'"저리 가." 밀어내요.', ok:false},
+      {e:'🙄', t:'본 척도 안 해요.', ok:false},
+    ],
+    praise:'동생과 사이좋게 함께 놀았어요. 다정한 형아·누나예요! 🎈'
+  },
+  {
+    name:'강아지와 이웃', bg:'linear-gradient(180deg,#D4F0DE,#BDEAD3 60%,#A6DDC0 60%,#92D0AE)',
+    layers:[{e:'🧑',x:40,y:46,s:108},{e:'🐶',x:62,y:62,s:68},{e:'🦴',x:74,y:46,s:40}],
+    sit:'이웃이 강아지와 산책하고 있어요.',
+    choices:[
+      {e:'🙋', t:'"쓰다듬어도 될까요?" 물어봐요.', ok:true},
+      {e:'😤', t:'갑자기 큰 소리를 질러요.', ok:false},
+      {e:'🪨', t:'강아지를 툭툭 건드려요.', ok:false},
+    ],
+    praise:'먼저 물어보고 강아지를 존중했어요. 사려 깊어요! 🐾'
+  },
+];
+
+/* 칭찬 멘트 (정답 공통 격려) */
+const CHEERS = ['참 잘했어요!','정말 멋져요!','와, 친절해요!','마음이가 기뻐해요!','최고예요!'];
+const TRY_AGAIN = ['다시 한 번 생각해 볼까요?','이웃을 도와주는 마음을 골라보아요.','괜찮아요, 다시 골라보아요!'];
+
+/* ===================== 상태 ===================== */
+let order = [];          // 섞인 순서
+let idx = 0;             // 현재 인덱스
+let hearts = 0;
+let met = 0;
+let answered = false;
+const settings = { tts:true, big:false, count:3 };
+
+/* ===================== 유틸 ===================== */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* TTS */
+let voices=[];
+function loadVoices(){ voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function speak(text){
+  if(!settings.tts || !window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='ko-KR'; u.rate=0.95; u.pitch=1.1;
+    const ko = voices.find(v=>v.lang && v.lang.toLowerCase().startsWith('ko'));
+    if(ko) u.voice=ko;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ===================== 탐색 → 만남 흐름 ===================== */
+const STRIP_EMOJI = ['🏠','🌳','🏢','🌻','🏬','🚲','🏡','🌲','⛲','🏪','🌸','🚌'];
+function buildStrip(){
+  const strip = document.getElementById('strip');
+  let html='';
+  for(let i=0;i<28;i++){ html += `<span>${STRIP_EMOJI[i%STRIP_EMOJI.length]}</span>`; }
+  strip.innerHTML = html;
+}
+function startExplore(){
+  if(idx >= order.length){ finish(); return; }
+  show('explore');
+  buildStrip();
+  const strip = document.getElementById('strip');
+  strip.classList.remove('run'); void strip.offsetWidth; strip.classList.add('run');
+  speak('두근두근, 누구를 만날까요?');
+  setTimeout(presentNeighbor, 1750);
+}
+
+function presentNeighbor(){
+  const n = NEIGHBORS[order[idx]];
+  answered = false;
+
+  // 무대 구성
+  const stage = document.getElementById('stage');
+  const ground = document.getElementById('ground');
+  ground.style.background = n.bg;
+  // 기존 레이어 제거
+  stage.querySelectorAll('.layer').forEach(el=>el.remove());
+  n.layers.forEach((L,i)=>{
+    const sp = document.createElement('span');
+    sp.className='layer enter';
+    sp.textContent=L.e;
+    sp.style.left=L.x+'%'; sp.style.top=L.y+'%';
+    sp.style.fontSize=L.s+'px';
+    sp.style.animationDelay=(i*0.08)+'s';
+    stage.insertBefore(sp, document.getElementById('nameTag'));
+  });
+  document.getElementById('nameTag').textContent = n.name;
+  document.getElementById('situationText').textContent = n.sit;
+  document.getElementById('feedback').textContent=''; document.getElementById('feedback').className='feedback';
+  document.getElementById('nextRow').style.display='none';
+
+  // 선택지
+  const wrap = document.getElementById('choices');
+  wrap.className = 'choices ' + (settings.count===2?'two':'three');
+  let opts = n.choices.slice();
+  if(settings.count===2){
+    const correct = opts.find(o=>o.ok);
+    const wrongs = shuffle(opts.filter(o=>!o.ok));
+    opts = shuffle([correct, wrongs[0]]);
+  } else {
+    opts = shuffle(opts);
+  }
+  wrap.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice'; b.type='button';
+    b.innerHTML = `<span class="face">${o.e}</span><span class="label">${o.t}</span>`;
+    b.addEventListener('click',()=>choose(b,o,n));
+    wrap.appendChild(b);
+  });
+
+  show('meet');
+  // 상황 읽어주기 (만남 멘트 후)
+  speak(n.name + '를 만났어요. ' + n.sit + ' 어떻게 하면 좋을까요?');
+}
+
+function choose(btn, opt, n){
+  if(answered) return;
+  if(opt.ok){
+    answered = true;
+    btn.classList.add('correct');
+    document.querySelectorAll('.choice').forEach(c=>{ if(c!==btn) c.classList.add('dim'); c.style.pointerEvents='none'; });
+    hearts++; met++;
+    document.getElementById('heartCount').textContent = hearts;
+    const fb = document.getElementById('feedback');
+    fb.className='feedback good';
+    fb.textContent = pick(CHEERS) + ' ' + n.praise;
+    sparkle();
+    speak(pick(CHEERS) + ' ' + n.praise);
+    document.getElementById('nextRow').style.display='flex';
+    document.getElementById('nextBtn').textContent =
+      (idx >= order.length-1) ? '탐험 마치기 🎉' : '다음 이웃 만나기 👉';
+  } else {
+    // 오답: 감점 없음, 부드럽게 재안내
+    btn.classList.add('wrong');
+    const fb = document.getElementById('feedback');
+    fb.className='feedback try';
+    const msg = pick(TRY_AGAIN);
+    fb.textContent = '🤔 ' + msg;
+    speak(msg);
+    setTimeout(()=>btn.classList.remove('wrong'), 600);
+  }
+}
+
+function nextNeighbor(){ idx++; startExplore(); }
+
+function finish(){
+  document.getElementById('metCount').textContent = met;
+  document.getElementById('finalHearts').textContent = hearts;
+  show('done');
+  speak('이웃 탐험을 모두 마쳤어요! 마음 하트를 ' + hearts + '개나 모았어요. 정말 잘했어요!');
+}
+
+function startGame(){
+  order = shuffle(NEIGHBORS.map((_,i)=>i));
+  idx=0; hearts=0; met=0;
+  document.getElementById('heartCount').textContent='0';
+  startExplore();
+}
+
+/* 별가루 */
+function sparkle(){
+  const box=document.getElementById('sparkles');
+  const icons=['⭐','💖','✨','🌟','💛'];
+  for(let i=0;i<16;i++){
+    const s=document.createElement('span');
+    s.className='spk'; s.textContent=icons[i%icons.length];
+    s.style.left=(15+Math.random()*70)+'%';
+    s.style.bottom=(20+Math.random()*30)+'%';
+    s.style.animationDelay=(Math.random()*0.3)+'s';
+    box.appendChild(s);
+    setTimeout(()=>s.remove(),1500);
+  }
+}
+
+/* ===================== 이벤트 ===================== */
+document.getElementById('goExplore').addEventListener('click', startGame);
+document.getElementById('nextBtn').addEventListener('click', nextNeighbor);
+document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('speakSit').addEventListener('click', ()=>{
+  const n = NEIGHBORS[order[idx]]; if(n) speak(n.sit);
+});
+
+/* 설정 패널 */
+const overlay=document.getElementById('overlay');
+document.getElementById('gearBtn').addEventListener('click',()=>overlay.classList.add('on'));
+document.getElementById('closePanel').addEventListener('click',()=>overlay.classList.remove('on'));
+overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.classList.remove('on'); });
+
+const tTts=document.getElementById('tTts');
+tTts.addEventListener('click',()=>{ settings.tts=!settings.tts; tTts.classList.toggle('on',settings.tts); if(!settings.tts && window.speechSynthesis) speechSynthesis.cancel(); });
+
+const tBig=document.getElementById('tBig');
+tBig.addEventListener('click',()=>{ settings.big=!settings.big; tBig.classList.toggle('on',settings.big); document.body.classList.toggle('big',settings.big); });
+
+document.getElementById('segCount').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  settings.count=parseInt(b.dataset.n,10);
+  document.querySelectorAll('#segCount button').forEach(x=>x.classList.toggle('sel',x===b));
+  // 현재 만남 화면이면 즉시 반영
+  if(document.getElementById('meet').classList.contains('on') && !answered){ presentNeighbor(); }
+});
+
+document.getElementById('passBtn').addEventListener('click',()=>{
+  overlay.classList.remove('on');
+  if(document.getElementById('done').classList.contains('on') || idx>=order.length){ return; }
+  nextNeighbor();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+
+/* 기본 설정 */
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; font-family: 'Gaegu', cursive;
+    background-color: #87ceeb;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 🌻 1. 꽃밭 캔버스 (전체 화면 고정) — 배경은 코드로 직접 그림 */
+#gardenCanvas {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 1; display: block; touch-action: none;
+}
+
+/* 🚪 2. 입장 레이어 (여름 하늘 + 햇살) */
+#entryOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% 25%, #fff1a8 0%, #ffd36e 24%, #7ec8e3 66%, #4aa3c9 100%);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 9999; overflow: hidden;
+}
+
+.entry-content {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    padding: 40px 60px; border-radius: 40px; border: 6px solid #ff9e3d;
+    text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    animation: contentPopUp 0.6s ease-out;
+}
+
+.entry-icon { font-size: 60px; margin-bottom: 10px; animation: bounce 2s infinite; }
+
+.entry-content h1 {
+    font-size: 3rem; color: #f5842b; margin: 10px 0 30px 0;
+    text-shadow: 2px 2px 0px white;
+}
+
+.btn-start {
+    padding: 15px 40px; font-size: 2.2rem; background: #ff9e3d; color: white;
+    border: none; border-radius: 50px; cursor: pointer; font-family: 'Gaegu';
+    box-shadow: 0 8px 0 #d97218; transition: 0.1s;
+}
+.btn-start:active { transform: translateY(5px); box-shadow: 0 3px 0 #d97218; }
+
+/* 🎀 3. 상단 UI 바 (얇은 한 줄 · 좌측 정렬 · 접기 가능) */
+.ui-panel {
+    position: fixed; top: 8px; left: 8px; z-index: 100;
+    max-width: calc(100% - 16px);
+    background: rgba(255, 255, 255, 0.9); padding: 6px 8px;
+    border-radius: 16px; border: 2px solid #ff9e3d;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    display: flex; flex-direction: row; align-items: center; gap: 6px;
+    transition: opacity 0.5s ease;
+}
+
+.btn-cluster {
+    display: flex; flex-direction: row; justify-content: flex-start;
+    align-items: stretch; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; overflow-y: hidden; max-width: 100%;
+    scrollbar-width: none;
+}
+.btn-cluster::-webkit-scrollbar { display: none; }
+
+/* 접기/펴기 */
+.btn-bar-toggle { background: #fff3c4; box-shadow: 0 3px 0 #e6c84e; flex: 0 0 auto; }
+.ui-panel.collapsed .btn-cluster { display: none; }
+
+.btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 0 0 auto;
+    min-width: 50px; padding: 6px 9px; font-size: 0.82rem; border: none; border-radius: 12px;
+    cursor: pointer; font-family: 'Gaegu'; font-weight: bold; transition: 0.15s; color: #444;
+    line-height: 1.05; white-space: nowrap;
+}
+.btn .ico { font-size: 1.35rem; }
+.btn:active { transform: translateY(3px); }
+
+.btn-primary  { background: #ffd166; box-shadow: 0 3px 0 #e0a83a; }   /* 촬영 */
+.btn-accent2  { background: #a2e3c4; box-shadow: 0 3px 0 #57b894; }   /* 앨범 */
+.btn-bug      { background: #a2d2ff; box-shadow: 0 3px 0 #5b9bd5; }   /* 곤충(날아다님) */
+.btn-plant    { background: #ffc2d1; box-shadow: 0 3px 0 #e58aa0; }   /* 꽃·수박(제자리) */
+.btn-ghost    { background: #ffffff; box-shadow: 0 3px 0 #e5e5e5; border: 1px solid #eee; }
+.btn-exit     { background: #ff9e3d; color: white; box-shadow: 0 3px 0 #d97218; }
+
+/* 올리기 종류 선택 모달 */
+.modal.show { display: flex; }
+.choice-box {
+    background: #fff; padding: 28px 34px; border-radius: 28px; border: 5px solid #ff9e3d;
+    text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+.choice-box h2 { color: #f5842b; margin: 0; font-size: 1.9rem; }
+.choice-btns { display: flex; gap: 18px; }
+.choice-box .btn { min-width: 120px; padding: 18px 22px; font-size: 1.3rem; }
+.choice-box .btn .ico { font-size: 2rem; }
+
+/* 📸 4. 카메라 모달 */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000;
+}
+.camera-content { position: relative; width: 90%; max-width: 500px; border: 6px solid white; border-radius: 25px; overflow: hidden; }
+#video { width: 100%; height: auto; display: block; }
+.camera-ui { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 30px; }
+.btn-capture { width: 65px; height: 65px; background: white; border: 5px solid #ff9e3d; border-radius: 50%; cursor: pointer; }
+.btn-close-cam { background: #ff9e3d; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-family: 'Gaegu'; font-size: 1.1rem; cursor: pointer; }
+
+/* 🫧 5. 로딩 알림창 */
+.custom-alert {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: white; padding: 25px 30px; border-radius: 25px; border: 4px solid #ffca28;
+    display: none; flex-direction: column; align-items: center; gap: 12px; z-index: 3000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align: center;
+}
+.custom-alert.show { display: flex; }
+.custom-alert .spin { font-size: 42px; animation: bounce 1.2s infinite; }
+.custom-alert .msg { font-size: 1.3rem; color: #444; }
+
+/* ✨ 애니메이션 */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+@keyframes contentPopUp {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}

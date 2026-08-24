@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자연쌤의 웹 앱 공작소 ✨</title>
+    <style>
+        /* 1. 폰트 등록 */
+        @font-face {
+            font-family: 'KoPubDotumBold';
+            src: url('./fonts/KoPub Dotum Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'MemomentKkukkukk';
+            src: url('./fonts/MemomentKkukkukk.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* 2. 색상 토큰 */
+        :root {
+            --bg:        #fff9f0;
+            --ink:       #4a4a4a;
+            --ink-soft:  #9a9a9a;
+            --pink:      #ff85a2;
+            --pink-soft: #ffd6e0;
+            --pink-line: #ffe3ec;
+            --card:      rgba(255, 255, 255, 0.55);
+            --card-hover:rgba(255, 255, 255, 0.75);
+            --shadow:    rgba(255, 133, 162, 0.18);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(var(--pink-line) 1.2px, transparent 1.2px);
+            background-size: 26px 26px;
+            font-family: 'MemomentKkukkukk', 'Noto Sans KR', sans-serif;
+            color: var(--ink);
+            margin: 0;
+            padding: 48px 20px 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 3. 헤더 */
+        header {
+            text-align: center;
+            margin-bottom: 44px;
+        }
+        h1 {
+            color: var(--pink);
+            font-family: 'MemomentKkukkukk', cursive;
+            font-size: 2.8rem;
+            margin: 0;
+            text-shadow: 2px 2px #fff;
+        }
+        .subtitle {
+            color: var(--ink-soft);
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        /* 4. 카테고리 섹션 */
+        .wrap { width: 100%; max-width: 1040px; }
+
+        .section { margin-bottom: 40px; }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .section-head .badge {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        .section-head h2 {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            font-size: 1.45rem;
+            color: var(--ink);
+            margin: 0;
+            white-space: nowrap;
+        }
+        .section-head .line {
+            flex: 1;
+            height: 2px;
+            background: var(--pink-line);
+            border-radius: 2px;
+        }
+
+        /* 5. 카드 그리드 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 18px;
+        }
+
+        .app-card {
+            background: var(--card);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 24px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--ink);
+            display: block;
+            box-shadow: 0 4px 14px var(--shadow);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+        }
+        .app-card:hover {
+            transform: translateY(-6px);
+            background: var(--card-hover);
+            border-color: var(--pink-soft);
+            box-shadow: 0 10px 22px var(--shadow);
+        }
+        .app-card:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px var(--shadow);
+        }
+
+        .app-icon { font-size: 46px; margin-bottom: 10px; }
+        .app-title {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+            word-break: keep-all;
+        }
+        .app-card p {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            margin: 0;
+            font-size: 1rem;
+            color: var(--ink-soft);
+            line-height: 1.4;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+
+        /* 6. 잠금 화면 */
+        #lock-screen {
+            position: fixed;
+            inset: 0;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 9999;
+        }
+        #lock-screen h2 {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            color: var(--ink);
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        #lock-screen input[type="password"] {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            padding: 12px 16px;
+            font-size: 1.1rem;
+            border: 2px solid var(--pink);
+            border-radius: 14px;
+            text-align: center;
+            outline: none;
+            width: 240px;
+        }
+        #lock-screen button {
+            font-family: 'MemomentKkukkukk', sans-serif;
+            padding: 11px 34px;
+            background: var(--pink);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: filter 0.2s ease;
+        }
+        #lock-screen button:hover { filter: brightness(1.05); }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2.1rem; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <h2>🔒 비밀번호를 입력하세요</h2>
+        <input type="password" id="pw-input" placeholder="비밀번호 입력...">
+        <button onclick="checkPassword()">입장하기</button>
+    </div>
+
+    <header>
+        <h1>✨ 자연쌤의 웹 앱 공작소 ✨</h1>
+        <p class="subtitle">놀고 싶은 코너를 골라보세요!</p>
+    </header>
+
+    <div class="wrap">
+
+        <!-- 사진관 -->
+        <section class="section">
+            <div class="section-head">
+                <span class="badge">📷</span>
+                <h2>사진관</h2>
+                <span class="line"></span>
+            </div>
+            <div class="grid">
+                <a href="PHOTOBOOTH.html" class="app-card">
+                    <div class="app-icon">📸</div>
+                    <div class="app-title">인생네컷 포토부스</div>
+                    <p>찰칵! 예쁜 추억을 남겨요</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- 인터랙티브 작품 전시 -->
+        <section class="section">
+            <div class="section-head">
+                <span class="badge">🖼️</span>
+                <h2>인터랙티브 작품 전시</h2>
+                <span class="line"></span>
+            </div>
+            <div class="grid">
+                <a href="AQUARIUM.html" class="app-card">
+                    <div class="app-icon">🐠</div>
+                    <div class="app-title">수족관 놀이터</div>
+                    <p>물고기들과 함께 놀아요!</p>
+                </a>
+                <a href="bird.html" class="app-card">
+                    <div class="app-icon">🐦</div>
+                    <div class="app-title">숲속 놀이터</div>
+                    <p>새들이 훨훨~ 숲속을 날아요!</p>
+                </a>
+                <a href="ORCHARD.html" class="app-card">
+                    <div class="app-icon">🍎</div>
+                    <div class="app-title">햇살 과수원</div>
+                    <p>나뭇가지에 열매가 대롱대롱!</p>
+                </a>
+                <a href="flag.html" class="app-card">
+                    <div class="app-icon">🚩</div>
+                    <div class="app-title">펄럭펄럭 국기 게양대</div>
+                    <p>국기를 찍어 올리면 하늘 높이 펄럭!</p>
+                </a>
+                <a href="GARDEN.html" class="app-card">
+                    <div class="app-icon">🌺</div>
+                    <div class="app-title">여름 꽃 정원</div>
+                    <p>다양한 꽃으로 가득 찬 아름다운 정원!</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- 예술 활동 -->
+        <section class="section">
+            <div class="section-head">
+                <span class="badge">🎨</span>
+                <h2>예술 활동</h2>
+                <span class="line"></span>
+            </div>
+            <div class="grid">
+                <a href="twinkle.html" class="app-card">
+                    <div class="app-icon">✨</div>
+                    <div class="app-title">트윙클 아트</div>
+                    <p>손가락으로 그리는 반짝이 예술!</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- 감정 -->
+        <section class="section">
+            <div class="section-head">
+                <span class="badge">💛</span>
+                <h2>감정</h2>
+                <span class="line"></span>
+            </div>
+            <div class="grid">
+                <a href="emotion.html" class="app-card">
+                    <div class="app-icon">😃</div>
+                    <div class="app-title">표정 따라하기</div>
+                    <p>감정에 따른 다양한 표정을 표정으로 따라해봐요!</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- 게임 -->
+        <section class="section">
+            <div class="section-head">
+                <span class="badge">🎮</span>
+                <h2>게임</h2>
+                <span class="line"></span>
+            </div>
+            <div class="grid">
+                <a href="touch.html" class="app-card">
+                    <div class="app-icon">🖐️</div>
+                    <div class="app-title">팡팡 터치 배틀</div>
+                    <p>누가누가 더 많이 터치할까?</p>
+                </a>
+                <a href="curling.html" class="app-card">
+                    <div class="app-icon">🥌</div>
+                    <div class="app-title">교실 컬링 올림픽</div>
+                    <p>스톤을 밀어서 과녁 안으로!</p>
+                </a>
+                <a href="balloon.html" class="app-card">
+                    <div class="app-icon">🎈</div>
+                    <div class="app-title">알록달록 풍선 팝팝</div>
+                    <p>떠오르는 풍선을 톡! 터뜨려요</p>
+                </a>
+                <a href="rhythm.html" class="app-card">
+                    <div class="app-icon">🎸</div>
+                    <div class="app-title">반짝반짝 리듬파티</div>
+                    <p>음악에 맞춰 별을 톡톡!</p>
+                </a>
+                <a href="flies.html" class="app-card">
+                    <div class="app-icon">🪰</div>
+                    <div class="app-title">여름철 파리 잡기</div>
+                    <p>윙윙~ 날아다니는 파리를 찰싹!</p>
+                </a>
+                <a class="app-card" href="animal-gym.html">
+                  <div class="app-card__icon">🐾</div>
+                  <div class="app-card__title">동물 체조 교실</div>
+                  <div class="app-card__desc">카메라로 동작을 인식해 동물처럼 변신해요</div>
+                </a>
+                <a href="hangul-body.html" class="app-card">
+                    <div class="app-icon">🙆‍♂️</div>
+                    <div class="app-title">몸으로 한글 만들기</div>
+                    <p>몸을 움직여 한글 글자를 따라 만들어봐요!</p>
+                </a>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        function checkPassword() {
+            const correctPassword = "03jayeon";
+            const input = document.getElementById('pw-input').value;
+            if (input === correctPassword) {
+                document.getElementById('lock-screen').style.display = 'none';
+            } else {
+                alert("비밀번호가 틀렸습니다!");
+            }
+        }
+        document.getElementById('pw-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') { checkPassword(); }
+        });
+    </script>
+</body>
+</html>

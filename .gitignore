@@ -1,0 +1,15 @@
+# 라이브러리 폴더 (axios 등을 설치했다면 필수)
+node_modules/
+
+# 운영체제 생성 파일
+.DS_Store
+Thumbs.db
+
+# VSC 설정 관련
+.vscode/
+
+# 환경 변수 파일 (혹시 로컬에서 .env 파일을 쓴다면)
+.env
+
+# 로그 파일
+*.log

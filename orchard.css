@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+
+* { box-sizing: border-box; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Gaegu', cursive; background: #fff; }
+
+/* 🌳 배경 이미지 레이어 */
+#bgImage {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: 1; /* 가장 뒤에 배치 */
+}
+
+/* 🍎 열매가 매달리는 실제 컨테이너 */
+#orchard-container {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 2; /* 배경 위에 배치 */
+}
+
+#orchardCanvas { width: 100%; height: 100%; }
+
+/* 🚪 입장 레이어 (귀엽게 애니메이션 추가) */
+#entryOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: linear-gradient(to bottom, #a8e063 0%, #56ab2f 100%);
+    display: flex; justify-content: center; align-items: center; z-index: 9999;
+}
+.entry-content {
+    background: rgba(255, 255, 255, 0.9); padding: 50px; border-radius: 40px; 
+    border: 6px solid #ff4d4d; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    animation: contentPopUp 0.6s ease-out;
+}
+.entry-icon { font-size: 70px; margin-bottom: 20px; animation: bounce 2s infinite; }
+.entry-content h1 { font-size: 3rem; color: #cc0000; margin-bottom: 30px; text-shadow: 2px 2px white; }
+.btn-start {
+    padding: 18px 50px; font-size: 2.3rem; background: #ff4d4d; color: white;
+    border: none; border-radius: 60px; cursor: pointer; font-family: 'Gaegu';
+    box-shadow: 0 10px 0 #cc0000; transition: 0.1s;
+}
+
+/* 🎀 아기자기한 UI 패널 */
+.ui-panel {
+    position: absolute; top: 30px; left: 30px; z-index: 100;
+    background: rgba(255, 255, 255, 0.9); padding: 25px; border-radius: 30px;
+    border: 4px solid #ff4d4d; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: opacity 0.5s ease; 
+}
+.ui-header { font-size: 2.2rem; color: #ff4d4d; text-align: center; margin-bottom: 20px; font-weight: bold; text-shadow: 1px 1px white; }
+
+.btn-main {
+    width: 100%; padding: 15px; font-size: 1.5rem; border: none; border-radius: 20px;
+    cursor: pointer; font-family: 'Gaegu'; margin-bottom: 12px; transition: 0.1s;
+}
+.camera-btn { background: #ff4d4d; color: white; box-shadow: 0 5px 0 #cc0000; }
+.upload-btn { background: #ffd93d; box-shadow: 0 5px 0 #fbc02d; color: #444; }
+.btn-main:active { transform: translateY(3px); box-shadow: none; }
+
+.btn-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.btn-circle {
+    flex: 1; padding: 12px; font-size: 1.2rem; background: white; border: 1px solid #eee;
+    border-radius: 15px; cursor: pointer; font-family: 'Gaegu'; box-shadow: 0 4px 0 #ddd;
+}
+
+.btn-exit {
+    width: 100%; padding: 12px; background: #ff4d4d; color: white; border: none;
+    border-radius: 15px; font-family: 'Gaegu'; font-size: 1.3rem; cursor: pointer;
+}
+
+/* 📸 카메라 및 모달 (귀엽게) */
+.camera-modal {
+    position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9);
+    display:none; justify-content:center; align-items:center; z-index:2000;
+}
+.camera-content { position:relative; width:90%; max-width:500px; border:8px solid white; border-radius:30px; overflow:hidden; }
+#video { width:100%; height:auto; display:block; }
+.camera-ui { position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:40px; }
+.btn-capture { width:70px; height:70px; background:white; border:5px solid #ff4d4d; border-radius:50%; }
+
+/* 🫧 알림창 (귀엽게) */
+.custom-alert {
+    position: fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+    background:white; padding:30px; border-radius:30px; border:4px solid #ff4d4d;
+    display:none; flex-direction:column; align-items:center; z-index:3000;
+}
+.custom-alert.show { display: flex; }
+
+/* ✨ 애니메이션 정의 */
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+@keyframes contentPopUp {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}

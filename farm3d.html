@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🌸 내 친구 동물 농장 3D 🌸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="farm3d.css">
+
+  <!-- Three.js r184 (CDN, 설치 불필요) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <div id="app">
+    <!-- 상단 바 -->
+    <header class="top-bar">
+      <div class="pet-title-wrap">
+        <button class="pet-name-btn" onclick="renamePet()">🌸 <span id="petNameDisplay">모찌</span></button>
+        <span class="level-badge" id="lvb">Lv.1</span>
+      </div>
+      <div class="coins-wrap">
+        <span class="coin-icon">🪙</span><span id="coins">120</span><span class="coin-label">코인</span>
+      </div>
+      <div class="exp-wrap">
+        <div class="exp-bar-outer"><div class="exp-bar-inner" id="efb" style="width:10%"></div></div>
+        <div class="exp-label" id="ell">EXP 10 / 100</div>
+      </div>
+      <button class="sound-btn" id="soundBtn" onclick="toggleSound(this)" title="소리 켜기/끄기">🔊</button>
+    </header>
+
+    <main class="main-area">
+      <!-- 좌측 -->
+      <aside class="side-panel left-panel">
+        <div class="panel-title">🐾 친구 선택</div>
+        <div class="pet-selector" id="petSelector"></div>
+
+        <div class="panel-title" style="margin-top:14px">🛍 간식 상점</div>
+        <div class="shop-list">
+          <button class="shop-item" onclick="buyItem('fish','🐟',20,15,0,10)">
+            <span class="shop-emoji">🐟</span>
+            <div><div class="shop-name">물고기</div><div class="shop-cost">🪙20</div></div>
+          </button>
+          <button class="shop-item" onclick="buyItem('cake','🎂',35,20,15,20)">
+            <span class="shop-emoji">🎂</span>
+            <div><div class="shop-name">케이크</div><div class="shop-cost">🪙35</div></div>
+          </button>
+          <button class="shop-item" onclick="buyItem('toy','🪀',25,0,25,15)">
+            <span class="shop-emoji">🪀</span>
+            <div><div class="shop-name">장난감</div><div class="shop-cost">🪙25</div></div>
+          </button>
+          <button class="shop-item" onclick="buyItem('vit','💊',40,5,10,30)">
+            <span class="shop-emoji">💊</span>
+            <div><div class="shop-name">비타민</div><div class="shop-cost">🪙40</div></div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 중앙: 3D 스테이지 -->
+      <section class="center-area">
+        <div class="stage" id="stage">
+          <div class="loading" id="loading">3D 친구 불러오는 중... 🐾</div>
+          <div class="speech-bubble" id="mbd">안녕! 나랑 놀아줘~ 🎀</div>
+          <div class="fx-layer" id="fx"></div>
+          <div class="interaction-layer" id="il"></div>
+          <div class="rotate-hint">🖐️ 끌어서 빙글 돌려요 · 두 손가락으로 확대 · 톡 쓰다듬기</div>
+        </div>
+
+        <div class="status-bars">
+          <div class="bar-row"><span class="bar-label">❤️ 건강</span><div class="bar-track"><div class="bar-fill bar-hp" id="bhp" style="width:85%"></div></div><span class="bar-val" id="vhp">85</span></div>
+          <div class="bar-row"><span class="bar-label">🍗 배고픔</span><div class="bar-track"><div class="bar-fill bar-hunger" id="bhu" style="width:60%"></div></div><span class="bar-val" id="vhu">60</span></div>
+          <div class="bar-row"><span class="bar-label">😊 행복</span><div class="bar-track"><div class="bar-fill bar-happy" id="bhh" style="width:75%"></div></div><span class="bar-val" id="vhh">75</span></div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="action-btn btn-feed" onclick="doAction('feed')"><span class="action-icon">🍖</span><span>밥주기</span></button>
+          <button class="action-btn btn-play" onclick="doAction('play')"><span class="action-icon">⚽</span><span>놀기</span></button>
+          <button class="action-btn btn-sleep" onclick="doAction('sleep')"><span class="action-icon">💤</span><span>재우기</span></button>
+          <button class="action-btn btn-wash" onclick="doAction('wash')"><span class="action-icon">🛁</span><span>씻기기</span></button>
+        </div>
+      </section>
+
+      <!-- 우측: 대화 -->
+      <aside class="side-panel right-panel">
+        <div class="panel-title">💬 대화하기</div>
+        <div class="chat-messages" id="cm">
+          <div class="msg pet">안녕! 나 모찌야~ 오늘 뭐 해? 🎀</div>
+        </div>
+        <div class="typing-dots" id="ti"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="chat-choices">
+          <div class="choices-label">✨ 뭐라고 말할까요?</div>
+          <div class="choices-grid" id="choicesGrid"></div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="ci" placeholder="직접 말하기..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-send" onclick="sendChat()">↑</button>
+        </div>
+      </aside>
+    </main>
+
+    <div class="notif-layer" id="notifLayer"></div>
+  </div>
+
+  <script type="module" src="farm3d.js"></script>
+</body>
+</html>

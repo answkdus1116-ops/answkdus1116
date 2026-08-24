@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>마음을 전해요 · 고운 말 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF6EC; --coral:#FFB5A7; --coral-deep:#FF8E7A;
+    --mint:#A8D5BA; --mint-deep:#7FC4A0; --sky:#A9D6E5;
+    --sun:#FFD97D; --pink:#FF8FA3; --ink:#5C4A3A; --ink-soft:#8A7A6A;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:'Gaegu', sans-serif;
+    background:
+      radial-gradient(circle at 15% 12%, #FFE3D6 0%, transparent 45%),
+      radial-gradient(circle at 85% 18%, #DCEFF6 0%, transparent 45%),
+      var(--cream);
+    color:var(--ink); min-height:100%; overflow-x:hidden; user-select:none;
+  }
+  h1,.jua{font-family:'Jua', sans-serif;}
+
+  .app{max-width:760px; margin:0 auto; padding:20px 18px 40px; position:relative;}
+  .screen{display:none; animation:fade .4s ease;}
+  .screen.on{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;}
+  .stars{display:flex; align-items:center; gap:8px; background:#fff; border:4px solid var(--sun);
+    border-radius:999px; padding:8px 18px; font-family:'Jua'; font-size:1.5rem; box-shadow:0 4px 0 rgba(0,0,0,.06);}
+  .stars .icon{font-size:1.7rem; line-height:1;}
+  #starCount{min-width:1.2em; text-align:center;}
+  .scan-toggle{display:flex; align-items:center; gap:10px; background:#fff; border:4px solid var(--sky);
+    border-radius:999px; padding:8px 16px; cursor:pointer; font-family:'Jua'; font-size:1.15rem; color:var(--ink);
+    box-shadow:0 4px 0 rgba(0,0,0,.06);}
+  .scan-toggle .dot{width:26px; height:26px; border-radius:50%; background:#D9CFc4; transition:.25s;}
+  .scan-toggle.active{background:var(--sky); color:#fff;}
+  .scan-toggle.active .dot{background:#fff;}
+
+  .mascot-wrap{text-align:center; margin:4px 0 10px;}
+  .mascot{width:150px; height:150px; display:inline-block;}
+  .mascot.happy{animation:bounce .6s ease;}
+  @keyframes bounce{0%,100%{transform:translateY(0) scale(1);} 30%{transform:translateY(-24px) scale(1.08);} 60%{transform:translateY(0) scale(.97);}}
+  .mascot .eye-closed{display:none;}
+  .mascot.happy .eye-open{display:none;}
+  .mascot.happy .eye-closed{display:block;}
+
+  .bubble{background:#fff; border:5px solid var(--coral); border-radius:30px; padding:18px 22px 22px;
+    margin:0 auto 22px; max-width:600px; text-align:center; position:relative; box-shadow:0 8px 0 rgba(255,142,122,.18);}
+  .bubble:after{content:""; position:absolute; top:-22px; left:50%; transform:translateX(-50%);
+    border:14px solid transparent; border-bottom-color:var(--coral);}
+  .bubble .prompt{font-family:'Jua'; font-size:1.6rem; line-height:1.5; white-space:pre-line;}
+  .bubble .stage{display:flex; flex-direction:column; align-items:center; gap:4px; min-height:1.2em;}
+  .bubble .stage-pic{width:120px; height:120px; object-fit:contain; display:none; margin-top:6px;}
+  .bubble .said{font-family:'Jua'; font-size:2.6rem; color:var(--coral-deep);}
+
+  .home-title{text-align:center; font-size:2.6rem; margin:2px 0 2px;}
+  .home-sub{text-align:center; font-size:1.4rem; color:var(--ink-soft); margin:0 0 18px;}
+  .situations{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .sit-card{border:none; cursor:pointer; border-radius:28px; padding:22px 12px; display:flex; flex-direction:column;
+    align-items:center; gap:8px; box-shadow:0 7px 0 rgba(0,0,0,.10); transition:transform .12s; font-family:'Jua';}
+  .sit-card:active{transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.10);}
+  .sit-card .emoji{font-size:3.6rem; line-height:1;}
+  .sit-card .name{font-size:1.7rem; color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.12);}
+
+  .choices{display:flex; flex-direction:column; gap:18px; margin-top:6px;}
+  .choice{border:6px solid #fff; cursor:pointer; border-radius:30px; padding:18px 20px; display:flex; align-items:center;
+    gap:20px; background:#fff; box-shadow:0 7px 0 rgba(0,0,0,.10); transition:transform .12s, border-color .15s;
+    font-family:'Jua'; text-align:left; width:100%;}
+  .choice:active{transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.10);}
+  .choice .pic-box{flex:0 0 auto; width:92px; height:92px; border-radius:24px; display:flex; align-items:center;
+    justify-content:center; overflow:hidden;}
+  .choice .pic-box .emoji{font-size:3.2rem; line-height:1;}
+  .choice .pic-box img{width:100%; height:100%; object-fit:contain; display:none;}
+  .choice .text{font-size:2.3rem; color:var(--ink); line-height:1.2;}
+  body.scan .choice.scan-on{border-color:var(--coral-deep); transform:scale(1.03);
+    box-shadow:0 0 0 6px rgba(255,142,122,.30), 0 7px 0 rgba(0,0,0,.10);}
+
+  .footer{display:flex; gap:14px; margin-top:24px;}
+  .btn{flex:1; border:none; cursor:pointer; border-radius:24px; padding:18px 10px; font-family:'Jua'; font-size:1.5rem;
+    color:#fff; box-shadow:0 6px 0 rgba(0,0,0,.12); transition:transform .12s; display:flex; align-items:center;
+    justify-content:center; gap:8px;}
+  .btn:active{transform:translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,.12);}
+  .btn-home{background:var(--sky);}
+  .btn-replay{background:var(--mint-deep);}
+  .scan-bar{display:none; width:100%; margin-top:20px; border:none; cursor:pointer; border-radius:28px; padding:26px;
+    font-family:'Jua'; font-size:2rem; color:#fff; background:var(--coral-deep); box-shadow:0 7px 0 rgba(0,0,0,.14);
+    animation:pulse 1.6s ease-in-out infinite;}
+  body.scan .play .scan-bar{display:block;}
+  body.scan .play .footer .btn-replay{display:none;}
+  @keyframes pulse{50%{filter:brightness(1.08); transform:scale(1.01);}}
+
+  .hearts{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .heart{position:absolute; font-size:2.4rem; animation:floatUp 1.6s ease-out forwards;}
+  @keyframes floatUp{0%{opacity:0; transform:translateY(0) scale(.4);} 20%{opacity:1;}
+    100%{opacity:0; transform:translateY(-220px) scale(1.3);}}
+
+  .help{text-align:center; color:var(--ink-soft); font-size:1.15rem; margin-top:26px; line-height:1.6;}
+  /* 선생님용 설정 */
+  .teacher{margin-top:30px; text-align:center; font-family:'Gaegu'; color:var(--ink-soft); font-size:1rem;}
+  .teacher summary{cursor:pointer; font-size:1.1rem;}
+  .teacher .row{display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:12px;}
+  .teacher select, .teacher input[type=range]{font-family:'Gaegu'; font-size:1rem;}
+  .teacher label{display:flex; align-items:center; gap:6px;}
+
+  @media (max-width:480px){
+    .home-title{font-size:2.1rem;} .choice .text{font-size:1.95rem;} .bubble .prompt{font-size:1.4rem;}
+    .bubble .said{font-size:2.1rem;} .sit-card .name{font-size:1.45rem;} .choice .pic-box{width:78px; height:78px;}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;} .scan-bar{animation:none;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="stars" aria-label="모은 칭찬 별"><span class="icon">⭐</span><span id="starCount">0</span></div>
+    <button class="scan-toggle" id="scanToggle" aria-pressed="false"><span class="dot"></span><span>한 번 누르기</span></button>
+  </div>
+
+  <!-- 홈 -->
+  <section class="screen on" id="home">
+    <div class="mascot-wrap"><div class="mascot" id="homeMascot"></div></div>
+    <h1 class="home-title">고운 말 만들기</h1>
+    <p class="home-sub">언제 고운 말을 할까? 골라 보자 🌷</p>
+    <div class="situations" id="situations"></div>
+    <p class="help">그림을 누르면 마음이가 고운 말을 들려줘.<br>손가락으로 누르거나, 스페이스 바를 눌러도 돼.</p>
+  </section>
+
+  <!-- 표현 고르기 -->
+  <section class="screen play" id="play">
+    <div class="mascot-wrap"><div class="mascot" id="playMascot"></div></div>
+    <div class="bubble">
+      <div class="prompt" id="prompt"></div>
+      <div class="stage"><img class="stage-pic" id="stagePic" alt=""><div class="said" id="said"></div></div>
+    </div>
+    <div class="choices" id="choices"></div>
+    <button class="scan-bar" id="scanBar">👇 여기를 눌러</button>
+    <div class="footer">
+      <button class="btn btn-home" id="btnHome">🏠 처음으로</button>
+      <button class="btn btn-replay" id="btnReplay">🔊 다시 듣기</button>
+    </div>
+  </section>
+
+  <!-- 선생님용 설정 -->
+  <details class="teacher">
+    <summary>🎚️ 선생님용 설정</summary>
+    <div class="row">
+      <label>목소리
+        <select id="voiceSelect"><option value="">자동</option></select>
+      </label>
+      <label>속도
+        <input type="range" id="rateRange" min="0.6" max="1.1" step="0.05" value="0.85">
+      </label>
+      <label><input type="checkbox" id="useArasaac" checked> 그림(ARASAAC) 불러오기</label>
+    </div>
+  </details>
+
+</div>
+
+<div class="hearts" id="hearts" aria-hidden="true"></div>
+
+<script>
+/* ============ 데이터 (모두 반말) ============
+   key   : ARASAAC 그림 검색에 쓰는 한국어 낱말
+   audio : 미리 녹음한 음성 파일명 (audio/파일명.mp3) — 없으면 브라우저 음성 사용 */
+const SITUATIONS = [
+  { id:'thanks', name:'고마울 때', emoji:'🙏', bg:'linear-gradient(160deg,#FFD97D,#FFB85C)',
+    prompt:'친구가 도와줬어.\n뭐라고 말할까?',
+    items:[
+      {emoji:'💛', cell:'#FFF3CE', text:'고마워',          key:'고맙다',  audio:'고마워'},
+      {emoji:'🤗', cell:'#FFE9CE', text:'도와줘서 고마워',  key:'감사하다', audio:'도와줘서고마워'},
+      {emoji:'😊', cell:'#FFF0D6', text:'정말 고마워',      key:'고맙다',  audio:'정말고마워'},
+    ]},
+  { id:'sorry', name:'미안할 때', emoji:'🤝', bg:'linear-gradient(160deg,#A9D6E5,#7FB8D6)',
+    prompt:'친구와 부딪쳤어.\n뭐라고 말할까?',
+    items:[
+      {emoji:'🙇', cell:'#DCEFF6', text:'미안해',        key:'미안하다', audio:'미안해'},
+      {emoji:'🫶', cell:'#E2F1F7', text:'괜찮아?',       key:'괜찮다',  audio:'괜찮아'},
+      {emoji:'🤲', cell:'#D6ECF4', text:'내가 도와줄게',  key:'돕다',    audio:'내가도와줄게'},
+    ]},
+  { id:'please', name:'부탁할 때', emoji:'🙋', bg:'linear-gradient(160deg,#FFB5A7,#FF8E7A)',
+    prompt:'도움이 필요해.\n뭐라고 말할까?',
+    items:[
+      {emoji:'🙏', cell:'#FFE3DC', text:'도와줘',          key:'돕다',  audio:'도와줘'},
+      {emoji:'👫', cell:'#FFE8E2', text:'같이 하자',        key:'함께',  audio:'같이하자'},
+      {emoji:'✏️', cell:'#FFDED6', text:'빌려줄 수 있어?',  key:'빌리다', audio:'빌려줄수있어'},
+    ]},
+  { id:'praise', name:'칭찬할 때', emoji:'👏', bg:'linear-gradient(160deg,#A8D5BA,#7FC4A0)',
+    prompt:'친구가 잘했어!\n뭐라고 말할까?',
+    items:[
+      {emoji:'🌟', cell:'#DCF0E4', text:'잘했어',  key:'잘하다', audio:'잘했어'},
+      {emoji:'😍', cell:'#E2F2EA', text:'멋지다',  key:'멋지다', audio:'멋지다'},
+      {emoji:'🏆', cell:'#D6EEDF', text:'최고야',  key:'최고',  audio:'최고야'},
+    ]},
+  { id:'hello', name:'인사할 때', emoji:'👋', bg:'linear-gradient(160deg,#FF8FA3,#FF6F8A)',
+    prompt:'친구를 만났어.\n뭐라고 말할까?',
+    items:[
+      {emoji:'🌞', cell:'#FFE0E6', text:'안녕',    key:'안녕',  audio:'안녕'},
+      {emoji:'💖', cell:'#FFE6EB', text:'반가워',  key:'반갑다', audio:'반가워'},
+      {emoji:'👋', cell:'#FFDBE3', text:'또 보자',  key:'인사',  audio:'또보자'},
+    ]},
+];
+
+/* ============ 귀여운 마스코트 (마음이) ============ */
+function mascotSVG(){
+  return `
+  <svg viewBox="0 0 120 124" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <ellipse cx="60" cy="116" rx="32" ry="6" fill="rgba(0,0,0,.07)"/>
+    <!-- 새싹 -->
+    <path d="M60 22 C60 12 52 8 48 12 C45 15 50 22 60 24" fill="#9BD3A6"/>
+    <path d="M60 22 C60 12 68 8 72 12 C75 15 70 22 60 24" fill="#B6E0BE"/>
+    <!-- 몸통 -->
+    <path d="M60 22 C36 22 26 40 26 64 C26 92 42 110 60 110 C78 110 94 92 94 64 C94 40 84 22 60 22 Z"
+          fill="#FFD9C7" stroke="#FFB89E" stroke-width="3"/>
+    <!-- 뺨 -->
+    <circle cx="40" cy="74" r="8" fill="#FF9FB0" opacity=".55"/>
+    <circle cx="80" cy="74" r="8" fill="#FF9FB0" opacity=".55"/>
+    <!-- 뜬 눈 -->
+    <g class="eye-open">
+      <ellipse cx="48" cy="62" rx="5" ry="6.5" fill="#5C4A3A"/>
+      <ellipse cx="72" cy="62" rx="5" ry="6.5" fill="#5C4A3A"/>
+      <circle cx="49.6" cy="59.6" r="1.8" fill="#fff"/>
+      <circle cx="73.6" cy="59.6" r="1.8" fill="#fff"/>
+    </g>
+    <!-- 웃는(감은) 눈 -->
+    <g class="eye-closed">
+      <path d="M43 63 Q48 57 53 63" fill="none" stroke="#5C4A3A" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M67 63 Q72 57 77 63" fill="none" stroke="#5C4A3A" stroke-width="3.2" stroke-linecap="round"/>
+    </g>
+    <!-- 입 -->
+    <path d="M52 78 Q60 88 68 78 Q60 84 52 78 Z" fill="#E8607A"/>
+    <!-- 작은 팔 -->
+    <circle cx="27" cy="86" r="6" fill="#FFD9C7" stroke="#FFB89E" stroke-width="2.5"/>
+    <circle cx="93" cy="86" r="6" fill="#FFD9C7" stroke="#FFB89E" stroke-width="2.5"/>
+  </svg>`;
+}
+
+/* ============ 음성 ============ */
+let voices = [], chosenVoice = null, rate = 0.85;
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+  const sel = document.getElementById('voiceSelect');
+  sel.length = 1;
+  voices.forEach((v,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=v.name; sel.appendChild(o); });
+  // 자동: 'Google' 또는 'Natural'(Microsoft 신경망) 음성 우선
+  chosenVoice = voices.find(v=>/google|natural|신경|yuna|sora|sunhi|injoon|hyunsu/i.test(v.name)) || voices[0] || null;
+}
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+function speak(text, audioName){
+  // 1) 미리 녹음한 mp3가 있으면 그것부터 재생 (가장 자연스러움)
+  if(audioName){
+    const a = new Audio('audio/' + audioName + '.mp3');
+    a.play().then(()=>{}).catch(()=> speakTTS(text)); // 파일 없으면 브라우저 음성
+    a.onerror = ()=> speakTTS(text);
+    return;
+  }
+  speakTTS(text);
+}
+function speakTTS(text){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ko-KR'; u.rate=rate; u.pitch=1.12;
+  if(chosenVoice) u.voice = chosenVoice;
+  speechSynthesis.speak(u);
+}
+
+/* ============ 부드러운 칭찬 소리 ============ */
+let audioCtx=null;
+function chime(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    [523.25,659.25,783.99].forEach((f,i)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      const t=audioCtx.currentTime+i*0.12;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.04);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.55);
+    });
+  }catch(e){}
+}
+
+/* ============ ARASAAC 그림 ============ */
+const picCache = {};
+async function loadPicto(keyword, imgEl){
+  if(!document.getElementById('useArasaac').checked) return;
+  try{
+    let id = picCache[keyword];
+    if(id === undefined){
+      const r = await fetch('https://api.arasaac.org/api/pictograms/ko/search/' + encodeURIComponent(keyword));
+      const data = await r.json();
+      id = (Array.isArray(data) && data.length) ? data[0]._id : null;
+      picCache[keyword] = id;
+    }
+    if(id){
+      const url = 'https://static.arasaac.org/pictograms/' + id + '/' + id + '_500.png';
+      imgEl.onload = ()=>{ imgEl.style.display='block'; const e=imgEl.previousElementSibling; if(e&&e.classList.contains('emoji')) e.style.display='none'; };
+      imgEl.onerror = ()=>{};
+      imgEl.dataset.url = url;
+      imgEl.src = url;
+    }
+  }catch(e){ /* 오프라인이면 이모지 유지 */ }
+}
+
+/* ============ 상태 ============ */
+let stars=0, current=null, scanMode=false, scanIndex=0, scanTimer=null;
+const $ = id => document.getElementById(id);
+
+function buildHome(){
+  $('homeMascot').innerHTML = mascotSVG();
+  const wrap=$('situations'); wrap.innerHTML='';
+  SITUATIONS.forEach(s=>{
+    const b=document.createElement('button'); b.className='sit-card'; b.style.background=s.bg;
+    b.innerHTML=`<span class="emoji">${s.emoji}</span><span class="name">${s.name}</span>`;
+    b.addEventListener('click',()=>{ speak(s.name); openSituation(s); });
+    wrap.appendChild(b);
+  });
+}
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
+function goHome(){ stopScan(); current=null; resetStage(); show('home'); }
+function resetStage(){ $('said').textContent=''; const p=$('stagePic'); p.style.display='none'; p.removeAttribute('src'); }
+
+function openSituation(s){
+  current=s;
+  $('playMascot').innerHTML=mascotSVG();
+  $('prompt').textContent=s.prompt; resetStage();
+  const wrap=$('choices'); wrap.innerHTML='';
+  s.items.forEach((it)=>{
+    const b=document.createElement('button'); b.className='choice';
+    b.innerHTML=`<span class="pic-box" style="background:${it.cell}">
+                   <span class="emoji">${it.emoji}</span><img alt="">
+                 </span><span class="text">${it.text}</span>`;
+    b.addEventListener('click',()=>choose(it));
+    wrap.appendChild(b);
+    loadPicto(it.key, b.querySelector('img'));   // 그림 비동기로 채우기
+  });
+  show('play');
+  setTimeout(()=>speak(s.prompt.replace('\n',' ')), 350);
+  if(scanMode) startScan();
+}
+
+function choose(item){
+  // 말풍선에 큰 그림 + 글자
+  $('said').textContent=item.text;
+  const pic=$('stagePic');
+  const url=picCache[item.key] ? 'https://static.arasaac.org/pictograms/'+picCache[item.key]+'/'+picCache[item.key]+'_500.png' : null;
+  if(url){ pic.src=url; pic.style.display='block'; } else { pic.style.display='none'; }
+  speak(item.text, item.audio);
+  chime(); rainHearts(); celebrateMascot(); addStar();
+  if(scanMode){ stopScan(); setTimeout(startScan,1600); }
+}
+function celebrateMascot(){ const m=$('playMascot'); m.classList.remove('happy'); void m.offsetWidth; m.classList.add('happy'); }
+function addStar(){ stars++; $('starCount').textContent=stars; }
+function rainHearts(){
+  const box=$('hearts'), icons=['💛','💖','⭐','🌸','✨'];
+  for(let i=0;i<10;i++){
+    const h=document.createElement('span'); h.className='heart';
+    h.textContent=icons[Math.floor(Math.random()*icons.length)];
+    h.style.left=(15+Math.random()*70)+'vw'; h.style.bottom=(10+Math.random()*30)+'vh';
+    h.style.animationDelay=(Math.random()*0.3)+'s';
+    box.appendChild(h); setTimeout(()=>h.remove(),1900);
+  }
+}
+
+/* 한 번 누르기(스캔) */
+function toggleScan(){
+  scanMode=!scanMode; document.body.classList.toggle('scan',scanMode);
+  const t=$('scanToggle'); t.classList.toggle('active',scanMode); t.setAttribute('aria-pressed',scanMode);
+  if(scanMode && current) startScan(); else stopScan();
+}
+function startScan(){
+  stopScan();
+  const cards=document.querySelectorAll('#choices .choice'); if(!cards.length) return;
+  scanIndex=0; highlight(cards);
+  scanTimer=setInterval(()=>{ scanIndex=(scanIndex+1)%cards.length; highlight(cards); },2200);
+}
+function highlight(cards){ cards.forEach((c,i)=>c.classList.toggle('scan-on',i===scanIndex)); }
+function stopScan(){ if(scanTimer){clearInterval(scanTimer); scanTimer=null;} document.querySelectorAll('.choice.scan-on').forEach(c=>c.classList.remove('scan-on')); }
+function selectScanned(){ const cards=document.querySelectorAll('#choices .choice'); if(cards[scanIndex]&&current) choose(current.items[scanIndex]); }
+
+/* 이벤트 */
+$('btnHome').addEventListener('click',goHome);
+$('btnReplay').addEventListener('click',()=>{
+  const said=$('said').textContent;
+  if(said){ const it=current?.items.find(i=>i.text===said); speak(said, it?.audio); }
+  else if(current) speak(current.prompt.replace('\n',' '));
+});
+$('scanToggle').addEventListener('click',toggleScan);
+$('scanBar').addEventListener('click',selectScanned);
+$('voiceSelect').addEventListener('change',e=>{ const v=e.target.value; chosenVoice = v==='' ? (voices[0]||null) : voices[+v]; });
+$('rateRange').addEventListener('input',e=>{ rate=+e.target.value; });
+document.addEventListener('keydown',e=>{
+  if((e.code==='Space'||e.code==='Enter') && $('play').classList.contains('on')){
+    e.preventDefault(); if(scanMode) selectScanned();
+  }
+});
+
+buildHome();
+</script>
+</body>
+</html>
