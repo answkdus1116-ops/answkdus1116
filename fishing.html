@@ -65,6 +65,28 @@
   .tw:nth-of-type(3n+1){animation-duration:5.4s;animation-delay:-3.2s;}
   @keyframes twinkle{0%,100%{opacity:.45}50%{opacity:1}}
 
+  /* ---------- 오늘의 목표 ---------- */
+  #mission{
+    position:absolute;left:10px;top:10px;z-index:3;
+    background:#fff;border:4px solid #ff8a3d;border-radius:20px;
+    padding:6px 14px 8px;box-shadow:0 6px 16px rgba(0,0,0,.28);
+    display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .25s;
+  }
+  #mission.pop{transform:scale(1.08) rotate(-1.5deg);}
+  #mission.done{border-color:#3fbf6f;background:#effbf3;}
+  .mLbl{font-size:15px;color:#e06a1e;}
+  #mission.done .mLbl{color:#2f9c58;}
+  .mBody{display:flex;align-items:center;gap:8px;}
+  .mIcon{font-size:34px;line-height:1;display:flex;align-items:center;}
+  .mText{font-size:clamp(19px,3.2vw,26px);}
+  .mText b{color:#e06a1e;font-size:1.25em;}
+
+  /* 고른 물고기 표시 */
+  #pick{transition:opacity .2s;}
+  #pick .bob{animation:pickBob 1s ease-in-out infinite;}
+  @keyframes pickBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  #fishes > g{cursor:pointer;}
+
   /* ---------- 통발 ---------- */
   #tank{
     position:absolute;right:10px;top:10px;z-index:3;
@@ -288,8 +310,21 @@
     </g>
 
     <g id="fishes"></g>
+    <!-- 고른 물고기 표시 -->
+    <g id="pick" opacity="0">
+      <g id="pickArrow">
+        <path class="bob" d="M0 0 l22 -30 h-44z" fill="#ffd54a" stroke="#e0a41e" stroke-width="4" stroke-linejoin="round"/>
+      </g>
+      <ellipse id="pickRing" rx="62" ry="42" fill="none" stroke="#ffd54a" stroke-width="6" stroke-dasharray="14 10" opacity=".9"/>
+    </g>
     <g id="fx"></g>
   </svg>
+
+  <!-- 오늘의 목표 -->
+  <div id="mission" hidden>
+    <div class="mLbl">🎯 목표</div>
+    <div class="mBody"><span class="mIcon" id="mIcon">🐙</span><span class="mText" id="mText">문어 0/2</span></div>
+  </div>
 
   <div id="tank">
     <span class="lbl">🧺 내가 잡은 친구들</span>
@@ -333,6 +368,21 @@
           <button class="opt" data-v="3">3번</button>
           <button class="opt" data-v="5">5번</button>
           <button class="opt" data-v="8">8번</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>물고기 고르기</span>
+        <div class="opts" id="optPick">
+          <button class="opt" data-v="touch">손으로 고르기</button>
+          <button class="opt" data-v="scan">차례로 (스위치)</button>
+          <button class="opt" data-v="auto">가까운 것</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>오늘의 목표 주기</span>
+        <div class="opts" id="optQuest">
+          <button class="opt" data-v="1">주기</button>
+          <button class="opt" data-v="0">안 주기</button>
         </div>
       </div>
       <div class="field">
@@ -510,14 +560,15 @@ let caught = [], seen = [];
 try{ caught = JSON.parse(localStorage.getItem('fishing-caught') || '[]'); }catch(e){}
 try{ seen = JSON.parse(localStorage.getItem('fishing-seen') || '[]'); }catch(e){}
 
-const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea', cycle:180 };
+const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea',
+              cycle:180, pick:'touch', quest:1 };
 let cfg = Object.assign({}, DEF);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('fishing-cfg') || '{}')); }catch(e){}
 function saveCfg(){ try{ localStorage.setItem('fishing-cfg', JSON.stringify(cfg)); }catch(e){} }
 
 const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],
                 ['optSpecial','special'],['optBgm','bgm'],['optWait','wait'],
-                ['optMode','mode'],['optCycle','cycle']];
+                ['optMode','mode'],['optCycle','cycle'],['optPick','pick'],['optQuest','quest']];
 function paintOpts(){
   OPTMAP.forEach(([box,key]) => {
     [...$(box).children].forEach(b =>
@@ -527,16 +578,20 @@ function paintOpts(){
 OPTMAP.forEach(([box,key]) => {
   $(box).addEventListener('click', e => {
     const b = e.target.closest('.opt'); if(!b) return;
-    cfg[key] = (key === 'mode') ? b.dataset.v : +b.dataset.v;
+    cfg[key] = (key === 'mode' || key === 'pick') ? b.dataset.v : +b.dataset.v;
     saveCfg(); paintOpts();
     if(key === 'bgm') applyBgm();
-    if(key === 'mode'){ applyLook(); respawnAll(); }
+    if(key === 'mode'){ applyLook(); respawnAll(); newMission(); }
+    if(key === 'pick'){ clearPick(); scanIdx = -1; }
+    if(key === 'quest'){ if(cfg.quest) newMission(); else { mission = null; $('mission').hidden = true; } }
   });
 });
 $('openSetup').addEventListener('click', () => { setup.hidden = false; paintOpts(); });
 $('closeSetup').addEventListener('click', () => { setup.hidden = true; });
 $('resetAll').addEventListener('click', () => {
-  caught.length = 0; saveCaught(); drawTank(); refreshCounts();
+  caught.length = 0; saveCaught();
+  bonusStars = 0; saveBonus();
+  drawTank(); refreshCounts(); newMission();
   setup.hidden = true; applyLook(); tell('다시 시작해요!');
 });
 
@@ -688,12 +743,20 @@ function makeFish(y, base, sp){
   const g = document.createElementNS(NS, 'g');
   g.innerHTML = shapeMarkup(sp);
   fishesG.appendChild(g);
-  fish.push({
+  const f = {
     el:g, sp, y, speedBase:base, t: Math.random()*6,
     x: 120 + Math.random()*760,
     dir: Math.random() < .5 ? -1 : 1,
     get spd(){ return this.speedBase * cfg.speed; }
+  };
+  /* 물고기를 손으로 눌러 고를 수 있습니다 */
+  g.addEventListener('pointerdown', e => {
+    if(state !== 'idle' || cfg.pick !== 'touch') return;
+    e.preventDefault(); e.stopPropagation();
+    choose(f);
   });
+  fish.push(f);
+  return f;
 }
 const SLOTS = [[350,.9],[430,1.15],[505,.75],[575,1.0],[625,.85]];
 function respawnAll(){
@@ -738,9 +801,13 @@ function drawTank(){
     tankFish.appendChild(t);
   }
 }
+let bonusStars = 0;
+try{ bonusStars = +(localStorage.getItem('fishing-bonus') || 0) || 0; }catch(e){}
+function saveBonus(){ try{ localStorage.setItem('fishing-bonus', bonusStars); }catch(e){} }
+
 function refreshCounts(){
   countEl.textContent = caught.length;
-  starsEl.textContent = caught.reduce((a,k) => a + (byKey(k).star || 0), 0);
+  starsEl.textContent = caught.reduce((a,k) => a + (byKey(k).star || 0), 0) + bonusStars;
 }
 
 function drawBook(){
@@ -794,6 +861,21 @@ function loop(now){
     }
     drawFish(f);
   }
+  /* 고른 물고기(또는 차례로 비추는 물고기) 위에 표시를 띄웁니다 */
+  const hi = state === 'idle'
+    ? (selected || (cfg.pick === 'scan' ? fish[scanIdx] : null))
+    : null;
+  if(hi){
+    const s = hi.sp.size || 1;
+    pickEl.setAttribute('opacity', 1);
+    pickEl.setAttribute('transform',
+      'translate(' + hi.x.toFixed(1) + ',' + (hi.y + Math.sin(hi.t) * 6).toFixed(1) + ')');
+    pickRing.setAttribute('rx', (60 * s).toFixed(0));
+    pickRing.setAttribute('ry', (40 * s).toFixed(0));
+    pickArrow.setAttribute('transform', 'translate(0,' + (-40 * s - 14).toFixed(0) + ')');
+  }else{
+    pickEl.setAttribute('opacity', 0);
+  }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -835,6 +917,38 @@ setInterval(() => {
   }
 }, 520);
 
+/* ---------- 물고기 고르기 ---------- */
+const pickEl = $('pick'), pickRing = $('pickRing'), pickArrow = $('pickArrow');
+let selected = null, scanIdx = -1;
+
+function choose(f){
+  selected = f;
+  beep(760, .09, 'sine', .14); buzz(20);
+  updateMainLabel();
+  tell(f.sp.name + '를 골랐어요!');
+}
+function clearPick(){
+  selected = null;
+  pickEl.setAttribute('opacity', 0);
+  updateMainLabel();
+}
+function updateMainLabel(){
+  const t = selected || (state === 'idle' && cfg.pick === 'scan' ? fish[scanIdx] : null);
+  mainBtn.textContent = t ? ('🎣 ' + t.sp.name + ' 낚기') : '🎣 낚싯대 내리기';
+}
+/* 스위치 하나로도 고를 수 있도록 물고기를 차례로 비춰 줍니다 */
+setInterval(() => {
+  if(document.hidden || cfg.pick !== 'scan' || state !== 'idle' || !fish.length) return;
+  scanIdx = (scanIdx + 1) % fish.length;
+  updateMainLabel();
+  beep(420, .05, 'sine', .07);
+}, 1500);
+
+/* 빈 물속을 누르면 고른 것을 취소합니다 */
+$('scene').addEventListener('pointerdown', e => {
+  if(state === 'idle' && selected && e.target.closest('#fishes') === null) clearPick();
+});
+
 /* ---------- ① 낚싯대 내리기 ---------- */
 function lower(){
   if(state !== 'idle') return;
@@ -843,7 +957,12 @@ function lower(){
   tell('내려갑니다…');
   beep(320, .18, 'sine', .14);
 
-  target = fish.reduce((a,b) => Math.abs(b.x - ROD_X) < Math.abs(a.x - ROD_X) ? b : a);
+  target = selected
+        || (cfg.pick === 'scan' ? fish[scanIdx] : null)
+        || fish.reduce((a,b) => Math.abs(b.x - ROD_X) < Math.abs(a.x - ROD_X) ? b : a);
+  selected = null;
+  pickEl.setAttribute('opacity', 0);
+  mainBtn.textContent = '🎣 낚싯대 내리기';
   need = Math.max(2, Math.round(cfg.taps * target.sp.mul));
 
   const from = hookY, to = target.y - 16, t0 = performance.now(), dur = 1300;
@@ -940,22 +1059,26 @@ function done(){
   tank.classList.add('pop'); setTimeout(() => tank.classList.remove('pop'), 260);
   fishChip.classList.remove('pop'); void fishChip.offsetWidth; fishChip.classList.add('pop');
 
-  const milestone = caught.length % 5 === 0;
+  const questWin = missionCatch(sp);
+  const milestone = !questWin && caught.length % 5 === 0;
   if(milestone){
     setTimeout(() => { party(); tell('대단해요! ' + caught.length + '마리!'); }, 800);
   }
-  if(first) setTimeout(() => tell('처음 만난 친구예요! 도감에 담았어요 📖'), milestone ? 2000 : 900);
+  if(first && !questWin)
+    setTimeout(() => tell('처음 만난 친구예요! 도감에 담았어요 📖'), milestone ? 2000 : 900);
 
   setTimeout(() => {
     cheer.hidden = true;
     const i = fish.indexOf(target); if(i > -1) fish.splice(i, 1);
     makeFish(340 + Math.random() * 280, .8 + Math.random() * .4);
     target = null;
+    ensureMissionFish();               // 목표 친구를 다시 채워 둡니다
     setHook(REST_Y);
     state = 'idle';
     mainBtn.disabled = false;
-    if(!milestone && !first) tell('또 해 볼까요?');
-  }, milestone ? 2800 : 2000);
+    updateMainLabel();
+    if(!milestone && !first && !questWin) tell('또 해 볼까요?');
+  }, questWin ? 3400 : (milestone ? 2800 : 2000));
 }
 
 /* 물고기가 포물선을 그리며 솟았다가 통발 쪽으로 날아갑니다 */
@@ -1021,6 +1144,76 @@ function party(){
   }
 }
 
+/* ---------- 오늘의 목표 ----------
+   도감을 다 채우려면 오래 걸리니, 한두 마리로 끝나는 짧은 목표를 계속 줍니다.
+   목표로 정한 친구는 반드시 물속에 있게 해서, 못 찾아 헤매는 일이 없습니다. */
+let mission = null;
+const missionEl = $('mission');
+
+function questPool(){
+  return SPECIES.filter(s =>
+    (s.mode ? s.mode === cfg.mode : true) &&
+    (s.night ? isNight() : true) &&
+    (cfg.special ? true : !s.special));
+}
+function newMission(){
+  if(!cfg.quest){ mission = null; missionEl.hidden = true; return; }
+  const pool = questPool();
+  if(Math.random() < 0.28 || !pool.length){
+    mission = { any:true, need: 3 + Math.floor(Math.random() * 3), got:0 };
+  }else{
+    const sp = pool[Math.floor(Math.random() * pool.length)];
+    mission = { key: sp.key, got:0,
+                need: sp.special ? (1 + Math.floor(Math.random() * 2))
+                                 : (2 + Math.floor(Math.random() * 2)) };
+    ensureMissionFish();
+  }
+  showMission();
+}
+function showMission(){
+  if(!mission){ missionEl.hidden = true; return; }
+  missionEl.hidden = false;
+  missionEl.classList.remove('done');
+  if(mission.any){
+    $('mIcon').textContent = '🐟';
+    $('mText').innerHTML = '아무거나 <b>' + mission.got + '</b> / ' + mission.need;
+  }else{
+    const sp = byKey(mission.key);
+    $('mIcon').innerHTML = iconHTML(sp, '40px', '28px');
+    $('mText').innerHTML = sp.name + ' <b>' + mission.got + '</b> / ' + mission.need;
+  }
+}
+/* 목표 친구가 물속에 없으면 한 마리를 그 친구로 바꿔 줍니다 */
+function ensureMissionFish(){
+  if(!mission || mission.any) return;
+  if(fish.some(f => f.sp.key === mission.key)) return;
+  const pool = fish.filter(f => f !== target);
+  if(!pool.length) return;
+  const victim = pool[Math.floor(Math.random() * pool.length)];
+  const y = victim.y, base = victim.speedBase;
+  if(selected === victim) clearPick();
+  victim.el.remove();
+  fish.splice(fish.indexOf(victim), 1);
+  makeFish(y, base, byKey(mission.key));
+}
+/* 한 마리 잡았을 때 목표를 살핍니다 */
+function missionCatch(sp){
+  if(!mission) return false;
+  if(!(mission.any || mission.key === sp.key)) return false;
+  mission.got++;
+  showMission();
+  missionEl.classList.remove('pop'); void missionEl.offsetWidth; missionEl.classList.add('pop');
+  setTimeout(() => missionEl.classList.remove('pop'), 300);
+  if(mission.got >= mission.need){
+    missionEl.classList.add('done');
+    bonusStars += 2; saveBonus(); refreshCounts();
+    setTimeout(() => { party(); chime([523,659,784,1047,1319]); tell('🎯 목표 성공! 잘했어요!'); }, 900);
+    setTimeout(() => { newMission(); tell('새로운 목표예요!'); }, 3000);
+    return true;
+  }
+  return false;
+}
+
 /* ---------- 물결 ---------- */
 const wave = $('wave');
 setInterval(() => {
@@ -1054,6 +1247,8 @@ applyBgm();
 
 mainBtn.addEventListener('click', lower);
 paintOpts();
+newMission();
+updateMainLabel();
 </script>
 </body>
 </html>
