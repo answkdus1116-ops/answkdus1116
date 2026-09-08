@@ -194,7 +194,9 @@
 <audio id="bgm" src="aquarium.mp3" loop preload="auto"></audio>
 
 <div id="stage">
-  <svg id="scene" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <!-- meet 으로 두어 어떤 화면에서도 하늘부터 바닥까지 다 보이게 합니다.
+       남는 자리는 아래 배경 사각형들을 넓게 그려서 채웁니다. -->
+  <svg id="scene" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
         <stop id="sky0" offset="0" stop-color="#bfe9ff"/><stop id="sky1" offset="1" stop-color="#e9f7ff"/>
@@ -210,7 +212,7 @@
     </defs>
 
     <!-- 하늘 -->
-    <rect id="skyRect" width="1000" height="260" fill="url(#sky)"/>
+    <rect id="skyRect" x="-1200" y="-800" width="3400" height="1060" fill="url(#sky)"/>
     <!-- 오른쪽 위는 통발이 가리므로 하늘 장식은 왼쪽에 둡니다 -->
     <g id="stars" opacity="0">
       <circle class="tw" cx="60" cy="150" r="6"/><circle class="tw" cx="130" cy="196" r="4.5"/>
@@ -233,7 +235,7 @@
     </g>
 
     <!-- 바다 -->
-    <rect y="260" width="1000" height="440" fill="url(#sea)"/>
+    <rect x="-1200" y="260" width="3400" height="1400" fill="url(#sea)"/>
     <path id="wave" d="M0 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H0Z" fill="#8fd6f7" opacity=".55"/>
     <g id="shine" opacity=".45" fill="#bfeaff">
       <ellipse cx="200" cy="332" rx="70" ry="9"/><ellipse cx="700" cy="302" rx="90" ry="10"/>
@@ -241,8 +243,8 @@
 
     <!-- 얼음판 (얼음낚시일 때만) -->
     <g id="ice" opacity="0">
-      <rect y="250" width="1000" height="54" fill="#eaf7ff"/>
-      <rect y="296" width="1000" height="14" fill="#c8e6f7"/>
+      <rect x="-1200" y="250" width="3400" height="54" fill="#eaf7ff"/>
+      <rect x="-1200" y="296" width="3400" height="14" fill="#c8e6f7"/>
       <ellipse cx="560" cy="278" rx="86" ry="24" fill="#1b5f8c"/>
       <ellipse cx="560" cy="272" rx="86" ry="24" fill="#0f4a72"/>
       <g fill="#ffffff" opacity=".85">
@@ -252,7 +254,8 @@
     </g>
 
     <!-- 바닥 -->
-    <path id="ground" d="M0 640 q120 -34 250 -10 t250 -6 t250 8 t250 -12 V700 H0Z" fill="#e6cf9b"/>
+    <rect id="groundBase" x="-1200" y="668" width="3400" height="1200" fill="#e6cf9b"/>
+    <path id="ground" d="M-1200 640 q120 -34 250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 V700 H-1200Z" fill="#e6cf9b"/>
     <g id="weeds" fill="#3f9a63">
       <path class="weed" d="M120 640q-14-56 8-96q10 44 22 96z"/>
       <path class="weed" d="M156 640q-6-42 16-70q4 34 8 70z"/>
@@ -330,6 +333,15 @@
           <button class="opt" data-v="3">3번</button>
           <button class="opt" data-v="5">5번</button>
           <button class="opt" data-v="8">8번</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>하늘이 바뀌는 빠르기 (아침·낮·노을·밤)</span>
+        <div class="opts" id="optCycle">
+          <button class="opt" data-v="90">빠르게</button>
+          <button class="opt" data-v="180">보통</button>
+          <button class="opt" data-v="420">느리게</button>
+          <button class="opt" data-v="0">늘 낮</button>
         </div>
       </div>
       <div class="field">
@@ -439,7 +451,7 @@ const SPECIES = [
 const byKey = k => SPECIES.find(s => s.key === k) || SPECIES[0];
 
 function pickSpecies(){
-  const night = phase() === 3;
+  const night = isNight();
   const pool = SPECIES.filter(s =>
     (s.mode ? s.mode === cfg.mode : true) &&
     (s.night ? night : true) &&
@@ -498,13 +510,14 @@ let caught = [], seen = [];
 try{ caught = JSON.parse(localStorage.getItem('fishing-caught') || '[]'); }catch(e){}
 try{ seen = JSON.parse(localStorage.getItem('fishing-seen') || '[]'); }catch(e){}
 
-const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea' };
+const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea', cycle:180 };
 let cfg = Object.assign({}, DEF);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('fishing-cfg') || '{}')); }catch(e){}
 function saveCfg(){ try{ localStorage.setItem('fishing-cfg', JSON.stringify(cfg)); }catch(e){} }
 
 const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],
-                ['optSpecial','special'],['optBgm','bgm'],['optWait','wait'],['optMode','mode']];
+                ['optSpecial','special'],['optBgm','bgm'],['optWait','wait'],
+                ['optMode','mode'],['optCycle','cycle']];
 function paintOpts(){
   OPTMAP.forEach(([box,key]) => {
     [...$(box).children].forEach(b =>
@@ -549,40 +562,99 @@ function chime(notes, type){
     setTimeout(() => beep(f, .28, type || 'triangle', .2), i*110));
 }
 
-/* ---------- 시간대 (다섯 마리마다 바뀝니다) ---------- */
-function phase(){ return Math.floor(caught.length / 5) % 4; }   // 0 아침 1 낮 2 노을 3 밤
-const PHASE_NAME = ['아침', '낮', '노을', '밤'];
-const LOOK = {
-  sea:{
-    sky:[['#ffd9a8','#fff1de'],['#bfe9ff','#e9f7ff'],['#ff9f6b','#ffd7a8'],['#12224a','#3f5c88']],
-    sea:[['#5fc0e8','#1f74b0'],['#4bb3e8','#1668a8'],['#4a86c0','#123f6e'],['#1b3a63','#0a1e3c']],
-    orb:[['#fff3b0','#ffb45a'],['#fff3b0','#ffd54a'],['#fff0c0','#ff7e4a'],['#ffffff','#dfe7f5']],
-    ground:'#e6cf9b'
-  },
-  ice:{
-    sky:[['#ffe6cf','#f6fbff'],['#cfe9ff','#ffffff'],['#ffc9d8','#ffe8f0'],['#0f1c3d','#33507f']],
-    sea:[['#7fd8f0','#26739e'],['#8fe0f5','#2d86b8'],['#7ab6d8','#1c5f8c'],['#16304f','#08182e']],
-    orb:[['#fff3b0','#ffc98a'],['#ffffff','#e8f4ff'],['#fff0c0','#ff9a7a'],['#ffffff','#dfe7f5']],
-    ground:'#dfe9f2'
-  }
-};
-function applyLook(){
-  const L = LOOK[cfg.mode], p = phase(), night = p === 3;
-  $('sky0').setAttribute('stop-color', L.sky[p][0]);
-  $('sky1').setAttribute('stop-color', L.sky[p][1]);
-  $('sea0').setAttribute('stop-color', L.sea[p][0]);
-  $('sea1').setAttribute('stop-color', L.sea[p][1]);
-  $('orb0').setAttribute('stop-color', L.orb[p][0]);
-  $('orb1').setAttribute('stop-color', L.orb[p][1]);
-  $('ground').setAttribute('fill', L.ground);
+/* ---------- 시간대 ----------
+   잡은 수와 상관없이 시간이 흐르면서 하늘이 조금씩 바뀝니다.
+   (다섯 마리씩 잡을 때까지 기다리게 하지 않으려고 이렇게 했습니다)
+   dayT 0 이 한밤중이고, 새벽 → 아침 → 낮 → 노을 → 땅거미 를 지나 다시 밤입니다.
+   색이 확 튀지 않도록 사이사이에 새벽·땅거미를 넣었습니다. */
+let dayT = 0.34;                                   // 아침에서 시작합니다
 
-  $('stars').setAttribute('opacity', night ? .95 : 0);
+const CYCLE = {
+  sea:[
+    { t:0.00, sky:['#0b1533','#28406c'], sea:['#122c4e','#071628'], orb:['#ffffff','#dfe7f5'] }, // 밤
+    { t:0.16, sky:['#42406e','#c98a86'], sea:['#2b4a72','#0e2a48'], orb:['#ffe9d0','#ffab7a'] }, // 새벽
+    { t:0.32, sky:['#ffd9a8','#fff1de'], sea:['#5fc0e8','#1f74b0'], orb:['#fff3b0','#ffb45a'] }, // 아침
+    { t:0.52, sky:['#bfe9ff','#e9f7ff'], sea:['#4bb3e8','#1668a8'], orb:['#fff3b0','#ffd54a'] }, // 낮
+    { t:0.72, sky:['#ff9f6b','#ffd7a8'], sea:['#4a86c0','#123f6e'], orb:['#fff0c0','#ff7e4a'] }, // 노을
+    { t:0.87, sky:['#4b3f78','#d98a72'], sea:['#26456c','#0c223c'], orb:['#ffd9c0','#ff8a5a'] }, // 땅거미
+    { t:1.00, sky:['#0b1533','#28406c'], sea:['#122c4e','#071628'], orb:['#ffffff','#dfe7f5'] }
+  ],
+  ice:[
+    { t:0.00, sky:['#0a1633','#2c4470'], sea:['#12314f','#07182c'], orb:['#ffffff','#e4ecfa'] },
+    { t:0.16, sky:['#4a4a78','#e0a0a0'], sea:['#2c5878','#0f2c48'], orb:['#fff0dc','#ffb894'] },
+    { t:0.32, sky:['#ffe6cf','#fbfdff'], sea:['#7fd8f0','#26739e'], orb:['#fff3b0','#ffc98a'] },
+    { t:0.52, sky:['#cfe9ff','#ffffff'], sea:['#8fe0f5','#2d86b8'], orb:['#ffffff','#eaf4ff'] },
+    { t:0.72, sky:['#ffc9d8','#ffe8f0'], sea:['#7ab6d8','#1c5f8c'], orb:['#fff0c0','#ff9a7a'] },
+    { t:0.87, sky:['#544a80','#e0a08c'], sea:['#284a70','#0c2340'], orb:['#ffe0cc','#ff9a72'] },
+    { t:1.00, sky:['#0a1633','#2c4470'], sea:['#12314f','#07182c'], orb:['#ffffff','#e4ecfa'] }
+  ]
+};
+const GROUND = { sea:'#e6cf9b', ice:'#dfe9f2' };
+
+/* 지금이 언제인지 (안내 문구용) */
+function phase(){
+  if(dayT < 0.22) return 3;          // 밤
+  if(dayT < 0.42) return 0;          // 아침
+  if(dayT < 0.62) return 1;          // 낮
+  if(dayT < 0.80) return 2;          // 노을
+  return 3;                          // 밤
+}
+const PHASE_NAME = ['아침', '낮', '노을', '밤'];
+const PHASE_ICON = ['🌅', '☀️', '🌇', '🌙'];
+
+function nightAmt(){                 // 0 = 환한 낮, 1 = 깊은 밤
+  let d = Math.min(dayT, 1 - dayT);  // 한밤중(0)에서 얼마나 떨어졌는지
+  return Math.max(0, Math.min(1, 1 - d / 0.20));
+}
+function isNight(){ return nightAmt() > 0.5; }
+
+/* 두 색을 섞습니다 (#rrggbb) */
+function mix(a, b, t){
+  const n = h => [parseInt(h.substr(1,2),16), parseInt(h.substr(3,2),16), parseInt(h.substr(5,2),16)];
+  const A = n(a), B = n(b);
+  return '#' + [0,1,2].map(i =>
+    Math.round(A[i] + (B[i] - A[i]) * t).toString(16).padStart(2,'0')).join('');
+}
+
+function applyLook(){
+  const K = CYCLE[cfg.mode];
+  let i = 0;
+  while(i < K.length - 2 && dayT >= K[i+1].t) i++;
+  const a = K[i], b = K[i+1];
+  const f = Math.max(0, Math.min(1, (dayT - a.t) / (b.t - a.t)));
+
+  const sky0 = mix(a.sky[0], b.sky[0], f);
+  $('sky0').setAttribute('stop-color', sky0);
+  $('sky1').setAttribute('stop-color', mix(a.sky[1], b.sky[1], f));
+  $('sea0').setAttribute('stop-color', mix(a.sea[0], b.sea[0], f));
+  $('sea1').setAttribute('stop-color', mix(a.sea[1], b.sea[1], f));
+  $('orb0').setAttribute('stop-color', mix(a.orb[0], b.orb[0], f));
+  $('orb1').setAttribute('stop-color', mix(a.orb[1], b.orb[1], f));
+  $('ground').setAttribute('fill', GROUND[cfg.mode]);
+  $('groundBase').setAttribute('fill', GROUND[cfg.mode]);
+
+  /* 해는 0.20 에 왼쪽에서 떠서 0.86 에 오른쪽으로 지고,
+     달은 그 사이(밤 동안)에 같은 길을 지나갑니다.
+     지평선 가까이에서는 옅어져서 갑자기 나타나지 않습니다.
+     오른쪽 위는 통발이 가리므로 왼쪽 하늘만 지나갑니다. */
+  const day = dayT >= 0.20 && dayT <= 0.86;
+  const u = day ? (dayT - 0.20) / 0.66
+                : (((dayT - 0.86 + 1) % 1) / 0.34);
+  const ox = 100 + 400 * u, oy = 172 - 112 * Math.sin(Math.PI * u);
+  const edge = Math.min(1, Math.min(u, 1 - u) / 0.06);   // 뜨고 질 때 서서히
+  $('orb').setAttribute('cx', ox.toFixed(1));  $('orb').setAttribute('cy', oy.toFixed(1));
+  $('orb').setAttribute('opacity', edge.toFixed(2));
+  $('orbHole').setAttribute('cx', (ox + 18).toFixed(1));
+  $('orbHole').setAttribute('cy', (oy - 14).toFixed(1));
+
+  const n = nightAmt();
+  $('stars').setAttribute('opacity', (n * .95).toFixed(2));
   $('stars').setAttribute('fill', '#fff8d0');
-  $('orbHole').setAttribute('opacity', night ? 1 : 0);
-  $('orbHole').setAttribute('fill', L.sky[p][0]);
-  $('clouds').setAttribute('opacity', night ? .18 : .92);
-  $('birds').setAttribute('opacity', night ? 0 : 1);
-  $('shine').setAttribute('opacity', night ? .15 : .45);
+  $('orbHole').setAttribute('opacity', (n * edge).toFixed(2));
+  $('orbHole').setAttribute('fill', sky0);
+  $('clouds').setAttribute('opacity', (.92 - .74 * n).toFixed(2));
+  $('birds').setAttribute('opacity', (1 - n).toFixed(2));
+  $('shine').setAttribute('opacity', (.45 - .3 * n).toFixed(2));
 
   const ice = cfg.mode === 'ice';
   $('ice').setAttribute('opacity', ice ? 1 : 0);
@@ -591,6 +663,23 @@ function applyLook(){
   $('wave').setAttribute('opacity', ice ? 0 : .55);
   document.body.style.background = ice ? '#123a52' : '#0d3550';
 }
+
+/* 시간 흐르기 : cfg.cycle 초에 하루 한 바퀴 (0 이면 늘 낮) */
+let lastTick = performance.now(), lastPhase = -1;
+setInterval(() => {
+  const now = performance.now(), dt = now - lastTick; lastTick = now;
+  if(document.hidden) return;
+  if(cfg.cycle > 0) dayT = (dayT + dt / (cfg.cycle * 1000)) % 1;
+  else dayT = 0.52;                                   // 고정하면 늘 환한 낮
+  applyLook();
+
+  const p = phase();
+  if(p !== lastPhase){
+    if(lastPhase >= 0 && state === 'idle' && cfg.cycle > 0)
+      tell(PHASE_ICON[p] + ' ' + PHASE_NAME[p] + '이 되었어요');
+    lastPhase = p;
+  }
+}, 260);
 
 /* ---------- 물고기 ---------- */
 const fish = [];
@@ -851,13 +940,9 @@ function done(){
   tank.classList.add('pop'); setTimeout(() => tank.classList.remove('pop'), 260);
   fishChip.classList.remove('pop'); void fishChip.offsetWidth; fishChip.classList.add('pop');
 
-  const before = phase();
   const milestone = caught.length % 5 === 0;
   if(milestone){
-    setTimeout(() => {
-      applyLook(); party();
-      tell('대단해요! ' + caught.length + '마리! ' + PHASE_NAME[phase()] + '이 되었어요');
-    }, 800);
+    setTimeout(() => { party(); tell('대단해요! ' + caught.length + '마리!'); }, 800);
   }
   if(first) setTimeout(() => tell('처음 만난 친구예요! 도감에 담았어요 📖'), milestone ? 2000 : 900);
 
