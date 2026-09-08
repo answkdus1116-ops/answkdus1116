@@ -58,18 +58,38 @@
   @keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg)}}
   @keyframes tankSway{0%,100%{transform:translate(-5px,0) rotate(-4deg)}50%{transform:translate(5px,-3px) rotate(4deg)}}
 
-  /* ---------- 잡은 물고기 수조 ---------- */
+  /* ---------- 잡은 친구를 담아 두는 통발 ---------- */
   #tank{
-    position:absolute;left:10px;bottom:10px;z-index:3;
-    width:min(330px,52%);height:92px;border-radius:16px;overflow:hidden;
-    background:linear-gradient(#7fd0f2,#3ea3d8);
-    border:5px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.28);
+    position:absolute;right:10px;top:10px;z-index:3;
+    width:min(288px,44%);height:116px;
+    /* 대나무를 엮은 느낌 : 빗금 두 겹 + 나뭇결 색 */
+    background:
+      repeating-linear-gradient(48deg, rgba(110,72,24,.20) 0 5px, transparent 5px 11px),
+      repeating-linear-gradient(-48deg, rgba(110,72,24,.16) 0 5px, transparent 5px 11px),
+      linear-gradient(#eccb96,#c9994f);
+    border:4px solid #a97c3c;
+    border-radius:20px 46px 46px 20px / 20px 58px 58px 20px;
+    box-shadow:0 7px 18px rgba(0,0,0,.32), inset 0 -7px 0 rgba(90,58,20,.18),
+               inset 0 4px 0 rgba(255,240,210,.35);
+  }
+  /* 통발 아가리 */
+  #tank::after{
+    content:'';position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+    width:26px;height:78%;border-radius:50%;
+    background:radial-gradient(ellipse at 30% 50%, rgba(60,35,10,.55), rgba(60,35,10,.18));
+    box-shadow:inset 2px 0 6px rgba(0,0,0,.35);
+  }
+  /* 테를 두른 띠 */
+  #tank::before{
+    content:'';position:absolute;left:0;right:0;top:calc(50% - 4px);height:8px;
+    background:rgba(140,96,40,.35);
   }
   #tank .lbl{
-    position:absolute;left:8px;top:4px;font-size:15px;color:#fff;opacity:.95;
-    text-shadow:0 1px 2px rgba(0,0,0,.35);z-index:2;
+    position:absolute;left:50%;top:-13px;transform:translateX(-50%);
+    white-space:nowrap;font-size:15px;color:#5a3c14;background:#ffe9c4;
+    border:3px solid #a97c3c;border-radius:999px;padding:1px 12px;z-index:3;
   }
-  #tankSvg{width:100%;height:100%;display:block;}
+  #tankSvg{position:relative;width:100%;height:100%;display:block;z-index:2;}
 
   /* ---------- 아래쪽 큰 버튼 ---------- */
   #bottom{flex:none;padding:10px 12px 12px;background:#0d3550;}
@@ -145,8 +165,11 @@
   <div class="chip" id="fishChip">🪣 <span id="count">0</span></div>
   <div id="say">낚싯대를 내려 보세요</div>
   <div class="chip" id="starChip">⭐ <span id="stars">0</span></div>
+  <button class="iconbtn" id="bgmBtn" title="배경음악 켜기·끄기">🎵</button>
   <button class="iconbtn" id="openSetup" title="설정">⚙️</button>
 </div>
+
+<audio id="bgm" src="aquarium.mp3" loop preload="auto"></audio>
 
 <div id="stage">
   <svg id="scene" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
@@ -211,8 +234,8 @@
 
   <!-- 잡은 물고기 수조 -->
   <div id="tank">
-    <span class="lbl">내가 잡은 친구들</span>
-    <svg id="tankSvg" viewBox="0 0 330 92" preserveAspectRatio="none"><g id="tankFish"></g></svg>
+    <span class="lbl">🧺 내가 잡은 친구들</span>
+    <svg id="tankSvg" viewBox="0 0 288 116" preserveAspectRatio="xMidYMid meet"><g id="tankFish"></g></svg>
   </div>
 
   <!-- 연타 -->
@@ -259,6 +282,13 @@
       <div class="field">
         <span>소리와 떨림</span>
         <div class="opts" id="optSound">
+          <button class="opt" data-v="1">켜기</button>
+          <button class="opt" data-v="0">끄기</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>배경음악</span>
+        <div class="opts" id="optBgm">
           <button class="opt" data-v="1">켜기</button>
           <button class="opt" data-v="0">끄기</button>
         </div>
@@ -319,12 +349,13 @@ function pickSpecies(){
 }
 
 /* ---------- 설정 ---------- */
-const DEF = { taps:5, speed:0.7, sound:1, special:1 };
+const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1 };
 let cfg = Object.assign({}, DEF);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('fishing-cfg') || '{}')); }catch(e){}
 function saveCfg(){ try{ localStorage.setItem('fishing-cfg', JSON.stringify(cfg)); }catch(e){} }
 
-const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],['optSpecial','special']];
+const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],
+                ['optSpecial','special'],['optBgm','bgm']];
 function paintOpts(){
   OPTMAP.forEach(([box,key]) => {
     [...$(box).children].forEach(b => b.classList.toggle('on', +b.dataset.v === +cfg[key]));
@@ -334,7 +365,7 @@ OPTMAP.forEach(([box,key]) => {
   $(box).addEventListener('click', e => {
     const b = e.target.closest('.opt'); if(!b) return;
     cfg[key] = +b.dataset.v; saveCfg(); paintOpts();
-    if(key === 'speed') fish.forEach(f => f.sp = f.base * cfg.speed);
+    if(key === 'bgm') applyBgm();
   });
 });
 $('openSetup').addEventListener('click', () => { setup.hidden = false; paintOpts(); });
@@ -382,6 +413,16 @@ function fishMarkup(sp){
     (sp.key === 'K' ? '<path d="M-8 -30 l14 -16 l14 16z" fill="#ffd54a"/>' : '') +
   '</g>';
 }
+/* 잡은 친구를 크게 보여 줄 때 쓰는 그림
+   - 이모지 친구는 이모지 그대로
+   - 그린 물고기는 그 색 그대로 (파란 🐟 로 뭉뚱그리지 않습니다) */
+function iconHTML(sp, w, h){
+  if(sp.kind === 'emoji') return sp.e;
+  return '<svg viewBox="-66 -52 160 104" width="' + w + '" height="' + h +
+         '" style="display:inline-block;vertical-align:middle">' +
+         fishMarkup(Object.assign({}, sp, { size:1 })) + '</svg>';
+}
+
 function makeFish(y, base, sp){
   sp = sp || pickSpecies();
   const g = document.createElementNS(NS, 'g');
@@ -409,10 +450,10 @@ function saveCaught(){ try{ localStorage.setItem('fishing-caught', JSON.stringif
 
 function drawTank(){
   tankFish.innerHTML = '';
-  const show = caught.slice(-14);
+  const show = caught.slice(-8);          // 최근에 잡은 여덟만 통발에 보입니다
   show.forEach((k, i) => {
     const sp = byKey(k);
-    const x = 26 + (i % 7) * 44, y = 34 + Math.floor(i / 7) * 32;
+    const x = 40 + (i % 4) * 60, y = 38 + Math.floor(i / 4) * 42;
     const outer = document.createElementNS(NS, 'g');       // 자리
     outer.setAttribute('transform', 'translate(' + x + ',' + y + ')');
     const inner = document.createElementNS(NS, 'g');       // 흔들림
@@ -426,11 +467,12 @@ function drawTank(){
     outer.appendChild(inner);
     tankFish.appendChild(outer);
   });
-  if(caught.length > 14){
+  if(caught.length > 8){
     const t = document.createElementNS(NS, 'text');
-    t.setAttribute('x', 316); t.setAttribute('y', 84);
-    t.setAttribute('text-anchor', 'end'); t.setAttribute('font-size', 18);
-    t.setAttribute('fill', '#fff'); t.textContent = '+' + (caught.length - 14);
+    t.setAttribute('x', 274); t.setAttribute('y', 104);
+    t.setAttribute('text-anchor', 'end'); t.setAttribute('font-size', 19);
+    t.setAttribute('fill', '#5a3c14'); t.setAttribute('font-family', 'Jua, sans-serif');
+    t.textContent = '+' + (caught.length - 8);
     tankFish.appendChild(t);
   }
 }
@@ -516,7 +558,7 @@ function bite(){
   state = 'bite'; taps = 0;
   gauge.style.width = '0%';
   gaugeFace.style.left = '0%';
-  gaugeFace.textContent = target.sp.kind === 'emoji' ? target.sp.e : '🐟';
+  gaugeFace.innerHTML = iconHTML(target.sp, '42px', '27px');
   tapBtn.textContent = '👆 눌러요!';
   tapLayer.hidden = false;
   tell(target.sp.special ? (target.sp.name + '다! 눌러요!') : '물고기다! 눌러요!');
@@ -558,8 +600,7 @@ function done(){
   tapLayer.hidden = true;
   const sp = target.sp;
 
-  cheerIcon.textContent = sp.kind === 'emoji' ? sp.e : '🐟';
-  cheerIcon.style.color = sp.c || '';
+  cheerIcon.innerHTML = iconHTML(sp, '1em', '0.65em');
   cheerName.textContent = sp.name + '!';
   cheer.hidden = false;
   tell(sp.name + ' 잡았다!');
@@ -640,6 +681,33 @@ setInterval(() => {
   if(document.hidden) return;
   wave.setAttribute('transform', 'translate(' + (Math.sin(Date.now()/1400) * 22).toFixed(1) + ',0)');
 }, 60);
+
+/* ---------- 배경음악 ----------
+   브라우저는 사용자가 화면을 한 번 누르기 전에는 소리를 내 주지 않습니다.
+   그래서 첫 누름·첫 키 입력 때 재생을 시작합니다. */
+const bgm = $('bgm'), bgmBtn = $('bgmBtn');
+bgm.volume = .32;                       // 효과음이 묻히지 않도록 작게
+let bgmReady = false;
+
+function applyBgm(){
+  bgmBtn.textContent = cfg.bgm ? '🎵' : '🔇';
+  bgmBtn.style.opacity = cfg.bgm ? '1' : '.5';
+  if(cfg.bgm && bgmReady) bgm.play().catch(() => {});
+  else bgm.pause();
+}
+['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, () => {
+  bgmReady = true;                       // 한 번에 안 되면 다음 누름에 다시 시도합니다
+  if(cfg.bgm && bgm.paused) bgm.play().catch(() => {});
+}));
+bgmBtn.addEventListener('click', () => {
+  cfg.bgm = cfg.bgm ? 0 : 1;
+  saveCfg(); paintOpts(); bgmReady = true; applyBgm();
+});
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) bgm.pause();
+  else if(cfg.bgm && bgmReady) bgm.play().catch(() => {});
+});
+applyBgm();
 
 mainBtn.addEventListener('click', lower);
 paintOpts();
