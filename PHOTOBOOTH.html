@@ -309,6 +309,8 @@ const THEMES = {
   party:  { name:'파티',   colors:['#fff6c8','#ffe9a8'], frame:'#f3cf6a', text:'#9a6b1a', icons:['🎉','🎈','🎁'] },
   xmas:   { name:'크리스마스', colors:['#f1faf0','#dff0e0'], frame:'#cfe6cb', text:'#1f7a44', icons:['🎄','🎁','⛄'] },
   hween:  { name:'할로윈', colors:['#2a1830','#1a0f24'], frame:'#5a3a6e', text:'#ffb86b', icons:['🎃','👻','🦇'] },
+  chuseok:{ name:'추석',   colors:['#fff6e4','#ffe6b8'], frame:'#d9a441', text:'#8a5a12', icons:['🌕','🥮','🌾'] },
+  hanji:  { name:'한가위 밤', colors:['#2b2a4a','#171733'], frame:'#c8a05a', text:'#ffe9a8', icons:['🌕','⭐','🐇'] },
 };
 
 const STICKERS = {
@@ -932,7 +934,13 @@ init();
     const nose = mapPt(lms[1], g);
     const fw = Math.max(8, dist(cheekL, cheekR));
     const roll = Math.atan2(Rc.y - Lc.y, Rc.x - Lc.x);
-    return { Lc, Rc, cheekL, cheekR, top, chin, nose, fw, roll, mid: { x: (Lc.x + Rc.x) / 2, y: (Lc.y + Rc.y) / 2 } };
+    /* 입 : 송편 필터처럼 입 주변에 그리는 것들이 씁니다 */
+    const lipU = mapPt(lms[13], g), lipD = mapPt(lms[14], g);
+    const mouth = { x: (lipU.x + lipD.x) / 2, y: (lipU.y + lipD.y) / 2 };
+    const mouthW = dist(mapPt(lms[61], g), mapPt(lms[291], g));
+    const open = Math.max(0, Math.min(1, (dist(lipU, lipD) / fw - 0.02) / 0.14));
+    return { Lc, Rc, cheekL, cheekR, top, chin, nose, fw, roll, mouth, mouthW, open,
+             mid: { x: (Lc.x + Rc.x) / 2, y: (Lc.y + Rc.y) / 2 } };
   }
 
   function tri(ctx, ax, ay, bx, by, cx, cy) { ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath(); ctx.fill(); }
@@ -1085,6 +1093,141 @@ init();
     });
   }
 
+  /* ---------------- 추석 필터 ---------------- */
+  function spark(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y);
+    ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.fill();
+  }
+
+  /* 반달 모양 송편 한 개 */
+  function songpyeon(ctx, x, y, r, rot, col, dark) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r, r * 0.92, 0, 0, Math.PI);   // 통통한 아랫배(반원)
+    ctx.quadraticCurveTo(0, -r * 0.62, -r, 0);       // 봉긋한 윗면
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = dark;
+    ctx.lineWidth = Math.max(1, r * 0.085);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath();                                  // 손으로 빚어 오므린 자국
+    ctx.moveTo(-r * 0.82, -r * 0.05);
+    ctx.quadraticCurveTo(-r * 0.42, -r * 0.44, 0, -r * 0.30);
+    ctx.quadraticCurveTo(r * 0.42, -r * 0.16, r * 0.82, -r * 0.05);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.5)";           // 윤기
+    ell(ctx, -r * 0.34, r * 0.34, r * 0.26, r * 0.15, -0.3);
+    ctx.fillStyle = "rgba(60,120,50,.45)";            // 솔잎 자국
+    ell(ctx, r * 0.36, r * 0.46, r * 0.22, r * 0.05, 0.5);
+    ctx.restore();
+  }
+
+  /* 입 주변에 송편이 옹기종기. 입을 벌리면 문 송편이 커집니다 */
+  function fSongpyeon(ctx, F) {
+    const fw = F.fw;
+    /* 얼굴을 가리지 않도록 볼 바깥쪽으로만 둘러 놓습니다 */
+    const AROUND = [
+      [-0.86, -0.30, 0.19, -0.5,  "#fdf7ee", "#ddcdb4"],
+      [ 0.86, -0.34, 0.17,  0.45, "#cfe8b8", "#9cc77a"],
+      [-0.74,  0.38, 0.16,  0.28, "#f7cddc", "#dc97b2"],
+      [ 0.76,  0.36, 0.18, -0.32, "#fdf7ee", "#ddcdb4"],
+      [-1.06,  0.06, 0.13,  0.12, "#cfe8b8", "#9cc77a"],
+      [ 1.08,  0.02, 0.14, -0.18, "#f7cddc", "#dc97b2"]
+    ];
+    ctx.save();
+    ctx.translate(F.mouth.x, F.mouth.y);
+    ctx.rotate(F.roll);
+    for (const a of AROUND) songpyeon(ctx, a[0] * fw, a[1] * fw, a[2] * fw, a[3], a[4], a[5]);
+    /* 입에 문 송편 : 입을 벌릴수록 커집니다 */
+    songpyeon(ctx, 0, fw * (0.04 + 0.07 * F.open), fw * (0.17 + 0.14 * F.open), 0, "#cfe8b8", "#9cc77a");
+    ctx.restore();
+  }
+
+  /* 색동저고리 : 턱 아래에 입혀 줍니다 */
+  function fHanbok(ctx, F) {
+    const fw = F.fw;
+    ctx.save();
+    ctx.translate(F.chin.x, F.chin.y);
+    ctx.rotate(F.roll);
+
+    const nY = 0.16 * fw, sY = 0.56 * fw, hs = 1.46 * fw, bot = 2.6 * fw;
+
+    const body = new Path2D();
+    body.moveTo(-0.46 * fw, nY);
+    body.quadraticCurveTo(-1.16 * fw, sY - 0.16 * fw, -hs, sY + 0.24 * fw);
+    body.lineTo(-hs - 0.06 * fw, bot);
+    body.lineTo(hs + 0.06 * fw, bot);
+    body.lineTo(hs, sY + 0.24 * fw);
+    body.quadraticCurveTo(1.16 * fw, sY - 0.16 * fw, 0.46 * fw, nY);
+    body.closePath();
+    ctx.fillStyle = "#6fbfb6";                     // 옥색 저고리
+    ctx.fill(body);
+
+    ctx.save(); ctx.clip(body);                    // 색동 소매 (어깨부터 바로)
+    const COLS = ["#e0304a", "#f5b942", "#3f9a63", "#3f6fd0", "#c46fd0"];
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = COLS[i % COLS.length];
+      const y = sY + 0.06 * fw + i * 0.18 * fw;
+      ctx.fillRect(-hs - 0.12 * fw, y, 0.66 * fw, 0.18 * fw);
+      ctx.fillRect(hs - 0.54 * fw, y, 0.66 * fw, 0.18 * fw);
+    }
+    ctx.restore();
+
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; // 깃과 동정
+    ctx.beginPath();
+    ctx.moveTo(-0.62 * fw, nY);
+    ctx.lineTo(0, 0.92 * fw);
+    ctx.lineTo(0.62 * fw, nY);
+    ctx.strokeStyle = "#2f5d8f"; ctx.lineWidth = 0.30 * fw; ctx.stroke();
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 0.15 * fw; ctx.stroke();
+
+    const gx = 0.06 * fw, gy = 0.90 * fw;          // 고름
+    ctx.fillStyle = "#e0304a";
+    ctx.beginPath();
+    ctx.moveTo(gx - 0.07 * fw, gy);
+    ctx.quadraticCurveTo(gx - 0.26 * fw, gy + 0.60 * fw, gx - 0.08 * fw, gy + 1.10 * fw);
+    ctx.lineTo(gx + 0.14 * fw, gy + 1.07 * fw);
+    ctx.quadraticCurveTo(gx + 0.02 * fw, gy + 0.56 * fw, gx + 0.12 * fw, gy);
+    ctx.closePath(); ctx.fill();
+    ell(ctx, gx - 0.19 * fw, gy + 0.02 * fw, 0.15 * fw, 0.10 * fw, -0.4);
+    ell(ctx, gx + 0.23 * fw, gy + 0.02 * fw, 0.15 * fw, 0.10 * fw, 0.4);
+    ctx.fillStyle = "#c01f38";
+    ell(ctx, gx + 0.02 * fw, gy + 0.02 * fw, 0.08 * fw, 0.065 * fw, 0);
+
+    ctx.restore();
+  }
+
+  /* 한가위 보름달 : 머리 옆에 달과 별, 달 속엔 방아 찧는 토끼 */
+  function fMoon(ctx, F) {
+    headFrame(ctx, F, (fw) => {
+      const mx = -0.90 * fw, my = -0.86 * fw, r = 0.36 * fw;
+      ctx.fillStyle = "rgba(255,238,170,.20)";
+      ell(ctx, mx, my, r * 1.5, r * 1.5, 0);
+      ctx.fillStyle = "rgba(255,240,180,.34)";
+      ell(ctx, mx, my, r * 1.2, r * 1.2, 0);
+      ctx.fillStyle = "#ffeaa4";
+      ell(ctx, mx, my, r, r, 0);
+      ctx.fillStyle = "rgba(223,190,110,.45)";     // 달 무늬
+      ell(ctx, mx - r * 0.34, my - r * 0.3, r * 0.19, r * 0.15, 0);
+      ell(ctx, mx + r * 0.38, my + r * 0.06, r * 0.13, r * 0.11, 0);
+      ell(ctx, mx + r * 0.02, my + r * 0.44, r * 0.16, r * 0.1, 0);
+      ctx.fillStyle = "rgba(186,150,70,.55)";      // 토끼
+      ell(ctx, mx - r * 0.1, my + r * 0.16, r * 0.17, r * 0.22, 0.1);
+      ell(ctx, mx - r * 0.12, my - r * 0.14, r * 0.11, r * 0.1, 0);
+      ell(ctx, mx - r * 0.22, my - r * 0.34, r * 0.05, r * 0.15, -0.25);
+      ell(ctx, mx - r * 0.02, my - r * 0.36, r * 0.05, r * 0.15, 0.25);
+      ctx.fillStyle = "#fff6c0";                   // 별
+      const S = [[0.82, -1.06, 0.05], [1.06, -0.66, 0.038], [0.42, -1.26, 0.042],
+                 [-1.36, -0.30, 0.038], [-0.36, -1.22, 0.034]];
+      for (const s of S) spark(ctx, s[0] * fw, s[1] * fw, s[2] * fw);
+    });
+  }
+
   const CUTE = {
     none:   { name: "없음",     draw: null },
     cat:    { name: "🐱 고양이", draw: fCat },
@@ -1096,8 +1239,12 @@ init();
     flower: { name: "🌸 꽃",     draw: fFlower },
     heart:  { name: "💗 하트안경", draw: fHeartGlasses },
     sun:    { name: "🕶️ 선글라스", draw: fSunglasses },
-    halo:   { name: "😇 천사",   draw: fHalo }
+    halo:   { name: "😇 천사",   draw: fHalo },
+    hanbok: { name: "🎎 한복",   draw: fHanbok },
+    song:   { name: "🥮 송편",   draw: fSongpyeon },
+    moon:   { name: "🌕 보름달", draw: fMoon }
   };
+  FaceFX.CUTE = CUTE;   // 카메라 없이도 그림을 확인할 수 있게 열어 둡니다
 
   /* ---------------- drawUser 래핑(확장) ---------------- */
   const _origDrawUser = window.drawUser;
