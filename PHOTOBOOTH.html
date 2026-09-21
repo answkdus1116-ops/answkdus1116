@@ -380,7 +380,7 @@ function applyCanvasSize(){
   wrap.style.aspectRatio = L.ar;
 }
 
-async function startCamera(){
+async function startCamera(quiet){
   if(stream) stream.getTracks().forEach(t=>t.stop());
   try{
     stream = await navigator.mediaDevices.getUserMedia({
@@ -399,10 +399,13 @@ async function startCamera(){
                           document.removeEventListener('pointerdown', retry); };
       document.addEventListener('pointerdown', retry);
     }
+    camFails = 0;
     document.getElementById('camLabel').innerText = facing==='user' ? '전면 카메라' : '후면 카메라';
     mirrorToggle.checked = (facing==='user');
   }catch(e){
     camNote = '카메라를 열 수 없어요';
+    camFails++;
+    if(quiet) return;                    // 자동 재시도일 때는 조용히 넘어갑니다
     alert('카메라를 시작할 수 없습니다.\n· https 또는 localhost 환경에서 열어주세요.\n· 브라우저의 카메라 권한을 허용해주세요.');
   }
 }
@@ -437,7 +440,21 @@ async function init(){
   requestAnimationFrame(render);
 }
 
-function switchCamera(){ facing = (facing==='user') ? 'environment' : 'user'; startCamera(); }
+function switchCamera(){ facing = (facing==='user') ? 'environment' : 'user'; camFails = 0; startCamera(); }
+
+/* 카메라가 멈춰 있으면 4초마다 스스로 다시 잡아 봅니다.
+   (다른 앱이 쓰고 있어 못 가져오는 경우, 그 앱을 닫는 순간 저절로 돌아옵니다)
+   웹페이지가 다른 앱에게서 카메라를 빼앗아 올 수는 없어서, 이렇게 기다렸다 잡습니다. */
+let camFails = 0, camRetryAt = 0;
+setInterval(()=>{
+  if(document.hidden || isRecording || capturing) return;
+  if(photos[currentCut]) return;
+  if(camFails >= 6) return;              // 계속 실패하면 멈춥니다(버튼으로 다시 시작)
+  if(!cameraStalled()) return;
+  if(performance.now() - camRetryAt < 4000) return;
+  camRetryAt = performance.now();
+  startCamera(true);
+}, 1000);
 
 /* ===================== UI 빌드 ===================== */
 function buildFilterUI(){
@@ -539,15 +556,49 @@ function cameraStalled(){
   if(video.currentTime !== camLastT){ camLastT = video.currentTime; camMoveAt = performance.now(); return false; }
   return performance.now() - camMoveAt > 1600;
 }
+/* 지금 카메라가 어떤 상태인지 읽어 옵니다 */
+function camState(){
+  const so = video.srcObject;
+  const t = (so && so.getVideoTracks) ? so.getVideoTracks()[0] : null;
+  return { track:t, muted: t ? t.muted : null, live: t ? t.readyState : null,
+           paused: video.paused, w: video.videoWidth, h: video.videoHeight };
+}
+/* 검은 화면 대신 "왜 안 나오는지"와 "무엇을 하면 되는지"를 그립니다 */
 function drawCamNote(c, r){
+  const st = camState();
+  let title, help;
+  if(!stream || !st.track || st.live === 'ended'){
+    title = '카메라를 열지 못했어요';
+    help  = ['주소창 왼쪽 자물쇠를 눌러', '카메라를 [허용] 으로 바꾸고', '[카메라 다시 켜기] 를 눌러 주세요'];
+  }else if(st.muted){
+    title = '다른 앱이 카메라를 쓰고 있어요';
+    help  = ['화상수업·줌·카메라 앱을 닫고', '[카메라 다시 켜기] 를 눌러 주세요'];
+  }else if(st.paused){
+    title = '화면을 한 번 눌러 주세요';
+    help  = ['브라우저가 영상 재생을 멈춰 두었어요'];
+  }else if(!st.w){
+    title = '카메라를 준비하고 있어요…';
+    help  = [];
+  }else{
+    title = '카메라 화면이 멈췄어요';
+    help  = ['다른 앱에서 카메라를 쓰고 있는지 보고', '[카메라 다시 켜기] 를 눌러 주세요'];
+  }
+  if(camNote) title = camNote;
+
   c.save();
-  c.fillStyle = 'rgba(22,22,34,.74)'; roundRect(r.x, r.y, r.w, r.h, 8); c.fill();
-  c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.font = "700 15px Jua, sans-serif";
-  const lines = camNote ? ['📷 ' + camNote]
-    : ['카메라 화면이 멈췄어요', '', '다른 앱(화상수업 등)에서', '카메라를 쓰고 있는지 보고', '[카메라 다시 켜기] 를 눌러 주세요'];
-  const cy = r.y + r.h / 2 - (lines.length - 1) * 11;
-  lines.forEach((t, i) => c.fillText(t, r.x + r.w / 2, cy + i * 22));
+  c.fillStyle = 'rgba(22,22,34,.76)'; roundRect(r.x, r.y, r.w, r.h, 8); c.fill();
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2 - help.length * 10;
+  c.fillStyle = '#ffd97a'; c.font = "700 16px Jua, sans-serif";
+  c.fillText('📷 ' + title, cx, cy);
+  c.fillStyle = '#eef2f7'; c.font = "700 13px Gaegu, sans-serif";
+  help.forEach((t, i) => c.fillText(t, cx, cy + 26 + i * 19));
+  /* 아래 작은 글씨는 원인을 알려 줄 때 쓰는 상태값입니다 */
+  c.fillStyle = 'rgba(255,255,255,.45)'; c.font = "700 11px Gaegu, sans-serif";
+  c.fillText('상태 ' + (st.w || 0) + 'x' + (st.h || 0) +
+             ' · ' + (st.live || '스트림없음') +
+             (st.muted ? ' · muted' : '') + (st.paused ? ' · paused' : ''),
+             cx, r.y + r.h - 14);
   c.restore();
 }
 
