@@ -215,10 +215,15 @@
         <span class="ai-label">📅 날짜 스탬프</span>
         <label class="switch"><input type="checkbox" id="dateToggle" checked><span class="slider"></span></label>
       </div>
-      <div class="ai-row">
+      <div class="ai-row" style="flex-wrap:wrap;gap:8px;">
         <button class="btn-gray" style="padding:8px 12px;font-size:13px;flex:0 0 auto;" onclick="switchCamera()">🔄 카메라 전환</button>
         <button class="btn-gray" style="padding:8px 12px;font-size:13px;flex:0 0 auto;" onclick="startCamera()">📷 카메라 다시 켜기</button>
-        <span style="font-size:12.5px;color:var(--muted);" id="camLabel">전면 카메라</span>
+      </div>
+      <div style="margin-top:10px;">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px;">어떤 카메라를 쓸까요?</label>
+        <select id="camPick" style="width:100%;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);font-family:inherit;font-size:13px;background:#fff;"></select>
+        <div style="font-size:12px;color:var(--muted);margin-top:5px;">지금: <b id="camLabel">전면 카메라</b></div>
+        <div class="hint" style="margin-top:8px;">💡 화면이 까맣게 나오면 다른 카메라를 골라 보세요. 노트북에는 얼굴인식용(IR) 카메라가 같이 달려 있어서, 그걸 잡으면 새까맣게 나옵니다.</div>
       </div>
     </div>
 
@@ -384,10 +389,20 @@ function applyCanvasSize(){
 async function startCamera(quiet){
   if(stream) stream.getTracks().forEach(t=>t.stop());
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode: facing, width:{ideal:1280}, height:{ideal:720} },
-      audio:false
-    });
+    const size = { width:{ideal:1280}, height:{ideal:720} };
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: camDeviceId ? Object.assign({ deviceId:{ exact:camDeviceId } }, size)
+                           : Object.assign({ facingMode: facing }, size),
+        audio:false
+      });
+    }catch(err){
+      if(!camDeviceId) throw err;
+      camDeviceId = '';                       // 고른 카메라가 사라졌으면 기본으로
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: Object.assign({ facingMode: facing }, size), audio:false
+      });
+    }
     video.srcObject = stream;
     camNote = '';
     try{
@@ -401,7 +416,9 @@ async function startCamera(quiet){
       document.addEventListener('pointerdown', retry);
     }
     camFails = 0;
-    document.getElementById('camLabel').innerText = facing==='user' ? '전면 카메라' : '후면 카메라';
+    const tr = stream.getVideoTracks()[0];
+    document.getElementById('camLabel').innerText = (tr && tr.label) ? tr.label : (facing==='user' ? '전면 카메라' : '후면 카메라');
+    fillCamList();
     mirrorToggle.checked = (facing==='user');
   }catch(e){
     camNote = '카메라를 열 수 없어요';
@@ -433,12 +450,46 @@ async function init(){
   applyCanvasSize();
   buildFilterUI(); buildThemeUI(); buildStickerUI();
   await startCamera();
+  fillCamList();          // 카메라를 못 열었을 때도 목록은 보이게
   initAI();
   // 영상저장 미지원 환경이면 버튼 숨김
   if(typeof MediaRecorder==='undefined' || !canvas.captureStream){
     document.getElementById('downloadVideoBtn').classList.add('hidden');
   }
   requestAnimationFrame(render);
+}
+
+/* 이 기기에 달린 카메라를 모두 찾아 목록에 넣습니다.
+   (이름은 카메라 권한을 허용한 뒤에야 보입니다) */
+let camDeviceId = '';
+try{ camDeviceId = localStorage.getItem('pb-cam') || ''; }catch(e){}
+
+async function fillCamList(){
+  const sel = document.getElementById('camPick');
+  if(!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  let list = [];
+  try{ list = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); }catch(e){ return; }
+  const now = stream && stream.getVideoTracks()[0];
+  const nowId = now && now.getSettings ? now.getSettings().deviceId : '';
+  sel.innerHTML = '';
+  list.forEach((d, i) => {
+    const o = document.createElement('option');
+    o.value = d.deviceId;
+    o.textContent = d.label || ('카메라 ' + (i + 1));
+    if(d.deviceId === (camDeviceId || nowId)) o.selected = true;
+    sel.appendChild(o);
+  });
+  if(list.length < 2){
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = '(이 기기에는 카메라가 하나뿐이에요)'; o.disabled = true;
+    sel.appendChild(o);
+  }
+  sel.onchange = () => {
+    camDeviceId = sel.value;
+    try{ localStorage.setItem('pb-cam', camDeviceId); }catch(e){}
+    camFails = 0;
+    startCamera();
+  };
 }
 
 function switchCamera(){ facing = (facing==='user') ? 'environment' : 'user'; camFails = 0; startCamera(); }
