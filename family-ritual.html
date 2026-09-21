@@ -914,11 +914,13 @@ function makeFace(zoomPct){
     const rx = lm[263].x*vw, ry = lm[263].y*vh;
     const d  = Math.hypot(rx-lx, ry-ly);
     ang  = Math.atan2(ry-ly, rx-lx);
-    size = d * 4.1;                              // 머리가 들어갈 만큼 넉넉히
-    cx = (lx+rx)/2 - Math.sin(ang)*d*0.45;       // 눈보다 조금 아래가 얼굴 한가운데
-    cy = (ly+ry)/2 + Math.cos(ang)*d*0.45;
+    /* 눈꼬리 사이 거리의 2.45배면 이마부터 턱까지 동그라미에 꽉 찹니다.
+       (넉넉히 잡으면 얼굴이 작아지고 주변이 휑하게 비어 보입니다) */
+    size = d * 2.45;
+    cx = (lx+rx)/2 - Math.sin(ang)*d*0.22;       // 눈보다 조금 아래가 얼굴 한가운데
+    cy = (ly+ry)/2 + Math.cos(ang)*d*0.22;
   }else{
-    size = Math.min(vw, vh) * 0.78;              // 못 찾으면 안내 동그라미만큼 오립니다
+    size = Math.min(vw, vh) * 0.62;              // 못 찾으면 안내 동그라미 안쪽을 오립니다
     cx = vw/2; cy = vh/2;
   }
   size *= 100 / (zoomPct || 100);                // 슬라이더: 크게 = 좁게 오리기
