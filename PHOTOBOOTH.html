@@ -216,6 +216,7 @@
       </div>
       <div class="ai-row">
         <button class="btn-gray" style="padding:8px 12px;font-size:13px;flex:0 0 auto;" onclick="switchCamera()">🔄 카메라 전환</button>
+        <button class="btn-gray" style="padding:8px 12px;font-size:13px;flex:0 0 auto;" onclick="startCamera()">📷 카메라 다시 켜기</button>
         <span style="font-size:12.5px;color:var(--muted);" id="camLabel">전면 카메라</span>
       </div>
     </div>
@@ -387,10 +388,21 @@ async function startCamera(){
       audio:false
     });
     video.srcObject = stream;
-    await video.play().catch(()=>{});
+    camNote = '';
+    try{
+      await video.play();
+    }catch(err){
+      /* 자동재생이 막힌 경우 : 화면을 한 번 누르면 다시 시도합니다 */
+      console.warn('[카메라] 재생이 막혔습니다', err && err.name);
+      camNote = '화면을 한 번 눌러 주세요';
+      const retry = ()=>{ video.play().then(()=>{ camNote=''; }).catch(()=>{});
+                          document.removeEventListener('pointerdown', retry); };
+      document.addEventListener('pointerdown', retry);
+    }
     document.getElementById('camLabel').innerText = facing==='user' ? '전면 카메라' : '후면 카메라';
     mirrorToggle.checked = (facing==='user');
   }catch(e){
+    camNote = '카메라를 열 수 없어요';
     alert('카메라를 시작할 수 없습니다.\n· https 또는 localhost 환경에서 열어주세요.\n· 브라우저의 카메라 권한을 허용해주세요.');
   }
 }
@@ -518,6 +530,27 @@ function drawUser(tCtx, x, y, w, h){
   tCtx.restore();
 }
 
+/* ===== 카메라가 검게 굳었는지 지켜봅니다 =====
+   스트림은 열렸는데 화면이 안 바뀌면(다른 앱이 쓰는 중 등)
+   까만 칸을 그대로 두지 않고 무엇을 해야 하는지 알려 줍니다. */
+let camNote = '', camLastT = -1, camMoveAt = performance.now();
+function cameraStalled(){
+  if(!stream) return true;
+  if(video.currentTime !== camLastT){ camLastT = video.currentTime; camMoveAt = performance.now(); return false; }
+  return performance.now() - camMoveAt > 1600;
+}
+function drawCamNote(c, r){
+  c.save();
+  c.fillStyle = 'rgba(22,22,34,.74)'; roundRect(r.x, r.y, r.w, r.h, 8); c.fill();
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.font = "700 15px Jua, sans-serif";
+  const lines = camNote ? ['📷 ' + camNote]
+    : ['카메라 화면이 멈췄어요', '', '다른 앱(화상수업 등)에서', '카메라를 쓰고 있는지 보고', '[카메라 다시 켜기] 를 눌러 주세요'];
+  const cy = r.y + r.h / 2 - (lines.length - 1) * 11;
+  lines.forEach((t, i) => c.fillText(t, r.x + r.w / 2, cy + i * 22));
+  c.restore();
+}
+
 /* ===================== 배경/장식 ===================== */
 function rectsBounds(){
   let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -570,12 +603,16 @@ function render(now){
     } else if(i===currentCut && !isRecording && video.readyState>=2){
       drawUser(ctx, r.x,r.y,r.w,r.h);
       drew=true;
+      if(cameraStalled()) drawCamNote(ctx, r);
       // 촬영 중이면 프레임 버스트 수집
       if(capturing){
         const fc=document.createElement('canvas'); fc.width=r.w; fc.height=r.h;
         drawUser(fc.getContext('2d'),0,0,r.w,r.h);
         if(cutFrames[i].length<40) cutFrames[i].push(fc);
       }
+    } else if(i===currentCut && !isRecording){
+      drawCamNote(ctx, r);               // 영상이 아직 없을 때도 빈 칸으로 두지 않습니다
+      drew=true;
     }
 
     // 테두리
