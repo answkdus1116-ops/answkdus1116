@@ -141,40 +141,10 @@
   /* 사진 배경을 넣으면 그려 둔 벡터 배경은 감춥니다 */
   .has-bg .bgVec{display:none;}
 
-  /* ---------------- 동작 애니메이션 ---------------- */
-  /* 세배 · 차례 : 상체를 숙인다 */
-  .kneel-torso{transition:transform .85s cubic-bezier(.4,0,.3,1);}
-  .kneel-head{transition:transform .85s cubic-bezier(.4,0,.3,1);}
-  #s1 .kneel-torso{transform-origin:400px 480px;}
-  #s1 .kneel-head{transform-origin:400px 300px;}
-  #s4 .kneel-torso{transform-origin:400px 480px;}
-  #s4 .kneel-head{transform-origin:400px 300px;}
-  #s1.playing .kneel-torso,
-  #s4.playing .kneel-torso{transform:translate(0,60px) scaleY(.70);}
-  #s1.playing .kneel-head,
-  #s4.playing .kneel-head{transform:translate(0,28px) scaleY(.55);}
-
-  /* 결혼식 : 하객석에서 축하 박수를 친다 */
-  #s2 .clap-l{transform-origin:206px 378px;}
-  #s2 .clap-r{transform-origin:294px 378px;}
-  #s2.playing .clap-l{animation:clapL .32s ease-in-out 6 alternate;}
-  #s2.playing .clap-r{animation:clapR .32s ease-in-out 6 alternate;}
-  @keyframes clapL{from{transform:rotate(0deg);}to{transform:rotate(13deg);}}
-  @keyframes clapR{from{transform:rotate(0deg);}to{transform:rotate(-13deg);}}
+  /* ---------------- 동작 애니메이션 ----------------
+     CSS 가 아니라 JS 로 움직입니다. 내보낸 그림·영상에는 CSS 가 따라가지
+     않아서, 저장하면 늘 멈춘 자세만 나왔기 때문입니다. (아래 ANIM 참고) */
   .petal{opacity:0;}
-  #s2.playing .petal{animation:petalFall 2.3s ease-in forwards;}
-  @keyframes petalFall{
-    0%{opacity:0;transform:translate(0,0) rotate(0deg);}
-    12%{opacity:1;}
-    100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(420deg);}
-  }
-
-  /* 장례식 : 고개를 숙여 묵념한다 */
-  .mourn-body{transition:transform 1s ease-in-out;}
-  #s3 .mourn-body{transform-origin:400px 452px;}
-  #s3.playing .mourn-body{transform:rotate(9deg) translate(0,10px);}
-  #s3 .chrys{transition:transform 1s ease-in-out .3s, opacity .6s ease-in-out 1.1s;}
-  #s3.playing .chrys{transform:translate(-118px,-56px) scale(.9);opacity:0;}
 
   @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 </style>
@@ -344,6 +314,7 @@
       <div class="row">
         <button class="sm play" data-scene="s1" data-dur="1500">🙇 세배하기</button>
         <button class="sm ghost save" data-scene="s1" data-name="세배">💾 저장</button>
+        <button class="sm ghost vid" data-scene="s1" data-name="세배">🎬 영상</button>
         <button class="sm ghost bg" data-scene="s1">🖼️ 배경</button>
       </div>
     </article>
@@ -510,6 +481,7 @@
       <div class="row">
         <button class="sm play" data-scene="s2" data-dur="2500">👏 축하 박수</button>
         <button class="sm ghost save" data-scene="s2" data-name="결혼축하">💾 저장</button>
+        <button class="sm ghost vid" data-scene="s2" data-name="결혼축하">🎬 영상</button>
         <button class="sm ghost bg" data-scene="s2">🖼️ 배경</button>
       </div>
     </article>
@@ -631,6 +603,7 @@
       <div class="row">
         <button class="sm play" data-scene="s3" data-dur="2600">🕯️ 헌화하고 묵념하기</button>
         <button class="sm ghost save" data-scene="s3" data-name="장례식">💾 저장</button>
+        <button class="sm ghost vid" data-scene="s3" data-name="장례식">🎬 영상</button>
         <button class="sm ghost bg" data-scene="s3">🖼️ 배경</button>
       </div>
     </article>
@@ -737,6 +710,7 @@
       <div class="row">
         <button class="sm play" data-scene="s4" data-dur="1500">🙏 절하기</button>
         <button class="sm ghost save" data-scene="s4" data-name="차례">💾 저장</button>
+        <button class="sm ghost vid" data-scene="s4" data-name="차례">🎬 영상</button>
         <button class="sm ghost bg" data-scene="s4">🖼️ 배경</button>
       </div>
     </article>
@@ -1008,16 +982,201 @@ document.getElementById('btnRetake').addEventListener('click', () => {
 });
 
 /* ---------- 동작 재생 ---------- */
+/* 0~1 을 넣으면 그 순간의 자세를 속성으로 그려 넣습니다.
+   화면에서 볼 때도, 영상으로 저장할 때도 같은 함수를 씁니다. */
+const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2;
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+/* 숙였다가 다시 펴는 한 번의 동작 */
+function swell(p, inEnd, holdEnd){
+  if(p < inEnd) return ease(p / inEnd);
+  if(p < holdEnd) return 1;
+  return 1 - ease((p - holdEnd) / (1 - holdEnd));
+}
+/* transform-origin 을 쓴 것과 같게 만들어 줍니다 */
+function about(ox, oy, inner){
+  return 'translate(' + ox + ',' + oy + ') ' + inner + ' translate(' + (-ox) + ',' + (-oy) + ')';
+}
+
+function animBow(el, p){              // 세배 · 차례
+  const d = swell(p, .42, .62);
+  const torso = el.querySelector('.kneel-torso'), head = el.querySelector('.kneel-head');
+  if(torso) torso.setAttribute('transform',
+    about(400, 480, 'translate(0,' + (60*d).toFixed(2) + ') scale(1,' + (1 - .30*d).toFixed(4) + ')'));
+  if(head) head.setAttribute('transform',
+    about(400, 300, 'translate(0,' + (28*d).toFixed(2) + ') scale(1,' + (1 - .45*d).toFixed(4) + ')'));
+}
+
+function animClap(el, p){             // 결혼식 : 박수 + 색종이
+  const u = clamp01(p / .78);
+  const a = 13 * (1 - Math.cos(2 * Math.PI * 3 * u)) / 2 * (p < .95 ? 1 : 0);
+  const L = el.querySelector('.clap-l'), R = el.querySelector('.clap-r');
+  if(L) L.setAttribute('transform', 'rotate(' + a.toFixed(2) + ',206,378)');
+  if(R) R.setAttribute('transform', 'rotate(' + (-a).toFixed(2) + ',294,378)');
+  el.querySelectorAll('.petal').forEach(q => {
+    const dx = parseFloat(q.style.getPropertyValue('--dx')) || 0;
+    const dy = parseFloat(q.style.getPropertyValue('--dy')) || 0;
+    const delay = parseFloat(q.style.animationDelay) || 0;          // 초
+    const t = clamp01((p * 2.5 - delay) / 2.3);                     // 2.3초 동안 떨어집니다
+    const e = t * t;
+    const cx = (+q.getAttribute('x') || 0) + (+q.getAttribute('width') || 0)/2;
+    const cy = (+q.getAttribute('y') || 0) + (+q.getAttribute('height') || 0)/2;
+    q.setAttribute('transform',
+      'translate(' + (dx*e).toFixed(2) + ',' + (dy*e).toFixed(2) + ') rotate(' + (420*e).toFixed(1) + ',' + cx + ',' + cy + ')');
+    q.style.opacity = (t <= 0 ? 0 : t < .12 ? t/.12 : (1 - t)/.88).toFixed(3);
+  });
+}
+
+function animMourn(el, p){            // 장례식 : 헌화하고 묵념
+  const d = swell(p, .45, .70);
+  const body = el.querySelector('.mourn-body');
+  if(body) body.setAttribute('transform',
+    about(400, 452, 'rotate(' + (9*d).toFixed(2) + ') translate(0,' + (10*d).toFixed(2) + ')'));
+  const fl = el.querySelector('.chrys');
+  if(fl){
+    const t = clamp01((p - .12) / .55);
+    const e = ease(t);
+    /* 원래 자리(400,416)에서 제단 쪽으로 옮겨 갑니다 */
+    fl.setAttribute('transform',
+      'translate(' + (400 - 118*e).toFixed(1) + ',' + (416 - 56*e).toFixed(1) + ') scale(' + (1 - .1*e).toFixed(3) + ')');
+    fl.style.opacity = (1 - clamp01((p - .55) / .25)).toFixed(3);
+  }
+}
+
+const ANIM = {
+  s1:{ dur:1600, fn:animBow },
+  s2:{ dur:2500, fn:animClap },
+  s3:{ dur:2600, fn:animMourn },
+  s4:{ dur:1600, fn:animBow }
+};
+
+let playing = {};
 function play(id, dur){
-  const el = document.getElementById(id);
-  el.classList.remove('playing');
-  void el.offsetWidth;              // 애니메이션 다시 시작시키기
-  el.classList.add('playing');
-  setTimeout(() => el.classList.remove('playing'), dur);
+  const el = document.getElementById(id), A = ANIM[id];
+  if(!A) return;
+  const t0 = performance.now(), D = dur || A.dur;
+  playing[id] = t0;
+  (function step(now){
+    if(playing[id] !== t0) return;                 // 새로 누르면 이전 것은 멈춥니다
+    const p = Math.min(1, (now - t0) / D);
+    A.fn(el, p);
+    if(p < 1) requestAnimationFrame(step); else playing[id] = 0;
+  })(t0);
 }
 document.querySelectorAll('.play').forEach(b => {
   b.addEventListener('click', () => play(b.dataset.scene, +b.dataset.dur));
 });
+/* ---------- 동작을 영상으로 저장 ----------
+   장면을 세 겹(뒤 배경 / 움직이는 인물 / 앞 장식)으로 나눠서,
+   배경은 한 번만 그리고 인물만 프레임마다 다시 그립니다.
+   (배경 사진이 통째로 들어가면 한 장 만드는 데 너무 오래 걸립니다) */
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function svgToImg(el){
+  return new Promise((ok, no) => {
+    el.setAttribute('width', 800); el.setAttribute('height', 600);
+    const str = new XMLSerializer().serializeToString(el);
+    const im = new Image();
+    im.onload = () => ok(im); im.onerror = no;
+    im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+  });
+}
+function layerAt(id, part){                 // 'back' · 'mid' · 'front'
+  const src = document.getElementById(id);
+  const c = src.cloneNode(true);
+  c.querySelectorAll('.slot-hint').forEach(x => x.remove());
+  if(src.classList.contains('has-bg')) c.querySelectorAll('.bgVec').forEach(x => x.remove());
+  const kids = [...c.children].filter(x => x.tagName.toLowerCase() !== 'defs');
+  const isBg = x => { const k = x.getAttribute('class') || ''; return k.indexOf('bgImg') > -1 || k.indexOf('bgVec') > -1; };
+  let first = kids.findIndex(x => !isBg(x)); if(first < 0) first = kids.length;
+  let last = kids.length - 1; while(last >= 0 && isBg(kids[last])) last--;
+  kids.forEach((x, i) => {
+    const back = i < first, front = i > last;
+    const keep = part === 'back' ? back : part === 'front' ? front : (!back && !front);
+    if(!keep) x.remove();
+  });
+  return c;
+}
+function pickMime(){
+  const want = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  for(const m of want) if(window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+function saveBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function recordScene(id, name, btn){
+  const A = ANIM[id];
+  const mime = pickMime();
+  if(!A || !mime){ alert('이 브라우저에서는 영상 저장을 지원하지 않습니다. 크롬이나 엣지에서 열어 주세요.'); return; }
+
+  const el = document.getElementById(id), old = btn.textContent;
+  const FPS = 25, W = 800, H = 600, CAPH = 72;
+  btn.disabled = true;
+  try{
+    btn.textContent = '준비 중…';
+    const back  = await svgToImg(layerAt(id, 'back'));
+    const front = await svgToImg(layerAt(id, 'front'));
+
+    const total = Math.max(8, Math.round(A.dur / 1000 * FPS));
+    const mids = [];
+    for(let i = 0; i <= total; i++){
+      A.fn(el, i / total);
+      mids.push(await svgToImg(layerAt(id, 'mid')));
+      if(i % 4 === 0) btn.textContent = '만드는 중 ' + Math.round(i / total * 100) + '%';
+    }
+    A.fn(el, 0);                                   // 화면은 원래 자세로
+
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H + CAPH;
+    const cx = cv.getContext('2d');
+    const draw = i => {
+      cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H + CAPH);
+      cx.drawImage(back, 0, 0, W, H);
+      cx.drawImage(mids[i], 0, 0, W, H);
+      cx.drawImage(front, 0, 0, W, H);
+      drawCaption(cx, CAP[id], 0, H, W, CAPH, 30);
+    };
+
+    btn.textContent = '녹화 중…';
+    draw(0);
+    const rec = new MediaRecorder(cv.captureStream(FPS), { mimeType: mime, videoBitsPerSecond: 5000000 });
+    const chunks = [];
+    rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => { rec.onstop = r; });
+    rec.start();
+
+    const t0 = performance.now();
+    for(let i = 0; i < mids.length; i++){
+      draw(i);
+      await wait(Math.max(0, t0 + (i + 1) * (1000 / FPS) - performance.now()));
+    }
+    for(let k = 0; k < 12; k++){ draw(mids.length - 1); await wait(1000 / FPS); }  // 끝 장면 잠깐 유지
+    rec.stop();
+    await stopped;
+
+    const blob = new Blob(chunks, { type: mime });
+    if(!blob.size){
+      /* 화면이 가려져 있으면 브라우저가 그림을 담아 주지 않아 빈 파일이 됩니다 */
+      alert('영상이 비어 있습니다. 이 화면을 켜 둔 채로 잠시 기다려 주세요. 다시 눌러 보세요.');
+      return;
+    }
+    const ext = mime.indexOf('mp4') > -1 ? 'mp4' : 'webm';
+    saveBlob(blob, '가족의례_' + name + '.' + ext);
+  }catch(e){
+    alert('영상으로 만들지 못했습니다. 다시 시도해 주세요.');
+  }finally{
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+document.querySelectorAll('.vid').forEach(b => {
+  b.addEventListener('click', () => recordScene(b.dataset.scene, b.dataset.name, b));
+});
+
 /* ---------- 한 장면씩 넘겨 보기 ---------- */
 const NAMES = ['설날 세배', '결혼식', '장례식', '차례'];
 const cards   = [...document.querySelectorAll('.card')];
