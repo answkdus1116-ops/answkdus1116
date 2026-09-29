@@ -11,49 +11,86 @@
 <link rel="stylesheet" href="playkit.css">
 <script src="playkit.js"></script>
 <style>
-  /* 찾을 글자 : 화면 위에 계속 크게 남아 있어 외우지 않아도 됩니다 */
+  .pk-stage{padding:0;gap:0;}
+  #sky{width:100%;height:100%;display:block;}
+  /* 찾을 글자 : 늘 화면 위에 크게 (외우지 않아도 됩니다) */
   #targetBox{
-    flex:none;display:flex;align-items:center;gap:14px;
-    background:#fff;border:5px solid var(--pk-go);border-radius:26px;
-    padding:10px 22px;box-shadow:0 8px 20px rgba(60,40,70,.16);
+    position:absolute;left:50%;top:8px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:12px;z-index:3;
+    background:#fff;border:5px solid var(--pk-go);border-radius:24px;
+    padding:6px 20px;box-shadow:0 8px 20px rgba(60,40,70,.25);
   }
-  #targetBox .lbl{font-size:clamp(16px,2.6vw,22px);color:var(--pk-muted);}
-  #targetCh{font-size:clamp(54px,11vw,110px);line-height:1.05;color:var(--pk-go-d);}
-  #targetBox.pop{animation:pkPop .45s;}
-
-  #grid{
-    flex:1;min-height:0;width:100%;max-width:1000px;display:grid;gap:12px;
-    grid-auto-rows:1fr;justify-items:stretch;align-items:stretch;
-  }
-  .card{
-    display:flex;align-items:center;justify-content:center;
-    background:#fff;border:5px solid var(--pk-line);border-radius:24px;
-    font-family:inherit;color:var(--pk-ink);cursor:pointer;
-    font-size:clamp(40px,10vw,96px);line-height:1;
-    box-shadow:0 7px 0 #ded7e8;transition:transform .15s,opacity .35s;
-    min-height:clamp(88px,17vh,190px);
-  }
-  .card:active{transform:translateY(4px);}
-  .card.right{border-color:var(--pk-ok);background:#effbf3;color:var(--pk-ok-d);
-              transform:scale(1.08);box-shadow:0 7px 0 var(--pk-ok-d);}
-  .card.gone{opacity:.12;pointer-events:none;box-shadow:none;}
+  #targetBox .lbl{font-size:clamp(14px,2.2vw,19px);color:var(--pk-muted);line-height:1.2;}
+  #targetCh{font-size:clamp(44px,9vw,84px);line-height:1;color:var(--pk-go-d);}
+  #targetBox.pop{animation:pkPop .5s;}
+  .balloon{cursor:pointer;}
 </style>
 </head>
 <body>
 
 <div class="pk-top">
   <a class="pk-icon" href="index.html" title="목록으로">←</a>
-  <div class="pk-say" id="pkSay">글자를 찾아보세요</div>
+  <div class="pk-say" id="pkSay">풍선에서 글자를 찾아요</div>
   <div class="pk-chip">⭐ <span id="stars">0</span></div>
+  <button class="pk-icon" id="btnBgm" title="노래">🎵</button>
   <button class="pk-icon" id="btnSet" title="설정">⚙️</button>
 </div>
 
+<audio id="bgm" src="aquarium.mp3" loop preload="auto"></audio>
+
 <div class="pk-stage">
+  <svg id="sky" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+        <stop id="sky0" offset="0" stop-color="#bfe9ff"/><stop id="sky1" offset="1" stop-color="#fff3e2"/>
+      </linearGradient>
+      <radialGradient id="orbG"><stop offset="0" stop-color="#fff6c8"/><stop offset="1" stop-color="#ffd54a"/></radialGradient>
+    </defs>
+
+    <rect x="-600" y="-400" width="2000" height="1360" fill="url(#skyG)"/>
+    <g id="stars5" opacity="0" fill="#fff6c0">
+      <circle cx="90" cy="70" r="5"/><circle cx="220" cy="40" r="4"/><circle cx="330" cy="96" r="5.5"/>
+      <circle cx="520" cy="52" r="4.5"/><circle cx="650" cy="90" r="5"/><circle cx="740" cy="44" r="4"/>
+    </g>
+    <circle id="orb" cx="700" cy="80" r="42" fill="url(#orbG)"/>
+    <g id="clouds" fill="#fff" opacity=".9">
+      <ellipse cx="150" cy="70" rx="52" ry="26"/><ellipse cx="196" cy="80" rx="38" ry="20"/>
+      <ellipse cx="470" cy="46" rx="44" ry="22"/><ellipse cx="510" cy="54" rx="32" ry="17"/>
+    </g>
+
+    <!-- 땅과 바구니 -->
+    <path d="M-600 470 q200 -26 400 -10 t400 -4 t400 8 t400 -12 V960 H-600Z" fill="#8fd08a"/>
+    <path d="M-600 486 q200 -20 400 -8 t400 -2 t400 6 t400 -10 V960 H-600Z" fill="#6fbf72"/>
+
+    <!-- 친구(반응하는 캐릭터) -->
+    <g id="buddy" transform="translate(84,470)">
+      <ellipse cy="52" rx="46" ry="12" fill="#000" opacity=".12"/>
+      <path d="M-38 48 q0 -60 38 -60 q38 0 38 60z" fill="#ff8a3d"/>
+      <circle cy="-30" r="34" fill="#ffd9a8"/>
+      <path d="M-34 -36 q8 -38 34 -38 q26 0 34 38 q-30 -22 -68 0z" fill="#5a3b28"/>
+      <g id="buddyFace">
+        <circle class="eye" cx="-12" cy="-30" r="5" fill="#3a3a44"/>
+        <circle class="eye" cx="12" cy="-30" r="5" fill="#3a3a44"/>
+        <path id="mouth" d="M-10 -16 q10 9 20 0" stroke="#c9694a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- 모은 글자 바구니 -->
+    <g id="basket" transform="translate(430,500)">
+      <path d="M-200 -26 h400 l-24 58 h-352z" fill="#d9a05b"/>
+      <path d="M-200 -26 h400" stroke="#b9834a" stroke-width="9" stroke-linecap="round"/>
+      <g id="basketItems"></g>
+      <text id="basketMore" x="186" y="26" text-anchor="end" font-family="Jua,sans-serif" font-size="20" fill="#7a4f22"></text>
+    </g>
+
+    <g id="balloons"></g>
+    <g id="fx"></g>
+  </svg>
+
   <div id="targetBox">
     <div class="lbl">이 글자를<br>찾아요</div>
     <div id="targetCh">가</div>
   </div>
-  <div id="grid"></div>
 </div>
 
 <div class="pk-bottom">
@@ -73,12 +110,20 @@
       </div>
     </div>
     <div class="pk-field">
-      <span>글자 개수</span>
+      <span>풍선 개수</span>
       <div class="pk-opts" id="optCount">
         <button class="pk-opt" data-v="2">2개</button>
         <button class="pk-opt" data-v="4">4개</button>
         <button class="pk-opt" data-v="6">6개</button>
         <button class="pk-opt" data-v="9">9개</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>풍선 움직임</span>
+      <div class="pk-opts" id="optMove">
+        <button class="pk-opt" data-v="0">멈춤</button>
+        <button class="pk-opt" data-v="1">둥실둥실</button>
+        <button class="pk-opt" data-v="2">활발하게</button>
       </div>
     </div>
     <div class="pk-field">
@@ -90,50 +135,64 @@
       </div>
     </div>
     <div class="pk-field">
-      <span>소리</span>
+      <span>소리 / 말 / 노래</span>
       <div class="pk-opts" id="optSound">
-        <button class="pk-opt" data-v="true">켜기</button>
-        <button class="pk-opt" data-v="false">끄기</button>
+        <button class="pk-opt" data-v="true">소리 켜기</button>
+        <button class="pk-opt" data-v="false">소리 끄기</button>
       </div>
-    </div>
-    <div class="pk-field">
-      <span>말로 알려주기</span>
       <div class="pk-opts" id="optVoice">
-        <button class="pk-opt" data-v="true">켜기</button>
-        <button class="pk-opt" data-v="false">끄기</button>
+        <button class="pk-opt" data-v="true">말 켜기</button>
+        <button class="pk-opt" data-v="false">말 끄기</button>
+      </div>
+      <div class="pk-opts" id="optBgm">
+        <button class="pk-opt" data-v="true">노래 켜기</button>
+        <button class="pk-opt" data-v="false">노래 끄기</button>
       </div>
     </div>
     <button class="pk-big ok" id="btnClose">시작하기</button>
+    <button class="pk-big" id="btnEmpty" style="background:#eef2f7;color:#5a6b7d;box-shadow:0 6px 0 #cfd8e2;font-size:22px;padding:12px;">🧺 바구니 비우기</button>
   </div>
 </div>
 
 <script>
 /* =========================================================
-   글자 찾기 놀이
-   - 찾을 글자는 화면 위에 계속 크게 남아 있습니다(외우지 않아도 됩니다).
-   - 틀려도 점수가 깎이지 않고, 두 번 틀리면 보기를 줄여 줍니다.
-   - 일정 시간 못 찾으면 정답이 스스로 반짝입니다.
+   글자 찾기 놀이 — 글자 풍선
+   - 글자 풍선이 둥실둥실 떠 있고, 맞는 풍선을 누르면 펑 터집니다.
+   - 터진 글자는 아래 바구니에 쌓입니다(모으는 재미).
+   - 다섯 개마다 하늘이 아침 → 낮 → 노을 → 밤으로 바뀝니다.
+   - 틀려도 잃는 것이 없고, 두 번 틀리면 보기를 줄여 줍니다.
    ========================================================= */
+const NS = 'http://www.w3.org/2000/svg';
 const SETS = {
-  ga : { name:'가나다', list:'가나다라마바사아자차카타파하'.split('') },
-  ja : { name:'자음',   list:'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'.split(''),
-         read:{ 'ㄱ':'기역','ㄴ':'니은','ㄷ':'디귿','ㄹ':'리을','ㅁ':'미음','ㅂ':'비읍','ㅅ':'시옷',
-                'ㅇ':'이응','ㅈ':'지읒','ㅊ':'치읓','ㅋ':'키읔','ㅌ':'티읕','ㅍ':'피읖','ㅎ':'히읗' } },
-  mo : { name:'모음',   list:'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ'.split(''),
-         read:{ 'ㅏ':'아','ㅑ':'야','ㅓ':'어','ㅕ':'여','ㅗ':'오','ㅛ':'요','ㅜ':'우','ㅠ':'유','ㅡ':'으','ㅣ':'이' } },
-  num: { name:'숫자',   list:'123456789'.split('') }
+  ga : { list:'가나다라마바사아자차카타파하'.split('') },
+  ja : { list:'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'.split(''),
+         read:{'ㄱ':'기역','ㄴ':'니은','ㄷ':'디귿','ㄹ':'리을','ㅁ':'미음','ㅂ':'비읍','ㅅ':'시옷',
+               'ㅇ':'이응','ㅈ':'지읒','ㅊ':'치읓','ㅋ':'키읔','ㅌ':'티읕','ㅍ':'피읖','ㅎ':'히읗'} },
+  mo : { list:'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ'.split(''),
+         read:{'ㅏ':'아','ㅑ':'야','ㅓ':'어','ㅕ':'여','ㅗ':'오','ㅛ':'요','ㅜ':'우','ㅠ':'유','ㅡ':'으','ㅣ':'이'} },
+  num: { list:'123456789'.split('') }
 };
+const COLORS = ['#ff6f91','#ffd54a','#7ee0c0','#5ac8fa','#b79cff','#ff8a3d','#8fd08a','#f48fb1'];
+const SKY = [['#ffd9a8','#fff1de'],['#bfe9ff','#eaf7ff'],['#ff9f6b','#ffd7a8'],['#243a6b','#4a6a9e']];
+const PHASE = ['아침','낮','노을','밤'];
 
 const KEY = 'letter-find';
-const cfg = PK.load(KEY, { set:'ga', count:4, hint:6, sound:true, voice:true });
+const cfg = PK.load(KEY, { set:'ga', count:4, move:1, hint:6, sound:true, voice:true, bgm:true });
 
-const grid = document.getElementById('grid');
+const balloonsG = document.getElementById('balloons');
+const fxG = document.getElementById('fx');
 const targetBox = document.getElementById('targetBox');
 const targetCh = document.getElementById('targetCh');
 const starsEl = document.getElementById('stars');
 const sheet = document.getElementById('setSheet');
+const mouth = document.getElementById('mouth');
+const buddy = document.getElementById('buddy');
 
-let target = '', wrong = 0, stars = 0, hintTimer = null, busy = false;
+let target = '', wrong = 0, busy = false, hintTimer = null;
+let balloons = [];            // {el, ch, x, y, t, sp}
+let caught = [];
+try{ caught = JSON.parse(localStorage.getItem('pk-letter-basket') || '[]'); }catch(e){}
+let stars = caught.length;
 
 function readOf(ch){
   const s = SETS[cfg.set];
@@ -146,100 +205,269 @@ function shuffle(a){
   }
   return a;
 }
-function layout(n){
-  const cols = n <= 2 ? 2 : n <= 4 ? 2 : n <= 6 ? 3 : 3;
-  grid.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
+
+/* ---------- 하늘 ---------- */
+function paintSky(){
+  const p = Math.floor(stars / 5) % 4;
+  document.getElementById('sky0').setAttribute('stop-color', SKY[p][0]);
+  document.getElementById('sky1').setAttribute('stop-color', SKY[p][1]);
+  const night = (p === 3);
+  document.getElementById('stars5').setAttribute('opacity', night ? .95 : 0);
+  document.getElementById('clouds').setAttribute('opacity', night ? .2 : .9);
+  document.getElementById('orb').setAttribute('fill', night ? '#eef3ff' : 'url(#orbG)');
+  return p;
+}
+
+/* ---------- 친구 표정 ---------- */
+function face(kind){
+  if(kind === 'happy') mouth.setAttribute('d', 'M-14 -18 q14 16 28 0');
+  else if(kind === 'oops') mouth.setAttribute('d', 'M-10 -12 q10 -8 20 0');
+  else mouth.setAttribute('d', 'M-10 -16 q10 9 20 0');
+  if(kind === 'happy'){
+    buddy.classList.add('pk-shake');
+    setTimeout(function(){ buddy.classList.remove('pk-shake'); }, 500);
+  }
+}
+
+/* ---------- 바구니 ---------- */
+function drawBasket(){
+  const box = document.getElementById('basketItems');
+  box.innerHTML = '';
+  const show = caught.slice(-12);
+  show.forEach(function(c, i){
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', -176 + i * 31);
+    t.setAttribute('y', 22);
+    t.setAttribute('font-family', 'Jua, sans-serif');
+    t.setAttribute('font-size', 26);
+    t.setAttribute('fill', COLORS[i % COLORS.length]);
+    t.setAttribute('text-anchor', 'middle');
+    t.textContent = c;
+    box.appendChild(t);
+  });
+  document.getElementById('basketMore').textContent = caught.length > 12 ? '+' + (caught.length - 12) : '';
+}
+function saveBasket(){
+  try{ localStorage.setItem('pk-letter-basket', JSON.stringify(caught.slice(-60))); }catch(e){}
+}
+
+/* ---------- 풍선 ---------- */
+function makeBalloon(ch, x, y, col){
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'balloon');
+  g.innerHTML =
+    '<path d="M0 46 q-16 22 2 44" stroke="#fff" stroke-width="3" fill="none" opacity=".85"/>' +
+    '<ellipse rx="46" ry="54" fill="' + col + '"/>' +
+    '<ellipse cx="-15" cy="-20" rx="12" ry="17" fill="#fff" opacity=".45"/>' +
+    '<path d="M-9 50 h18 l-9 12z" fill="' + col + '"/>' +
+    '<text y="17" text-anchor="middle" font-family="Jua, sans-serif" font-size="52" fill="#fff">' + ch + '</text>';
+  balloonsG.appendChild(g);
+  const b = { el:g, ch:ch, x:x, y:y, t:Math.random()*6, gone:false, col:col };
+  g.addEventListener('pointerdown', function(e){ e.preventDefault(); pick(b); });
+  balloons.push(b);
+  return b;
+}
+
+function layoutSpots(n){
+  const cols = n <= 2 ? 2 : n <= 4 ? 2 : 3;
+  const rows = Math.ceil(n / cols);
+  const spots = [];
+  /* 화면 가운데에 모이도록 폭을 잡습니다 (양끝으로 벌어지면 허전해 보입니다) */
+  const span = cols === 2 ? 300 : 450;
+  const yspan = rows <= 1 ? 0 : rows === 2 ? 175 : 250;
+  for(let i = 0; i < n; i++){
+    const r = Math.floor(i / cols), c = i % cols;
+    const cx = 400 + (c - (cols - 1) / 2) * (span / (cols - 1));
+    const cy = rows === 1 ? 250 : 155 + yspan * r / (rows - 1);
+    spots.push({ x:cx + (Math.random() - .5) * 24, y:cy + (Math.random() - .5) * 16 });
+  }
+  return spots;
 }
 
 function speakTarget(){
-  PK.say(readOf(target) + '. ' + readOf(target) + ' 을 찾아보세요.');
+  PK.say(readOf(target) + '. ' + readOf(target) + ' 풍선을 찾아 주세요.');
 }
 
 function newRound(){
   clearTimeout(hintTimer);
   busy = false; wrong = 0;
-  const pool = SETS[cfg.set].list.slice();
-  shuffle(pool);
+  balloons.forEach(function(b){ b.el.remove(); });
+  balloons = [];
+
+  const pool = shuffle(SETS[cfg.set].list.slice());
   target = pool[0];
-  const picks = pool.slice(0, cfg.count);
-  shuffle(picks);
+  const picks = shuffle(pool.slice(0, cfg.count));
+  const spots = layoutSpots(cfg.count);
+  const cols = shuffle(COLORS.slice());
+
+  picks.forEach(function(ch, i){ makeBalloon(ch, spots[i].x, spots[i].y, cols[i % cols.length]); });
 
   targetCh.textContent = target;
   targetBox.classList.remove('pop'); void targetBox.offsetWidth; targetBox.classList.add('pop');
-
-  layout(cfg.count);
-  grid.innerHTML = '';
-  picks.forEach(ch => {
-    const b = document.createElement('button');
-    b.className = 'card';
-    b.textContent = ch;
-    b.addEventListener('click', () => pick(b, ch));
-    grid.appendChild(b);
-  });
-
-  PK.tell('같은 글자를 찾아 눌러요');
+  face('normal');
+  PK.tell('같은 글자 풍선을 눌러요');
   speakTarget();
   armHint();
 }
 
-/* 한참 못 찾으면 정답이 반짝입니다 */
 function armHint(){
   clearTimeout(hintTimer);
   if(!cfg.hint) return;
-  hintTimer = setTimeout(() => {
-    const el = [...grid.children].find(c => c.textContent === target);
-    if(el){ el.classList.add('pk-hint'); PK.beep('hint'); PK.tell('여기예요! 반짝이는 글자를 눌러요'); }
+  hintTimer = setTimeout(function(){
+    const b = balloons.find(function(o){ return o.ch === target && !o.gone; });
+    if(b){ b.hint = true; PK.beep('hint'); PK.tell('여기예요! 반짝이는 풍선을 눌러요'); }
   }, cfg.hint * 1000);
 }
 
-function pick(el, ch){
-  if(busy) return;
-  if(ch === target){
+/* 펑! 터지는 연출과 바구니로 날아가는 글자 */
+function popFx(x, y, col, ch){
+  for(let i = 0; i < 12; i++){
+    const p = document.createElementNS(NS, 'path');
+    const a = (i / 12) * Math.PI * 2, d = 60 + Math.random() * 70;
+    p.setAttribute('d', 'M0 0 l10 -6 l-2 14z');
+    p.setAttribute('fill', col);
+    fxG.appendChild(p);
+    (function(pp, ang, dist){
+      const t0 = performance.now();
+      (function fly(now){
+        const t = (now - t0) / 700;
+        if(t >= 1){ pp.remove(); return; }
+        pp.setAttribute('transform', 'translate(' + (x + Math.cos(ang)*dist*t) + ',' +
+          (y + Math.sin(ang)*dist*t + 90*t*t) + ') rotate(' + (t*420) + ')');
+        pp.setAttribute('opacity', (1 - t).toFixed(2));
+        requestAnimationFrame(fly);
+      })(performance.now());
+    })(p, a, d);
+  }
+  const t = document.createElementNS(NS, 'text');
+  t.setAttribute('font-family', 'Jua, sans-serif');
+  t.setAttribute('font-size', 52);
+  t.setAttribute('fill', col);
+  t.setAttribute('text-anchor', 'middle');
+  t.textContent = ch;
+  fxG.appendChild(t);
+  const bx = 430 - 176 + Math.min(caught.length, 11) * 31, by = 522;
+  const t0 = performance.now();
+  (function fly(now){
+    const p = Math.min(1, (now - t0) / 700);
+    const e = p * p;
+    t.setAttribute('x', x + (bx - x) * e);
+    t.setAttribute('y', y + (by - y) * e - 70 * Math.sin(Math.PI * p));
+    t.setAttribute('font-size', 52 - 26 * p);
+    if(p < 1) requestAnimationFrame(fly);
+    else { t.remove(); caught.push(ch); saveBasket(); drawBasket(); }
+  })(performance.now());
+}
+
+function pick(b){
+  if(busy || b.gone) return;
+  if(b.ch === target){
     busy = true;
     clearTimeout(hintTimer);
-    [...grid.children].forEach(c => { if(c !== el) c.classList.add('gone'); });
-    el.classList.remove('pk-hint');
-    el.classList.add('right');
-    PK.beep('good'); PK.buzz(40);
+    b.gone = true;
+    popFx(b.x, b.y, b.col, b.ch);
+    b.el.remove();
+    balloons.forEach(function(o){ if(!o.gone) o.fade = performance.now(); });
+    PK.beep('good'); PK.buzz(40); face('happy');
     stars++; starsEl.textContent = stars;
     const chip = starsEl.parentElement;
     chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
-    PK.tell('맞았어요! ' + readOf(ch));
+    PK.tell('맞았어요! ' + readOf(b.ch));
     PK.say(PK.praise());
-    if(stars % 5 === 0) PK.cheer('⭐', stars + '개 맞췄어요!', 1700);
-    setTimeout(newRound, stars % 5 === 0 ? 2000 : 1100);
+    const phase = paintSky();
+    const big = (stars % 5 === 0);
+    if(big){
+      PK.cheer('🎈', stars + '개 모았어요!', 1800);
+      PK.tell(PHASE[phase] + '이 되었어요! ' + stars + '개 모았어요');
+    }
+    setTimeout(newRound, big ? 2100 : 1200);
   }else{
     wrong++;
-    el.classList.remove('pk-shake'); void el.offsetWidth; el.classList.add('pk-shake');
-    PK.beep('bad'); PK.buzz(25);
-    PK.tell('다시 한 번 찾아볼까요?');
+    b.wob = performance.now();
+    PK.beep('bad'); PK.buzz(25); face('oops');
+    PK.tell('괜찮아요! 다시 찾아볼까요?');
     speakTarget();
-    /* 두 번 틀리면 보기를 줄여 줍니다(반드시 찾을 수 있게) */
     if(wrong >= 2){
-      const others = [...grid.children].filter(c => c.textContent !== target && !c.classList.contains('gone'));
-      shuffle(others);
-      others.slice(0, Math.max(0, others.length - 1)).forEach(c => c.classList.add('gone'));
-      const right = [...grid.children].find(c => c.textContent === target);
-      if(right) right.classList.add('pk-hint');
-      PK.tell('여기 있어요! 반짝이는 글자를 눌러요');
+      const others = shuffle(balloons.filter(function(o){ return o.ch !== target && !o.gone; }));
+      others.slice(0, Math.max(0, others.length - 1)).forEach(function(o){ o.gone = true; o.fly = performance.now(); });
+      const right = balloons.find(function(o){ return o.ch === target; });
+      if(right) right.hint = true;
+      PK.tell('여기 있어요! 반짝이는 풍선을 눌러요');
     }else{
       armHint();
     }
   }
 }
 
-document.getElementById('btnAgain').addEventListener('click', () => {
+/* ---------- 둥실둥실 움직임 ---------- */
+let last = performance.now();
+(function loop(now){
+  const dt = Math.min(50, now - last); last = now;
+  balloons.forEach(function(b){
+    b.t += cfg.move ? dt / (520 / cfg.move) : 0;
+    let x = b.x, y = b.y + (cfg.move ? Math.sin(b.t) * 9 * cfg.move : 0);
+    let sc = 1, op = 1;
+    if(b.hint) sc = 1 + Math.sin(now / 160) * .07;
+    if(b.wob){
+      const w = (now - b.wob) / 400;
+      if(w >= 1) b.wob = 0; else x += Math.sin(w * Math.PI * 4) * 14;
+    }
+    if(b.fly){
+      const f = (now - b.fly) / 900;
+      if(f >= 1){ b.el.remove(); b.fly = 0; return; }
+      y -= f * 260; op = 1 - f;
+    }
+    if(b.fade){
+      op = Math.max(0, 1 - (now - b.fade) / 500);
+    }
+    b.el.setAttribute('transform', 'translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ') scale(' + sc.toFixed(3) + ')');
+    b.el.setAttribute('opacity', op.toFixed(2));
+  });
+  requestAnimationFrame(loop);
+})(performance.now());
+
+/* ---------- 버튼과 설정 ---------- */
+document.getElementById('btnAgain').addEventListener('click', function(){
   PK.beep('tap'); speakTarget();
-  const el = [...grid.children].find(c => c.textContent === target);
-  if(el && cfg.hint) { el.classList.add('pk-hint'); }
+  const b = balloons.find(function(o){ return o.ch === target && !o.gone; });
+  if(b && cfg.hint) b.hint = true;
+});
+document.getElementById('btnSet').addEventListener('click', function(){ PK.hush(); sheet.hidden = false; });
+document.getElementById('btnClose').addEventListener('click', function(){ sheet.hidden = true; applyBgm(); newRound(); });
+document.getElementById('btnEmpty').addEventListener('click', function(){
+  caught = []; stars = 0; saveBasket(); drawBasket();
+  starsEl.textContent = 0; paintSky(); sheet.hidden = true; newRound();
+});
+PK.bindOpts([['optSet','set'],['optCount','count'],['optMove','move'],['optHint','hint'],
+             ['optSound','sound'],['optVoice','voice'],['optBgm','bgm']], cfg, KEY, function(k){
+  if(k === 'bgm') applyBgm();
 });
 
-/* 설정 */
-document.getElementById('btnSet').addEventListener('click', () => { PK.hush(); sheet.hidden = false; });
-document.getElementById('btnClose').addEventListener('click', () => { sheet.hidden = true; newRound(); });
-PK.bindOpts([['optSet','set'],['optCount','count'],['optHint','hint'],
-             ['optSound','sound'],['optVoice','voice']], cfg, KEY, () => {});
+/* ---------- 노래 ---------- */
+const bgm = document.getElementById('bgm'), btnBgm = document.getElementById('btnBgm');
+bgm.volume = .25;
+let bgmReady = false;
+function applyBgm(){
+  btnBgm.textContent = cfg.bgm ? '🎵' : '🔇';
+  btnBgm.style.opacity = cfg.bgm ? '1' : '.5';
+  if(cfg.bgm && bgmReady) bgm.play().catch(function(){}); else bgm.pause();
+}
+['pointerdown','keydown'].forEach(function(ev){
+  document.addEventListener(ev, function(){
+    bgmReady = true;
+    if(cfg.bgm && bgm.paused) bgm.play().catch(function(){});
+  });
+});
+btnBgm.addEventListener('click', function(){
+  cfg.bgm = !cfg.bgm; PK.save(KEY, cfg); bgmReady = true; applyBgm();
+});
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden) bgm.pause();
+  else if(cfg.bgm && bgmReady) bgm.play().catch(function(){});
+});
 
+paintSky(); drawBasket(); applyBgm();
+starsEl.textContent = stars;
 newRound();
 </script>
 </body>
