@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ff8a3d">
+<title>글자 찾기 놀이</title>
+<script src="guard.js"></script>
+<link rel="stylesheet" href="playkit.css">
+<script src="playkit.js"></script>
+<style>
+  /* 찾을 글자 : 화면 위에 계속 크게 남아 있어 외우지 않아도 됩니다 */
+  #targetBox{
+    flex:none;display:flex;align-items:center;gap:14px;
+    background:#fff;border:5px solid var(--pk-go);border-radius:26px;
+    padding:10px 22px;box-shadow:0 8px 20px rgba(60,40,70,.16);
+  }
+  #targetBox .lbl{font-size:clamp(16px,2.6vw,22px);color:var(--pk-muted);}
+  #targetCh{font-size:clamp(54px,11vw,110px);line-height:1.05;color:var(--pk-go-d);}
+  #targetBox.pop{animation:pkPop .45s;}
+
+  #grid{
+    flex:1;min-height:0;width:100%;max-width:1000px;display:grid;gap:12px;
+    grid-auto-rows:1fr;justify-items:stretch;align-items:stretch;
+  }
+  .card{
+    display:flex;align-items:center;justify-content:center;
+    background:#fff;border:5px solid var(--pk-line);border-radius:24px;
+    font-family:inherit;color:var(--pk-ink);cursor:pointer;
+    font-size:clamp(40px,10vw,96px);line-height:1;
+    box-shadow:0 7px 0 #ded7e8;transition:transform .15s,opacity .35s;
+    min-height:clamp(88px,17vh,190px);
+  }
+  .card:active{transform:translateY(4px);}
+  .card.right{border-color:var(--pk-ok);background:#effbf3;color:var(--pk-ok-d);
+              transform:scale(1.08);box-shadow:0 7px 0 var(--pk-ok-d);}
+  .card.gone{opacity:.12;pointer-events:none;box-shadow:none;}
+</style>
+</head>
+<body>
+
+<div class="pk-top">
+  <a class="pk-icon" href="index.html" title="목록으로">←</a>
+  <div class="pk-say" id="pkSay">글자를 찾아보세요</div>
+  <div class="pk-chip">⭐ <span id="stars">0</span></div>
+  <button class="pk-icon" id="btnSet" title="설정">⚙️</button>
+</div>
+
+<div class="pk-stage">
+  <div id="targetBox">
+    <div class="lbl">이 글자를<br>찾아요</div>
+    <div id="targetCh">가</div>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<div class="pk-bottom">
+  <button class="pk-big" id="btnAgain">🔊 다시 들려주세요</button>
+</div>
+
+<div class="pk-sheet" id="setSheet" hidden>
+  <div class="pk-panel">
+    <h2>⚙️ 설정</h2>
+    <div class="pk-field">
+      <span>무엇을 찾을까요?</span>
+      <div class="pk-opts" id="optSet">
+        <button class="pk-opt" data-v="ga">가나다</button>
+        <button class="pk-opt" data-v="ja">자음</button>
+        <button class="pk-opt" data-v="mo">모음</button>
+        <button class="pk-opt" data-v="num">숫자</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>글자 개수</span>
+      <div class="pk-opts" id="optCount">
+        <button class="pk-opt" data-v="2">2개</button>
+        <button class="pk-opt" data-v="4">4개</button>
+        <button class="pk-opt" data-v="6">6개</button>
+        <button class="pk-opt" data-v="9">9개</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>힌트 (못 찾으면 반짝여요)</span>
+      <div class="pk-opts" id="optHint">
+        <button class="pk-opt" data-v="3">빠르게</button>
+        <button class="pk-opt" data-v="6">보통</button>
+        <button class="pk-opt" data-v="0">없음</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>소리</span>
+      <div class="pk-opts" id="optSound">
+        <button class="pk-opt" data-v="true">켜기</button>
+        <button class="pk-opt" data-v="false">끄기</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>말로 알려주기</span>
+      <div class="pk-opts" id="optVoice">
+        <button class="pk-opt" data-v="true">켜기</button>
+        <button class="pk-opt" data-v="false">끄기</button>
+      </div>
+    </div>
+    <button class="pk-big ok" id="btnClose">시작하기</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   글자 찾기 놀이
+   - 찾을 글자는 화면 위에 계속 크게 남아 있습니다(외우지 않아도 됩니다).
+   - 틀려도 점수가 깎이지 않고, 두 번 틀리면 보기를 줄여 줍니다.
+   - 일정 시간 못 찾으면 정답이 스스로 반짝입니다.
+   ========================================================= */
+const SETS = {
+  ga : { name:'가나다', list:'가나다라마바사아자차카타파하'.split('') },
+  ja : { name:'자음',   list:'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'.split(''),
+         read:{ 'ㄱ':'기역','ㄴ':'니은','ㄷ':'디귿','ㄹ':'리을','ㅁ':'미음','ㅂ':'비읍','ㅅ':'시옷',
+                'ㅇ':'이응','ㅈ':'지읒','ㅊ':'치읓','ㅋ':'키읔','ㅌ':'티읕','ㅍ':'피읖','ㅎ':'히읗' } },
+  mo : { name:'모음',   list:'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ'.split(''),
+         read:{ 'ㅏ':'아','ㅑ':'야','ㅓ':'어','ㅕ':'여','ㅗ':'오','ㅛ':'요','ㅜ':'우','ㅠ':'유','ㅡ':'으','ㅣ':'이' } },
+  num: { name:'숫자',   list:'123456789'.split('') }
+};
+
+const KEY = 'letter-find';
+const cfg = PK.load(KEY, { set:'ga', count:4, hint:6, sound:true, voice:true });
+
+const grid = document.getElementById('grid');
+const targetBox = document.getElementById('targetBox');
+const targetCh = document.getElementById('targetCh');
+const starsEl = document.getElementById('stars');
+const sheet = document.getElementById('setSheet');
+
+let target = '', wrong = 0, stars = 0, hintTimer = null, busy = false;
+
+function readOf(ch){
+  const s = SETS[cfg.set];
+  return (s.read && s.read[ch]) ? s.read[ch] : ch;
+}
+function shuffle(a){
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function layout(n){
+  const cols = n <= 2 ? 2 : n <= 4 ? 2 : n <= 6 ? 3 : 3;
+  grid.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
+}
+
+function speakTarget(){
+  PK.say(readOf(target) + '. ' + readOf(target) + ' 을 찾아보세요.');
+}
+
+function newRound(){
+  clearTimeout(hintTimer);
+  busy = false; wrong = 0;
+  const pool = SETS[cfg.set].list.slice();
+  shuffle(pool);
+  target = pool[0];
+  const picks = pool.slice(0, cfg.count);
+  shuffle(picks);
+
+  targetCh.textContent = target;
+  targetBox.classList.remove('pop'); void targetBox.offsetWidth; targetBox.classList.add('pop');
+
+  layout(cfg.count);
+  grid.innerHTML = '';
+  picks.forEach(ch => {
+    const b = document.createElement('button');
+    b.className = 'card';
+    b.textContent = ch;
+    b.addEventListener('click', () => pick(b, ch));
+    grid.appendChild(b);
+  });
+
+  PK.tell('같은 글자를 찾아 눌러요');
+  speakTarget();
+  armHint();
+}
+
+/* 한참 못 찾으면 정답이 반짝입니다 */
+function armHint(){
+  clearTimeout(hintTimer);
+  if(!cfg.hint) return;
+  hintTimer = setTimeout(() => {
+    const el = [...grid.children].find(c => c.textContent === target);
+    if(el){ el.classList.add('pk-hint'); PK.beep('hint'); PK.tell('여기예요! 반짝이는 글자를 눌러요'); }
+  }, cfg.hint * 1000);
+}
+
+function pick(el, ch){
+  if(busy) return;
+  if(ch === target){
+    busy = true;
+    clearTimeout(hintTimer);
+    [...grid.children].forEach(c => { if(c !== el) c.classList.add('gone'); });
+    el.classList.remove('pk-hint');
+    el.classList.add('right');
+    PK.beep('good'); PK.buzz(40);
+    stars++; starsEl.textContent = stars;
+    const chip = starsEl.parentElement;
+    chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
+    PK.tell('맞았어요! ' + readOf(ch));
+    PK.say(PK.praise());
+    if(stars % 5 === 0) PK.cheer('⭐', stars + '개 맞췄어요!', 1700);
+    setTimeout(newRound, stars % 5 === 0 ? 2000 : 1100);
+  }else{
+    wrong++;
+    el.classList.remove('pk-shake'); void el.offsetWidth; el.classList.add('pk-shake');
+    PK.beep('bad'); PK.buzz(25);
+    PK.tell('다시 한 번 찾아볼까요?');
+    speakTarget();
+    /* 두 번 틀리면 보기를 줄여 줍니다(반드시 찾을 수 있게) */
+    if(wrong >= 2){
+      const others = [...grid.children].filter(c => c.textContent !== target && !c.classList.contains('gone'));
+      shuffle(others);
+      others.slice(0, Math.max(0, others.length - 1)).forEach(c => c.classList.add('gone'));
+      const right = [...grid.children].find(c => c.textContent === target);
+      if(right) right.classList.add('pk-hint');
+      PK.tell('여기 있어요! 반짝이는 글자를 눌러요');
+    }else{
+      armHint();
+    }
+  }
+}
+
+document.getElementById('btnAgain').addEventListener('click', () => {
+  PK.beep('tap'); speakTarget();
+  const el = [...grid.children].find(c => c.textContent === target);
+  if(el && cfg.hint) { el.classList.add('pk-hint'); }
+});
+
+/* 설정 */
+document.getElementById('btnSet').addEventListener('click', () => { PK.hush(); sheet.hidden = false; });
+document.getElementById('btnClose').addEventListener('click', () => { sheet.hidden = true; newRound(); });
+PK.bindOpts([['optSet','set'],['optCount','count'],['optHint','hint'],
+             ['optSound','sound'],['optVoice','voice']], cfg, KEY, () => {});
+
+newRound();
+</script>
+</body>
+</html>
