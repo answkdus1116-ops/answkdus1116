@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>별자리 잇기 - 시지각 놀이터</title>
+    <script src="guard.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', 'Gowun Dodum', sans-serif;
+            background-color: #f4f6f9;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .canvas-container {
+            position: relative;
+            background-color: #0d111e;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        .glow-button { transition: all 0.2s ease; }
+        .glow-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3); }
+        .glow-button:active { transform: translateY(0); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800 bg-slate-100">
+
+    <nav class="bg-white border-b border-slate-200 px-4 py-3 shadow-sm sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="text-slate-400 hover:text-indigo-600 font-bold text-lg px-2 py-1 rounded-lg hover:bg-slate-100 transition" title="목록으로">&#8592;</a>
+                <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+                    <svg class="w-6 h-6 text-yellow-300 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-black text-slate-800 tracking-tight">별자리 잇기</h1>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="openReportModal()" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm text-slate-700 hover:bg-slate-100 border border-slate-200 flex items-center gap-1.5 transition">📊 학습 리포트</button>
+                <button onclick="openSettingsModal()" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm text-slate-700 hover:bg-slate-100 border border-slate-200 flex items-center gap-1.5 transition">⚙️ 설정</button>
+                <div class="flex items-center gap-2 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl shadow-sm">
+                    <span class="text-xs font-bold text-amber-900">💡 힌트 모드:</span>
+                    <select id="hint-level-select" onchange="changeHintLevel(this.value)" class="text-xs font-bold bg-white text-slate-800 border border-amber-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-amber-400">
+                        <option value="high" selected>⭐ 초급 (가이드선 + 반짝임 + 번호)</option>
+                        <option value="mid">✨ 중급 (가이드선만)</option>
+                        <option value="none">🎯 고급 (힌트 없음)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col space-y-4">
+        <div class="text-center py-2">
+            <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight flex items-center justify-center gap-3">
+                <span id="shape-name-text">삼각형: 별들을 이어 삼각형을 만들어보세요.</span>
+                <button onclick="speakInstruction()" class="p-2 text-indigo-600 hover:text-indigo-800 bg-indigo-100 hover:bg-indigo-200 rounded-full transition transform hover:scale-105 active:scale-95" title="음성 설명 듣기">
+                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071a1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243a1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828a1 1 0 010-1.415z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col shadow-sm">
+                <div class="text-center font-bold text-indigo-900 mb-2 text-sm tracking-wide">따라할 모양</div>
+                <div class="canvas-container flex-1 min-h-[300px] md:min-h-[380px] w-full">
+                    <canvas id="targetCanvas" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col shadow-sm">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="font-bold text-indigo-900 text-sm tracking-wide">만드는 곳</span>
+                    <button onclick="resetCurrentStage()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded-md font-medium transition">🔄 다시 그리기</button>
+                </div>
+                <div class="canvas-container flex-1 min-h-[300px] md:min-h-[380px] w-full relative">
+                    <canvas id="userCanvas" class="w-full h-full block cursor-pointer"></canvas>
+                    <div class="absolute top-3 left-3 bg-amber-500/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm shadow flex items-center gap-1.5 transition-all">
+                        <span>💡</span> <span id="hint-badge-text">별을 드래그하거나 터치하여 이어보세요</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between flex-wrap gap-4">
+            <div class="text-lg font-extrabold text-slate-700 flex items-center space-x-2">
+                <span>점수:</span>
+                <span id="score-text" class="text-indigo-600 text-2xl font-black">0</span>
+            </div>
+            <div class="text-lg font-bold text-slate-600 bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                <span id="current-stage-text">1</span> / <span id="total-stage-text">5</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="prevStage()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm transition">이전</button>
+                <button onclick="checkCompletion()" class="glow-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-2.5 rounded-xl text-base shadow-lg transition flex items-center gap-2">
+                    <span>완성</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="settings-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-xl font-bold text-slate-800">⚙️ 설정 &amp; 발달장애 지원 옵션</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">힌트 레벨 (난이도 조정)</label>
+                    <select id="modal-hint-select" onchange="changeHintLevel(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-semibold text-slate-700">
+                        <option value="high">⭐ 초급 (가이드선 + 반짝임 + 번호)</option>
+                        <option value="mid">✨ 중급 (가이드선 오버레이만)</option>
+                        <option value="none">🎯 고급 (자율 별자리 이어보기)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">터치/클릭 반응 범위 (터치 보정)</label>
+                    <select id="hitbox-select" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-semibold text-slate-700">
+                        <option value="45" selected>매우 크게 (손쉬운 터치)</option>
+                        <option value="30">보통 (일반 터치)</option>
+                        <option value="20">정밀 (소형 별 터치)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">음성 안내 속도</label>
+                    <input type="range" id="tts-rate" min="0.5" max="1.2" step="0.1" value="0.8" class="w-full accent-indigo-600">
+                    <div class="flex justify-between text-xs text-slate-500 font-semibold mt-1">
+                        <span>천천히</span><span>보통</span><span>빠르게</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div>
+                        <div class="text-sm font-bold text-indigo-900">자동 완성 감지</div>
+                        <div class="text-xs text-indigo-600">모든 선을 이으면 버튼을 누르지 않아도 완성됩니다</div>
+                    </div>
+                    <input type="checkbox" id="auto-check-toggle" checked class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500">
+                </div>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeSettingsModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition">확인 및 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-xl font-bold text-slate-800">📊 시지각 학습 리포트</h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-indigo-50 p-4 rounded-xl text-center">
+                        <div class="text-xs text-indigo-600 font-bold mb-1">총 획득 점수</div>
+                        <div id="report-score" class="text-3xl font-black text-indigo-700">0 점</div>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-xl text-center">
+                        <div class="text-xs text-emerald-600 font-bold mb-1">완성한 별자리</div>
+                        <div id="report-completed" class="text-3xl font-black text-emerald-700">0 / 5</div>
+                    </div>
+                </div>
+                <div class="border rounded-xl p-4 bg-slate-50 space-y-2">
+                    <h4 class="font-bold text-sm text-slate-700">학습 평가 및 피드백</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">손과 눈의 협응 능력(시지각-운동)이 발달하고 있습니다. 가이드선과 음성 안내를 활용해 완성도를 높여 보세요!</p>
+                </div>
+            </div>
+            <button onclick="closeReportModal()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl shadow">닫기</button>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-xl opacity-0 transition-all pointer-events-none z-50">메시지</div>
+
+    <script>
+        const STAGES = [
+            { id:1, name:"삼각형", instruction:"삼각형: 별들을 이어 삼각형을 만들어보세요.",
+              stars:[{x:0.5,y:0.2},{x:0.2,y:0.75},{x:0.8,y:0.75}],
+              lines:[[0,1],[1,2],[2,0]] },
+            { id:2, name:"사각형", instruction:"사각형: 네 개의 별을 순서대로 이어 사각형을 완성해보세요.",
+              stars:[{x:0.25,y:0.25},{x:0.75,y:0.25},{x:0.75,y:0.75},{x:0.25,y:0.75}],
+              lines:[[0,1],[1,2],[2,3],[3,0]] },
+            { id:3, name:"집 모양", instruction:"집 모양: 지붕과 벽면의 별들을 이어 예쁜 집을 만들어보세요.",
+              stars:[{x:0.5,y:0.18},{x:0.2,y:0.45},{x:0.8,y:0.45},{x:0.8,y:0.82},{x:0.2,y:0.82}],
+              lines:[[0,1],[0,2],[1,2],[1,4],[2,3],[3,4]] },
+            { id:4, name:"카시오페아 별자리", instruction:"카시오페아: W자 모양의 밤하늘 별자리를 이어보세요.",
+              stars:[{x:0.15,y:0.35},{x:0.32,y:0.72},{x:0.50,y:0.45},{x:0.68,y:0.78},{x:0.85,y:0.25}],
+              lines:[[0,1],[1,2],[2,3],[3,4]] },
+            { id:5, name:"오각 별자리", instruction:"오각 별: 반짝이는 별자리를 완성해보세요.",
+              stars:[{x:0.5,y:0.15},{x:0.2,y:0.85},{x:0.9,y:0.38},{x:0.1,y:0.38},{x:0.8,y:0.85}],
+              lines:[[0,1],[1,2],[2,3],[3,4],[4,0]] }
+        ];
+
+        let currentStageIdx = 0, score = 0;
+        let completedStages = new Set();
+        let userLines = [], selectedStarIdx = null;
+        let hintLevel = 'high', starPulsePhase = 0;
+        let isDragging = false, currentDragPos = null;
+
+        const targetCanvas = document.getElementById('targetCanvas');
+        const targetCtx = targetCanvas.getContext('2d');
+        const userCanvas = document.getElementById('userCanvas');
+        const userCtx = userCanvas.getContext('2d');
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function initAudio(){ if(!audioCtx) audioCtx = new AudioCtx(); }
+
+        function playSound(type){
+            initAudio();
+            if(!audioCtx) return;
+            const now = audioCtx.currentTime;
+            if(type === 'success'){
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = freq;
+                    o.connect(g); g.connect(audioCtx.destination);
+                    const st = now + idx * 0.08;
+                    g.gain.setValueAtTime(0.2, st);
+                    g.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
+                    o.start(st); o.stop(st + 0.4);
+                });
+                return;
+            }
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if(type === 'tap'){
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            }else{
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(659.25, now);
+                osc.frequency.setValueAtTime(783.99, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            }
+        }
+
+        function speakInstruction(){
+            if(!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(STAGES[currentStageIdx].instruction);
+            u.lang = 'ko-KR';
+            const r = document.getElementById('tts-rate');
+            u.rate = r ? parseFloat(r.value) : 0.8;
+            window.speechSynthesis.speak(u);
+        }
+
+        function resizeCanvases(){
+            document.querySelectorAll('.canvas-container').forEach(box => {
+                const rect = box.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                box.querySelectorAll('canvas').forEach(cv => {
+                    cv.width = rect.width * dpr;
+                    cv.height = rect.height * dpr;
+                });
+            });
+            renderAll();
+        }
+
+        function drawBackgroundSpace(ctx, w, h){
+            const g = ctx.createLinearGradient(0, 0, 0, h);
+            g.addColorStop(0, '#0a0d18'); g.addColorStop(1, '#111827');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for(let i = 0; i < 30; i++){
+                const x = (i * 137.5) % w, y = (i * 293.3) % h;
+                ctx.beginPath(); ctx.arc(x, y, (i % 3 === 0) ? 1.5 : 0.8, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        function drawGlowingLine(ctx, p1, p2, color, lw, dashed){
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash(dashed ? [8, 6] : []);
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = color; ctx.lineWidth = lw;
+            ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawStarNode(ctx, p, isSelected, pulse, label){
+            ctx.save();
+            const r = isSelected ? 16 : 12;
+            if(pulse){
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r + 6 + Math.sin(starPulsePhase) * 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(251,191,36,0.35)'; ctx.fill();
+            }
+            ctx.shadowColor = isSelected ? '#38bdf8' : '#fbbf24';
+            ctx.shadowBlur = isSelected ? 20 : 15;
+            ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = isSelected ? '#38bdf8' : '#fbbf24'; ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff'; ctx.fill();
+            if(label != null && hintLevel === 'high'){
+                ctx.shadowBlur = 0;
+                ctx.font = 'bold 13px Pretendard'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.beginPath(); ctx.arc(p.x + 14, p.y - 14, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#4f46e5'; ctx.fill();
+                ctx.fillStyle = '#ffffff'; ctx.fillText(label, p.x + 14, p.y - 13);
+            }
+            ctx.restore();
+        }
+
+        function isLineDrawn(a, b){
+            return userLines.some(l => (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
+        }
+
+        function renderAll(){
+            const stage = STAGES[currentStageIdx];
+            const dpr = window.devicePixelRatio || 1;
+
+            const tw = targetCanvas.width, th = targetCanvas.height;
+            targetCtx.clearRect(0, 0, tw, th);
+            drawBackgroundSpace(targetCtx, tw, th);
+            const tp = stage.stars.map(s => ({ x: s.x * tw, y: s.y * th }));
+            stage.lines.forEach(l => drawGlowingLine(targetCtx, tp[l[0]], tp[l[1]], '#38bdf8', 4 * dpr, false));
+            tp.forEach((p, i) => drawStarNode(targetCtx, p, false, false, i + 1));
+
+            const uw = userCanvas.width, uh = userCanvas.height;
+            userCtx.clearRect(0, 0, uw, uh);
+            drawBackgroundSpace(userCtx, uw, uh);
+            const up = stage.stars.map(s => ({ x: s.x * uw, y: s.y * uh }));
+
+            if(hintLevel === 'high' || hintLevel === 'mid'){
+                stage.lines.forEach(l => drawGlowingLine(userCtx, up[l[0]], up[l[1]], 'rgba(255,255,255,0.25)', 3 * dpr, true));
+            }
+            userLines.forEach(l => drawGlowingLine(userCtx, up[l[0]], up[l[1]], '#f43f5e', 5 * dpr, false));
+            if(isDragging && selectedStarIdx !== null && currentDragPos){
+                drawGlowingLine(userCtx, up[selectedStarIdx], currentDragPos, '#f43f5e', 3 * dpr, true);
+            }
+
+            let nextIdx = null;
+            if(hintLevel === 'high'){
+                if(selectedStarIdx !== null){
+                    const nb = stage.lines.find(l =>
+                        (l[0] === selectedStarIdx || l[1] === selectedStarIdx) && !isLineDrawn(l[0], l[1]));
+                    if(nb) nextIdx = (nb[0] === selectedStarIdx) ? nb[1] : nb[0];
+                }else if(userLines.length === 0){
+                    nextIdx = 0;
+                }
+            }
+            up.forEach((p, i) => drawStarNode(userCtx, p, i === selectedStarIdx, i === nextIdx, i + 1));
+        }
+
+        function getStarIndexAtPos(x, y){
+            const stage = STAGES[currentStageIdx];
+            const uw = userCanvas.width, uh = userCanvas.height;
+            const dpr = window.devicePixelRatio || 1;
+            const sel = document.getElementById('hitbox-select');
+            const th = (sel ? parseInt(sel.value) : 45) * dpr;
+            for(let i = 0; i < stage.stars.length; i++){
+                if(Math.hypot(x - stage.stars[i].x * uw, y - stage.stars[i].y * uh) <= th) return i;
+            }
+            return null;
+        }
+
+        /* 가이드선에 있는 짝인지 확인합니다 */
+        function isTargetLine(a, b){
+            return STAGES[currentStageIdx].lines.some(l =>
+                (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
+        }
+
+        /* 반환값 : 'done' 완성 · 'ok' 이어짐 · 'bad' 가이드선이 아님 · 'dup' 이미 이어짐 */
+        function tryConnect(from, to, quiet){
+            if(isLineDrawn(from, to)) return 'dup';
+            if(!isTargetLine(from, to)){
+                /* 아무 별끼리나 이어지면 대충 훑기만 해도 완성되어 버립니다.
+                   점선(가이드선)에 있는 짝만 이어 줍니다. */
+                if(!quiet){
+                    playSound('tap');
+                    showToast('이 두 별 사이에는 선이 없어요. 점선을 따라 이어 보세요.');
+                }
+                return 'bad';
+            }
+            userLines.push([from, to]);
+            playSound('connect');
+            const at = document.getElementById('auto-check-toggle');
+            if(at && at.checked && checkAutoCompletion()){
+                isDragging = false; currentDragPos = null;
+                renderAll();
+                setTimeout(triggerSuccess, 200);
+                return 'done';
+            }
+            return 'ok';
+        }
+
+        function handleDragStart(clientX, clientY){
+            initAudio();
+            const rect = userCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const x = (clientX - rect.left) * dpr, y = (clientY - rect.top) * dpr;
+            const hit = getStarIndexAtPos(x, y);
+            if(hit !== null){
+                if(selectedStarIdx !== null && selectedStarIdx !== hit){
+                    if(tryConnect(selectedStarIdx, hit) === 'done') return;
+                }else{
+                    playSound('tap');
+                }
+                isDragging = true; selectedStarIdx = hit; currentDragPos = { x: x, y: y };
+            }else{
+                selectedStarIdx = null; isDragging = false; currentDragPos = null;
+            }
+            renderAll();
+        }
+
+        function handleDragMove(clientX, clientY){
+            if(!isDragging || selectedStarIdx === null) return;
+            const rect = userCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const x = (clientX - rect.left) * dpr, y = (clientY - rect.top) * dpr;
+            currentDragPos = { x: x, y: y };
+            const hit = getStarIndexAtPos(x, y);
+            if(hit !== null && hit !== selectedStarIdx){
+                const r = tryConnect(selectedStarIdx, hit, true);
+                if(r === 'done') return;
+                /* 이어진 별로만 옮겨 갑니다. 선이 없는 별로는 건너뛰지 않습니다 */
+                if(r === 'ok' || r === 'dup') selectedStarIdx = hit;
+            }
+            renderAll();
+        }
+
+        function handleDragEnd(){
+            if(isDragging){ isDragging = false; currentDragPos = null; renderAll(); }
+        }
+
+        userCanvas.addEventListener('mousedown', e => handleDragStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => { if(isDragging) handleDragMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', handleDragEnd);
+        window.addEventListener('blur', handleDragEnd);
+        document.addEventListener('visibilitychange', () => { if(document.hidden) handleDragEnd(); });
+        userCanvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if(e.touches.length) handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive:false });
+        userCanvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if(e.touches.length) handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive:false });
+        userCanvas.addEventListener('touchend', e => { e.preventDefault(); handleDragEnd(); });
+        userCanvas.addEventListener('touchcancel', e => { e.preventDefault(); handleDragEnd(); });
+
+        function checkAutoCompletion(){
+            const stage = STAGES[currentStageIdx];
+            if(userLines.length < stage.lines.length) return false;
+            return stage.lines.every(l => isLineDrawn(l[0], l[1]));
+        }
+
+        function checkCompletion(){
+            if(checkAutoCompletion()){
+                triggerSuccess();
+            }else{
+                playSound('tap');
+                showToast('아직 안 이은 별이 있어요! 더 이어보세요.');
+            }
+        }
+
+        function triggerSuccess(){
+            playSound('success');
+            if(!completedStages.has(currentStageIdx)){
+                completedStages.add(currentStageIdx);
+                score += 20;
+                document.getElementById('score-text').textContent = score;
+            }
+            if(window.confetti) confetti({ particleCount:80, spread:70, origin:{ y:0.6 } });
+            showToast('🎉 참 잘했어요! 별자리를 완성했습니다!');
+            setTimeout(() => {
+                if(currentStageIdx < STAGES.length - 1){
+                    loadStage(currentStageIdx + 1);
+                }else{
+                    showToast('🏆 모든 별자리를 다 완성했습니다! 대단해요!');
+                    openReportModal();
+                }
+            }, 1500);
+        }
+
+        function loadStage(idx){
+            currentStageIdx = idx;
+            userLines = []; selectedStarIdx = null;
+            isDragging = false; currentDragPos = null;
+            document.getElementById('shape-name-text').textContent = STAGES[idx].instruction;
+            document.getElementById('current-stage-text').textContent = idx + 1;
+            document.getElementById('total-stage-text').textContent = STAGES.length;
+            renderAll();
+            speakInstruction();
+        }
+
+        function resetCurrentStage(){
+            userLines = []; selectedStarIdx = null;
+            isDragging = false; currentDragPos = null;
+            renderAll();
+            showToast('다시 그리기 준비가 되었습니다.');
+        }
+
+        function prevStage(){ if(currentStageIdx > 0) loadStage(currentStageIdx - 1); }
+
+        function changeHintLevel(level){
+            hintLevel = level;
+            const a = document.getElementById('hint-level-select');
+            const b = document.getElementById('modal-hint-select');
+            if(a) a.value = level;
+            if(b) b.value = level;
+            const t = document.getElementById('hint-badge-text');
+            if(t){
+                if(level === 'high') t.textContent = '가이드선 + 번호 + 다음 별 반짝임 지원 중';
+                else if(level === 'mid') t.textContent = '가이드선 오버레이 지원 중';
+                else t.textContent = '도움 없이 자유롭게 이어보기';
+            }
+            renderAll();
+        }
+
+        function openSettingsModal(){ document.getElementById('settings-modal').classList.remove('hidden'); }
+        function closeSettingsModal(){ document.getElementById('settings-modal').classList.add('hidden'); }
+        function openReportModal(){
+            document.getElementById('report-score').textContent = score + ' 점';
+            document.getElementById('report-completed').textContent = completedStages.size + ' / ' + STAGES.length;
+            document.getElementById('report-modal').classList.remove('hidden');
+        }
+        function closeReportModal(){ document.getElementById('report-modal').classList.add('hidden'); }
+
+        function showToast(msg){
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 2500);
+        }
+
+        function startAnimationLoop(){
+            (function animate(){
+                starPulsePhase += 0.05;
+                if(hintLevel === 'high' && !document.hidden) renderAll();
+                requestAnimationFrame(animate);
+            })();
+        }
+
+        window.onload = function(){
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+            loadStage(0);
+            startAnimationLoop();
+        };
+    </script>
+</body>
+</html>
