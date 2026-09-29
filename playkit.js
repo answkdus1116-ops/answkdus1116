@@ -45,6 +45,11 @@
     }
   };
 
+  /* 음 높이를 직접 정해서 내는 소리 (패턴 놀이처럼 음이 필요한 앱용) */
+  PK.note = function (freq, dur, type, vol) {
+    tone(freq, dur || 0.38, type || "triangle", vol || 0.2);
+  };
+
   PK.buzz = function (p) {
     if (!PK.sound) return;
     try { navigator.vibrate && navigator.vibrate(p); } catch (e) {}

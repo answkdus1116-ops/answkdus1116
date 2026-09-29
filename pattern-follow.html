@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ff8a3d">
+<title>패턴 따라하기</title>
+<script src="guard.js"></script>
+<link rel="stylesheet" href="playkit.css">
+<script src="playkit.js"></script>
+<style>
+  .pk-stage{gap:10px;}
+  /* 순서 표시 : 지금 몇 번째인지 점으로 보여 줍니다 */
+  #dots{flex:none;display:flex;gap:10px;align-items:center;justify-content:center;min-height:26px;}
+  .dot{width:20px;height:20px;border-radius:50%;background:#e2dcec;box-shadow:inset 0 2px 0 #cfc7dd;}
+  .dot.on{background:var(--pk-go);box-shadow:0 0 0 5px rgba(255,138,61,.22);}
+  .dot.now{animation:pkHint 1s ease-in-out infinite;}
+
+  #pads{
+    flex:1;min-height:0;width:100%;max-width:900px;display:grid;gap:14px;
+    grid-auto-rows:1fr;align-items:stretch;justify-items:stretch;
+  }
+  .pad{
+    border:0;border-radius:32px;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(50px,13vw,120px);line-height:1;
+    box-shadow:0 10px 0 rgba(0,0,0,.18);transition:transform .12s,filter .12s;
+    filter:saturate(.75) brightness(.97);
+  }
+  .pad:active{transform:translateY(6px);box-shadow:0 4px 0 rgba(0,0,0,.18);}
+  .pad.lit{transform:scale(1.06);filter:saturate(1.5) brightness(1.12);
+           box-shadow:0 0 0 10px rgba(255,255,255,.55),0 10px 0 rgba(0,0,0,.18);}
+  .pad.wait{pointer-events:none;}
+
+  /* 모은 스티커 선반 */
+  #shelf{
+    flex:none;width:100%;max-width:900px;min-height:52px;display:flex;align-items:center;gap:6px;
+    background:#fff;border:4px solid #e8dfc8;border-radius:18px;padding:5px 12px;
+    font-size:26px;overflow:hidden;
+  }
+  #shelf .lbl{font-size:15px;color:var(--pk-muted);flex:none;margin-right:4px;}
+  #shelf .more{font-size:16px;color:var(--pk-muted);}
+</style>
+</head>
+<body>
+
+<div class="pk-top">
+  <a class="pk-icon" href="index.html" title="목록으로">←</a>
+  <div class="pk-say" id="pkSay">잘 보고 똑같이 눌러요</div>
+  <div class="pk-chip">⭐ <span id="stars">0</span></div>
+  <button class="pk-icon" id="btnSet" title="설정">⚙️</button>
+</div>
+
+<div class="pk-stage">
+  <div id="dots"></div>
+  <div id="pads"></div>
+  <div id="shelf"><span class="lbl">모은 스티커</span><span id="shelfItems"></span><span class="more" id="shelfMore"></span></div>
+</div>
+
+<div class="pk-bottom">
+  <button class="pk-big" id="btnShow">👀 다시 보여주세요</button>
+</div>
+
+<div class="pk-sheet" id="setSheet" hidden>
+  <div class="pk-panel">
+    <h2>⚙️ 설정</h2>
+    <div class="pk-field">
+      <span>친구 수</span>
+      <div class="pk-opts" id="optPads">
+        <button class="pk-opt" data-v="2">2마리</button>
+        <button class="pk-opt" data-v="3">3마리</button>
+        <button class="pk-opt" data-v="4">4마리</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>시작 길이</span>
+      <div class="pk-opts" id="optStart">
+        <button class="pk-opt" data-v="1">1개</button>
+        <button class="pk-opt" data-v="2">2개</button>
+        <button class="pk-opt" data-v="3">3개</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>가장 긴 순서</span>
+      <div class="pk-opts" id="optMax">
+        <button class="pk-opt" data-v="3">3개까지</button>
+        <button class="pk-opt" data-v="5">5개까지</button>
+        <button class="pk-opt" data-v="8">8개까지</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>보여주는 빠르기</span>
+      <div class="pk-opts" id="optSpeed">
+        <button class="pk-opt" data-v="1100">아주 느리게</button>
+        <button class="pk-opt" data-v="800">느리게</button>
+        <button class="pk-opt" data-v="550">보통</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>소리 / 말</span>
+      <div class="pk-opts" id="optSound">
+        <button class="pk-opt" data-v="true">소리 켜기</button>
+        <button class="pk-opt" data-v="false">소리 끄기</button>
+      </div>
+      <div class="pk-opts" id="optVoice">
+        <button class="pk-opt" data-v="true">말 켜기</button>
+        <button class="pk-opt" data-v="false">말 끄기</button>
+      </div>
+    </div>
+    <button class="pk-big ok" id="btnClose">시작하기</button>
+    <button class="pk-big" id="btnEmpty" style="background:#eef2f7;color:#5a6b7d;box-shadow:0 6px 0 #cfd8e2;font-size:22px;padding:12px;">🧹 스티커 비우기</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   패턴 따라하기
+   - 친구들이 순서대로 폴짝 뛰며 소리를 냅니다. 같은 순서로 눌러 주세요.
+   - 틀려도 처음부터 다시 하지 않습니다. 그 자리에서 다시 보여 주고 이어서 합니다.
+   - 두 번 틀리면 눌러야 할 친구가 계속 반짝입니다(반드시 성공하도록).
+   ========================================================= */
+const FRIENDS = [
+  { e:'🐸', c:'#8fe07a', n:392.00, say:'개구리' },
+  { e:'🐤', c:'#ffd85e', n:523.25, say:'병아리' },
+  { e:'🐱', c:'#ffa3c8', n:659.25, say:'고양이' },
+  { e:'🐶', c:'#7fcdf7', n:783.99, say:'강아지' }
+];
+
+const KEY = 'pattern-follow';
+const cfg = PK.load(KEY, { pads:3, start:2, max:5, speed:800, sound:true, voice:true });
+
+const padsBox = document.getElementById('pads');
+const dotsBox = document.getElementById('dots');
+const starsEl = document.getElementById('stars');
+const sheet = document.getElementById('setSheet');
+const shelfItems = document.getElementById('shelfItems');
+const shelfMore = document.getElementById('shelfMore');
+
+let seq = [], step = 0, wrong = 0, showing = false, len = 2;
+let stickers = [];
+try{ stickers = JSON.parse(localStorage.getItem('pk-pattern-stickers') || '[]'); }catch(e){}
+let stars = stickers.length;
+
+function saveStickers(){
+  try{ localStorage.setItem('pk-pattern-stickers', JSON.stringify(stickers.slice(-40))); }catch(e){}
+}
+function drawShelf(){
+  const show = stickers.slice(-14);
+  shelfItems.textContent = show.join(' ');
+  shelfMore.textContent = stickers.length > 14 ? '+' + (stickers.length - 14) : '';
+}
+
+function buildPads(){
+  padsBox.innerHTML = '';
+  padsBox.style.gridTemplateColumns = 'repeat(' + (cfg.pads <= 2 ? 2 : 2) + ',1fr)';
+  if(cfg.pads === 3) padsBox.style.gridTemplateColumns = 'repeat(3,1fr)';
+  for(let i = 0; i < cfg.pads; i++){
+    const f = FRIENDS[i];
+    const b = document.createElement('button');
+    b.className = 'pad';
+    b.style.background = f.c;
+    b.textContent = f.e;
+    b.dataset.i = i;
+    b.addEventListener('pointerdown', function(e){ e.preventDefault(); press(i); });
+    padsBox.appendChild(b);
+  }
+}
+function padEl(i){ return padsBox.children[i]; }
+
+function drawDots(){
+  dotsBox.innerHTML = '';
+  for(let i = 0; i < seq.length; i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < step ? ' on' : (i === step && !showing ? ' now' : ''));
+    dotsBox.appendChild(d);
+  }
+}
+
+/* 친구 하나가 폴짝 뛰며 소리를 냅니다 */
+function light(i, ms){
+  const el = padEl(i);
+  if(!el) return;
+  el.classList.add('lit');
+  PK.note(FRIENDS[i].n, 0.42);
+  PK.buzz(18);
+  setTimeout(function(){ el.classList.remove('lit'); }, ms || 380);
+}
+
+/* 순서를 보여 줍니다 */
+function showSeq(fromWrong){
+  showing = true; step = 0; drawDots();
+  [...padsBox.children].forEach(function(p){ p.classList.add('wait'); });
+  PK.tell(fromWrong ? '다시 한 번 잘 보세요' : '잘 보세요!');
+  if(!fromWrong) PK.say('잘 보세요');
+  const gap = cfg.speed;
+  seq.forEach(function(idx, k){
+    setTimeout(function(){ light(idx, Math.min(460, gap - 120)); }, 700 + k * gap);
+  });
+  setTimeout(function(){
+    showing = false;
+    [...padsBox.children].forEach(function(p){ p.classList.remove('wait'); });
+    drawDots();
+    PK.tell('이제 똑같이 눌러요');
+    PK.say('이제 똑같이 눌러 보세요');
+    if(wrong >= 2) markNext();
+  }, 700 + seq.length * gap + 200);
+}
+
+/* 두 번 틀리면 눌러야 할 친구가 계속 반짝입니다 */
+function markNext(){
+  [...padsBox.children].forEach(function(p){ p.classList.remove('pk-hint'); });
+  const el = padEl(seq[step]);
+  if(el) el.classList.add('pk-hint');
+}
+function clearMark(){
+  [...padsBox.children].forEach(function(p){ p.classList.remove('pk-hint'); });
+}
+
+function newRound(grow){
+  clearMark();
+  wrong = 0;
+  if(grow){
+    len = Math.min(cfg.max, len + 1);
+  }else{
+    len = Math.min(cfg.max, Math.max(1, cfg.start));
+  }
+  seq = [];
+  for(let i = 0; i < len; i++) seq.push(Math.floor(Math.random() * cfg.pads));
+  showSeq(false);
+}
+
+function press(i){
+  if(showing) return;
+  const el = padEl(i);
+  if(i === seq[step]){
+    light(i, 300);
+    el.classList.remove('pk-hint');
+    step++;
+    drawDots();
+    if(step >= seq.length){
+      /* 한 줄 다 맞혔습니다 */
+      showing = true;
+      PK.beep('good');
+      stars++; starsEl.textContent = stars;
+      const chip = starsEl.parentElement;
+      chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
+      stickers.push(FRIENDS[seq[seq.length - 1]].e);
+      saveStickers(); drawShelf();
+      PK.tell('맞았어요! ' + seq.length + '개를 기억했어요');
+      PK.say(PK.praise());
+      const big = (stars % 5 === 0);
+      if(big) PK.cheer('🌈', stars + '개 모았어요!', 1800);
+      setTimeout(function(){ newRound(true); }, big ? 2100 : 1300);
+    }else{
+      if(wrong >= 2) markNext();
+    }
+  }else{
+    wrong++;
+    el.classList.remove('pk-shake'); void el.offsetWidth; el.classList.add('pk-shake');
+    PK.beep('bad'); PK.buzz(25);
+    PK.tell('괜찮아요! 다시 보여줄게요');
+    PK.say('괜찮아요. 다시 보여 줄게요');
+    setTimeout(function(){ showSeq(true); }, 900);
+  }
+}
+
+/* ---------- 버튼과 설정 ---------- */
+document.getElementById('btnShow').addEventListener('click', function(){
+  if(showing) return;
+  PK.beep('tap');
+  showSeq(true);
+});
+document.getElementById('btnSet').addEventListener('click', function(){ PK.hush(); sheet.hidden = false; });
+document.getElementById('btnClose').addEventListener('click', function(){
+  sheet.hidden = true; buildPads(); newRound(false);
+});
+document.getElementById('btnEmpty').addEventListener('click', function(){
+  stickers = []; stars = 0; saveStickers(); drawShelf();
+  starsEl.textContent = 0; sheet.hidden = true; buildPads(); newRound(false);
+});
+PK.bindOpts([['optPads','pads'],['optStart','start'],['optMax','max'],['optSpeed','speed'],
+             ['optSound','sound'],['optVoice','voice']], cfg, KEY, function(){});
+
+drawShelf();
+starsEl.textContent = stars;
+buildPads();
+newRound(false);
+</script>
+</body>
+</html>
