@@ -312,23 +312,6 @@ const JAMO = [
       ['오른팔은 아래로', armAt(f.R,-95,38,t)]
     ]},
 
-  { ch:'ㅗ', name:'오', type:'v', legs:false, fig:F(78,78,78,78),
-    guide:'양팔을 위로 번쩍! 만세',
-    cond:(f,t)=>[
-      ['왼팔 위로', armAt(f.L,78,28,t)],
-      ['오른팔 위로', armAt(f.R,78,28,t)],
-      ['팔 쭉 펴기', straight(f.elL,t) && straight(f.elR,t)],
-      ['손은 벌려서', f.wristRatio > 0.85/t]
-    ]},
-
-  { ch:'ㅜ', name:'우', type:'v', legs:false, fig:F(-42,-42,-42,-42),
-    guide:'양팔을 아래로 비스듬히 벌려요',
-    cond:(f,t)=>[
-      ['왼팔 아래로 벌리기', armAt(f.L,-40,21,t)],
-      ['오른팔 아래로 벌리기', armAt(f.R,-40,21,t)],
-      ['팔 쭉 펴기', straight(f.elL,t) && straight(f.elR,t)]
-    ]},
-
   // ── 자음 ──
   { ch:'ㄱ', name:'기역', type:'c', legs:false, fig:F(-90,-90,0,-90),
     guide:'오른팔을 옆으로 들고 팔꿈치를 꺾어 손을 아래로',
@@ -649,22 +632,51 @@ function stopCam(){
 }
 
 const CONN = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+const vis = (p)=> (p && (p.visibility??1) >= 0.35);
+
+/* 몸에 겹쳐 그리는 선.
+   글자 모양이 가려지지 않도록 연하게 그리고, 머리까지 그려 사람 모양이 분명하게 보이도록 합니다. */
 function drawPose(lm,W,H,good){
   octx.clearRect(0,0,W,H);
   if(!S.skeleton || !lm) return;
-  octx.lineWidth = Math.max(5, W*0.008);
-  octx.strokeStyle = good ? 'rgba(94,207,160,.95)' : 'rgba(255,179,198,.9)';
-  octx.lineCap='round';
+  octx.lineWidth = Math.max(3, W*0.0052);
+  octx.strokeStyle = good ? 'rgba(94,207,160,.52)' : 'rgba(255,179,198,.42)';
+  octx.lineCap='round'; octx.lineJoin='round';
+
   CONN.forEach(([a,b])=>{
-    if((lm[a].visibility??1)<0.35 || (lm[b].visibility??1)<0.35) return;
+    if(!vis(lm[a]) || !vis(lm[b])) return;
     octx.beginPath(); octx.moveTo(lm[a].x*W,lm[a].y*H); octx.lineTo(lm[b].x*W,lm[b].y*H); octx.stroke();
   });
-  octx.fillStyle = good ? '#3fb98a' : '#ff7fa3';
+
+  /* 머리 : 목선과 머리 동그라미 */
+  const nose = lm[0], ls = lm[11], rs = lm[12];
+  if(vis(nose) && vis(ls) && vis(rs)){
+    const nx = (ls.x+rs.x)/2*W, ny = (ls.y+rs.y)/2*H;
+    const hx = nose.x*W, hy = nose.y*H;
+    const er = lm[7], el2 = lm[8];
+    let r = (er && el2 && vis(er) && vis(el2))
+      ? Math.hypot((er.x-el2.x)*W, (er.y-el2.y)*H) * 0.85
+      : Math.hypot((ls.x-rs.x)*W, (ls.y-rs.y)*H) * 0.34;
+    r = Math.max(12, r);
+    const dx = hx-nx, dy = hy-ny, len = Math.hypot(dx,dy) || 1;
+    octx.beginPath();
+    octx.moveTo(nx, ny);
+    octx.lineTo(hx - dx/len*r*0.8, hy - dy/len*r*0.8);
+    octx.stroke();
+    octx.beginPath();
+    octx.arc(hx, hy - r*0.12, r, 0, 7);
+    octx.stroke();
+  }
+
+  octx.fillStyle = good ? 'rgba(63,185,138,.5)' : 'rgba(255,127,163,.42)';
   [11,12,13,14,15,16,23,24,25,26,27,28].forEach(i=>{
-    if((lm[i].visibility??1)<0.35) return;
-    octx.beginPath(); octx.arc(lm[i].x*W, lm[i].y*H, Math.max(6,W*0.009), 0, 7); octx.fill();
+    if(!vis(lm[i])) return;
+    octx.beginPath(); octx.arc(lm[i].x*W, lm[i].y*H, Math.max(4,W*0.0062), 0, 7); octx.fill();
   });
 }
+
+/* 카메라 없이도 선 모양을 확인할 수 있게 열어 둡니다 */
+window.__pose = { draw:drawPose, conn:CONN };
 
 let tickAt=0;
 function loop(){
