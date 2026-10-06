@@ -85,17 +85,20 @@
     <div class="pk-field">
       <span>가장 긴 순서</span>
       <div class="pk-opts" id="optMax">
+        <button class="pk-opt" data-v="2">2개까지</button>
         <button class="pk-opt" data-v="3">3개까지</button>
-        <button class="pk-opt" data-v="5">5개까지</button>
+        <button class="pk-opt" data-v="4">4개까지</button>
+        <button class="pk-opt" data-v="6">6개까지</button>
         <button class="pk-opt" data-v="8">8개까지</button>
       </div>
     </div>
     <div class="pk-field">
       <span>보여주는 빠르기</span>
       <div class="pk-opts" id="optSpeed">
-        <button class="pk-opt" data-v="1100">아주 느리게</button>
-        <button class="pk-opt" data-v="800">느리게</button>
-        <button class="pk-opt" data-v="550">보통</button>
+        <button class="pk-opt" data-v="1500">아주 천천히</button>
+        <button class="pk-opt" data-v="1100">천천히</button>
+        <button class="pk-opt" data-v="800">보통</button>
+        <button class="pk-opt" data-v="550">빠르게</button>
       </div>
     </div>
     <div class="pk-field">
@@ -129,7 +132,7 @@ const FRIENDS = [
 ];
 
 const KEY = 'pattern-follow';
-const cfg = PK.load(KEY, { pads:3, start:2, max:5, speed:800, sound:true, voice:true });
+const cfg = PK.load(KEY, { pads:3, start:1, max:4, speed:1100, sound:true, voice:true });
 
 const padsBox = document.getElementById('pads');
 const dotsBox = document.getElementById('dots');

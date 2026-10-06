@@ -129,6 +129,7 @@
     <div class="pk-field">
       <span>힌트 (못 찾으면 반짝여요)</span>
       <div class="pk-opts" id="optHint">
+        <button class="pk-opt" data-v="1.5">바로</button>
         <button class="pk-opt" data-v="3">빠르게</button>
         <button class="pk-opt" data-v="6">보통</button>
         <button class="pk-opt" data-v="0">없음</button>
@@ -177,7 +178,7 @@ const SKY = [['#ffd9a8','#fff1de'],['#bfe9ff','#eaf7ff'],['#ff9f6b','#ffd7a8'],[
 const PHASE = ['아침','낮','노을','밤'];
 
 const KEY = 'letter-find';
-const cfg = PK.load(KEY, { set:'ga', count:4, move:1, hint:6, sound:true, voice:true, bgm:true });
+const cfg = PK.load(KEY, { set:'ga', count:4, move:1, hint:3, sound:true, voice:true, bgm:true });
 
 const balloonsG = document.getElementById('balloons');
 const fxG = document.getElementById('fx');
