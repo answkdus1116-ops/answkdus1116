@@ -94,6 +94,9 @@ button{font-family:inherit;cursor:pointer;border:none}
 .tinfo .gd{font-family:'Gaegu';font-weight:700;font-size:21px;color:var(--ink2);line-height:1.3;margin-top:4px}
 #figbox{display:flex;align-items:center;justify-content:center;flex:1 1 auto;min-height:120px}
 #figbox svg{width:100%;height:100%;max-height:260px}
+    .legend{display:flex;align-items:center;justify-content:center;gap:7px;font-size:.92rem;color:#8b7f86;margin-top:6px;word-break:keep-all;line-height:1.35}
+    .legend .sw{flex:0 0 auto;width:22px;height:7px;border-radius:4px;background:#ffa81f;box-shadow:0 0 7px rgba(255,168,31,.75)}
+    .legend b{color:#e8890a}
 .gauge{height:22px;border-radius:999px;background:#fff;overflow:hidden;box-shadow:inset 0 2px 6px rgba(120,100,150,.18)}
 .gauge>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--lemon-d),var(--mint-d));transition:width .1s linear}
 .stars{display:flex;flex-wrap:wrap;gap:5px;font-size:22px;line-height:1}
@@ -181,7 +184,10 @@ button{font-family:inherit;cursor:pointer;border:none}
           <div class="gd" id="tguide">준비 중…</div>
         </div>
       </div>
-      <div class="card" id="figcard"><div id="figbox"></div></div>
+      <div class="card" id="figcard">
+        <div id="figbox"></div>
+        <div class="legend"><i class="sw"></i>진한 색 선이 <b>글자가 되는 부분</b>이에요</div>
+      </div>
       <div class="card" style="display:flex;flex-direction:column;gap:10px">
         <div class="gauge"><i id="gfill"></i></div>
         <div class="stars" id="stars"></div>
@@ -276,6 +282,43 @@ const S = {
    ══════════════════════════════════════════════════════ */
 const D = Math.PI/180;
 
+/* 글자를 만드는 몸의 부위.
+   자모마다 '어디가 글자인지'를 key 로 적어 두고, 그 선만 다른 색으로 진하게 그립니다.
+   (head 는 머리 동그라미 + 목선으로 따로 처리) */
+const SEG = {
+  sh:    [[11,12]],
+  torso: [[11,23],[12,24],[23,24]],
+  armL:  [[11,13],[13,15]],
+  armR:  [[12,14],[14,16]],
+  legL:  [[23,25],[25,27]],
+  legR:  [[24,26],[26,28]]
+};
+
+// 양손 다 허용일 때, 지금 글자 모양을 만들고 있는 팔을 고릅니다
+function sideArm(f, allowAny, by){
+  if(!f || !allowAny) return 'armR';
+  const l = Math.abs(by==='fore' ? f.L.f : f.L.u);
+  const r = Math.abs(by==='fore' ? f.R.f : f.R.u);
+  return l < r ? 'armL' : 'armR';
+}
+
+// 자모의 key → 선 한 쌍들의 집합
+function keyOf(j, f){
+  if(!j || !j.key) return null;
+  const names = typeof j.key === 'function' ? j.key(f) : j.key;
+  const set = new Set();
+  let head = false, spine = false;
+  names.forEach(nm=>{
+    if(nm === 'head'){ head = true; return; }
+    if(nm === 'spine'){ spine = true; return; }
+    (SEG[nm]||[]).forEach(([a,b])=> set.add(a<b ? a+'-'+b : b+'-'+a));
+  });
+  return { set, head, spine, names };
+}
+
+// 시범 그림용 : 기본(가르치는) 자세 기준의 key 이름
+const figKeys = j => (keyOf(j, null) || {names:[]}).names;
+
 // 시범 그림용 관절 각도 (up=위팔, fore=아래팔)
 const F = (lu,lf,ru,rf,legs) => ({L:{u:lu,f:lf}, R:{u:ru,f:rf}, legs:legs||'together'});
 
@@ -283,6 +326,7 @@ const JAMO = [
   // ── 모음 ──
   { ch:'ㅣ', name:'이', type:'v', legs:false, fig:F(-90,-90,-90,-90),
     guide:'차렷! 팔을 몸에 붙이고 곧게 서요',
+    key:['head','spine','legL','legR'],
     cond:(f,t)=>[
       ['왼팔 아래로', armAt(f.L,-95,32,t)],
       ['오른팔 아래로', armAt(f.R,-95,32,t)],
@@ -291,6 +335,7 @@ const JAMO = [
 
   { ch:'ㅡ', name:'으', type:'v', legs:false, fig:F(0,0,0,0),
     guide:'양팔을 옆으로 쭉! 一 자로 펴요',
+    key:['sh','armL','armR'],
     cond:(f,t)=>[
       ['왼팔 옆으로', armAt(f.L,0,22,t)],
       ['오른팔 옆으로', armAt(f.R,0,22,t)],
@@ -299,6 +344,7 @@ const JAMO = [
 
   { ch:'ㅏ', name:'아', type:'v', legs:false, fig:F(-90,-90,0,0),
     guide:'오른팔만 옆으로 쭉 뻗어요',
+    key:(f)=>['head','spine', S.strictLR ? 'armR' : sideArm(f,true,'up')],
     cond:(f,t)=> S.strictLR
       ? [['오른팔 옆으로', armAt(f.R,0,25,t) && straight(f.elR,t)],
          ['왼팔은 아래로', armAt(f.L,-95,38,t)]]
@@ -307,6 +353,7 @@ const JAMO = [
 
   { ch:'ㅓ', name:'어', type:'v', legs:false, fig:F(0,0,-90,-90),
     guide:'왼팔만 옆으로 쭉 뻗어요',
+    key:['head','spine','armL'],
     cond:(f,t)=>[
       ['왼팔 옆으로', armAt(f.L,0,25,t) && straight(f.elL,t)],
       ['오른팔은 아래로', armAt(f.R,-95,38,t)]
@@ -315,6 +362,7 @@ const JAMO = [
   // ── 자음 ──
   { ch:'ㄱ', name:'기역', type:'c', legs:false, fig:F(-90,-90,0,-90),
     guide:'오른팔을 옆으로 들고 팔꿈치를 꺾어 손을 아래로',
+    key:(f)=>[ sideArm(f,S.anyArm,'up') ],
     cond:(f,t)=>{
       const one = (a,el)=>[ angAt(a.u,3,26,t), angAt(a.f,-88,34,t), el>52 && el<128+18*t ];
       const R = one(f.R,f.elR), L = one(f.L,f.elL);
@@ -328,6 +376,7 @@ const JAMO = [
 
   { ch:'ㄴ', name:'니은', type:'c', legs:false, fig:F(-90,-90,-90,0),
     guide:'오른 팔꿈치를 옆구리에 붙이고 손만 옆으로 쭉',
+    key:(f)=>[ sideArm(f,S.anyArm,'fore') ],
     cond:(f,t)=>{
       const one = (a,el)=>[ angAt(a.u,-84,30,t), angAt(a.f,3,29,t), el>52 && el<128+18*t ];
       const R = one(f.R,f.elR), L = one(f.L,f.elL);
@@ -341,6 +390,7 @@ const JAMO = [
 
   { ch:'ㅅ', name:'시옷', type:'c', legs:true, fig:F(-80,-80,-80,-80,'apart'),
     guide:'다리를 시옷처럼 활짝 벌리고 서요',
+    key:['legL','legR'],
     cond:(f,t)=>[
       ['다리 벌리기', f.ankleRatio !== null && f.ankleRatio > 1.75/t],
       ['팔은 아래로', armAt(f.L,-88,42,t) && armAt(f.R,-88,42,t)]
@@ -348,6 +398,7 @@ const JAMO = [
 
   { ch:'ㅇ', name:'이응', type:'c', legs:false, fig:F(45,130,45,130),
     guide:'머리 위로 두 팔을 동그랗게 모아요',
+    key:['armL','armR'],
     cond:(f,t)=>[
       ['팔꿈치 구부리기', bent(f.elL,t) && bent(f.elR,t)],
       ['손을 머리 위로', f.wristsUp],
@@ -356,6 +407,7 @@ const JAMO = [
 
   { ch:'ㅈ', name:'지읒', type:'c', legs:true, fig:F(0,0,0,0,'apart'),
     guide:'다리는 벌리고 양팔은 옆으로 쭉!',
+    key:['sh','armL','armR','legL','legR'],
     cond:(f,t)=>[
       ['다리 벌리기', f.ankleRatio !== null && f.ankleRatio > 1.75/t],
       ['양팔 옆으로', armAt(f.L,0,25,t) && armAt(f.R,0,25,t)],
@@ -422,7 +474,7 @@ function features(lm, W, H){
 /* ══════════════════════════════════════════════════════
    4. 시범 스틱피겨 (거울 화면 기준 = 학생 오른쪽이 그림 오른쪽)
    ══════════════════════════════════════════════════════ */
-function stickSVG(fig, done){
+function stickSVG(fig, done, keys){
   const cx=100, headY=36, r=19, neck=58, shY=76, hipY=150, UA=36, FA=36;
   const shL={x:cx-27,y:shY}, shR={x:cx+27,y:shY};
   const pt=(o,ang,len,out)=>({x:o.x + Math.cos(ang*D)*len*out, y:o.y - Math.sin(ang*D)*len});
@@ -432,18 +484,25 @@ function stickSVG(fig, done){
   const hipL={x:cx-16,y:hipY}, hipR={x:cx+16,y:hipY};
   const knL ={x:cx-(apart?42:20),y:hipY+40}, knR={x:cx+(apart?42:20),y:hipY+40};
   const anL ={x:cx-(apart?66:22),y:hipY+80}, anR={x:cx+(apart?66:22),y:hipY+80};
-  const c = done? '#5ecfa0' : '#ff7fa3';
-  const L=(a,b)=>`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`;
-  const dot=(p)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="${c}"/>`;
+
+  const K = new Set(keys||[]);
+  const dim  = done? '#bfe8d7' : '#ffd6e0';           // 글자가 아닌 몸
+  const key  = done? '#2fd98a' : '#ffa81f';           // 글자를 만드는 부위
+  const col  = nm => (K.size===0 || K.has(nm)) ? key : dim;
+  const wid  = nm => (K.size===0 || K.has(nm)) ? 13 : 9;
+
+  const L=(a,b,nm)=>`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col(nm)}" stroke-width="${wid(nm)}"/>`;
+  const dot=(p,nm)=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="${col(nm)}"/>`;
+
   return `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg">
-    <g stroke="${c}" stroke-width="11" stroke-linecap="round" fill="none">
-      ${L({x:cx,y:neck},{x:cx,y:hipY})}
-      ${L(shL,shR)} ${L(hipL,hipR)}
-      ${L(shL,elL)}${L(elL,wrL)}${L(shR,elR)}${L(elR,wrR)}
-      ${L(hipL,knL)}${L(knL,anL)}${L(hipR,knR)}${L(knR,anR)}
+    <g stroke-linecap="round" fill="none">
+      ${L({x:cx,y:neck},{x:cx,y:hipY},'spine')}
+      ${L(shL,shR,'sh')} ${L(hipL,hipR,'torso')}
+      ${L(shL,elL,'armL')}${L(elL,wrL,'armL')}${L(shR,elR,'armR')}${L(elR,wrR,'armR')}
+      ${L(hipL,knL,'legL')}${L(knL,anL,'legL')}${L(hipR,knR,'legR')}${L(knR,anR,'legR')}
     </g>
-    <circle cx="${cx}" cy="${headY}" r="${r}" fill="${c}"/>
-    ${dot(wrL)}${dot(wrR)}
+    <circle cx="${cx}" cy="${headY}" r="${r}" fill="${col('head')}"/>
+    ${dot(wrL,'armL')}${dot(wrR,'armR')}
   </svg>`;
 }
 
@@ -560,7 +619,7 @@ function setTarget(){
   glyph.textContent=cur.ch; glyph.classList.remove('ok');
   tname.textContent=`${cur.ch}  ·  ${cur.name}`;
   tguide.textContent=cur.guide;
-  figbox.innerHTML = stickSVG(cur.fig,false);
+  figbox.innerHTML = stickSVG(cur.fig,false,figKeys(cur));
   gfill.style.width='0%';
   renderStars();
   say(`${cur.name}. ${cur.guide}`);
@@ -587,7 +646,7 @@ addEventListener('keydown', e=>{
 function succeed(){
   if(passed) return; passed=true;
   glyph.classList.add('ok');
-  figbox.innerHTML = stickSVG(cur.fig,true);
+  figbox.innerHTML = stickSVG(cur.fig,true,figKeys(cur));
   gfill.style.width='100%';
   sndOk(); confetti(); showToast(pick(['잘했어요!','최고예요!','정확해요!','멋져요!']));
   say(pick(['잘했어요','최고예요','정확해요']));
@@ -634,23 +693,54 @@ function stopCam(){
 const CONN = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
 const vis = (p)=> (p && (p.visibility??1) >= 0.35);
 
+/* 선 색.
+   body = 글자와 상관없는 몸의 선(연하게), key = 지금 글자를 만드는 부위(진하게, 다른 색) */
+const PAL = {
+  body:   { bad:'rgba(255,179,198,.32)', good:'rgba(94,207,160,.38)' },
+  key:    { bad:'rgba(255,176,32,.95)',  good:'rgba(54,226,150,.98)' },
+  dot:    { bad:'rgba(255,127,163,.32)', good:'rgba(63,185,138,.38)' },
+  keyDot: { bad:'rgba(255,205,92,1)',    good:'rgba(120,245,186,1)' },
+  glow:   { bad:'rgba(255,176,32,.85)',  good:'rgba(54,226,150,.9)' }
+};
+
 /* 몸에 겹쳐 그리는 선.
-   글자 모양이 가려지지 않도록 연하게 그리고, 머리까지 그려 사람 모양이 분명하게 보이도록 합니다. */
-function drawPose(lm,W,H,good){
+   몸 전체가 아니라 일부만 글자인 자모가 있으므로,
+   글자를 만드는 부위는 다른 색으로 진하게, 나머지는 아주 연하게 그립니다. */
+function drawPose(lm,W,H,good,keys){
   octx.clearRect(0,0,W,H);
   if(!S.skeleton || !lm) return;
-  octx.lineWidth = Math.max(3, W*0.0052);
-  octx.strokeStyle = good ? 'rgba(94,207,160,.52)' : 'rgba(255,179,198,.42)';
+  const thin  = Math.max(3, W*0.0052);
+  const thick = Math.max(6, W*0.0108);
+  const K = keys || null;
+  const pair = (a,b)=> a<b ? a+'-'+b : b+'-'+a;
+  const isKey = (a,b)=> !!(K && K.set.has(pair(a,b)));
+  const g = good ? 'good' : 'bad';
   octx.lineCap='round'; octx.lineJoin='round';
 
-  CONN.forEach(([a,b])=>{
+  const line = (x1,y1,x2,y2,key)=>{
+    octx.save();
+    if(key){
+      octx.strokeStyle = PAL.key[g];
+      octx.lineWidth = thick;
+      octx.shadowColor = PAL.glow[g];
+      octx.shadowBlur = Math.max(9, W*0.017);
+    }else{
+      octx.strokeStyle = PAL.body[g];
+      octx.lineWidth = thin;
+    }
+    octx.beginPath(); octx.moveTo(x1,y1); octx.lineTo(x2,y2); octx.stroke();
+    octx.restore();
+  };
+  const seg = (a,b,key)=>{
     if(!vis(lm[a]) || !vis(lm[b])) return;
-    octx.beginPath(); octx.moveTo(lm[a].x*W,lm[a].y*H); octx.lineTo(lm[b].x*W,lm[b].y*H); octx.stroke();
-  });
+    line(lm[a].x*W, lm[a].y*H, lm[b].x*W, lm[b].y*H, key);
+  };
 
   /* 머리 : 목선과 머리 동그라미 */
-  const nose = lm[0], ls = lm[11], rs = lm[12];
-  if(vis(nose) && vis(ls) && vis(rs)){
+  const headKey = !!(K && K.head);
+  const drawHead = (key)=>{
+    const nose = lm[0], ls = lm[11], rs = lm[12];
+    if(!(vis(nose) && vis(ls) && vis(rs))) return;
     const nx = (ls.x+rs.x)/2*W, ny = (ls.y+rs.y)/2*H;
     const hx = nose.x*W, hy = nose.y*H;
     const er = lm[7], el2 = lm[8];
@@ -659,24 +749,52 @@ function drawPose(lm,W,H,good){
       : Math.hypot((ls.x-rs.x)*W, (ls.y-rs.y)*H) * 0.34;
     r = Math.max(12, r);
     const dx = hx-nx, dy = hy-ny, len = Math.hypot(dx,dy) || 1;
-    octx.beginPath();
-    octx.moveTo(nx, ny);
-    octx.lineTo(hx - dx/len*r*0.8, hy - dy/len*r*0.8);
-    octx.stroke();
-    octx.beginPath();
-    octx.arc(hx, hy - r*0.12, r, 0, 7);
-    octx.stroke();
-  }
+    line(nx, ny, hx - dx/len*r*0.8, hy - dy/len*r*0.8, key);
+    octx.save();
+    if(key){
+      octx.strokeStyle = PAL.key[g];
+      octx.lineWidth = thick;
+      octx.shadowColor = PAL.glow[g];
+      octx.shadowBlur = Math.max(9, W*0.017);
+    }else{
+      octx.strokeStyle = PAL.body[g];
+      octx.lineWidth = thin;
+    }
+    octx.beginPath(); octx.arc(hx, hy - r*0.12, r, 0, 7); octx.stroke();
+    octx.restore();
+  };
 
-  octx.fillStyle = good ? 'rgba(63,185,138,.5)' : 'rgba(255,127,163,.42)';
+  /* 등줄기 : 어깨 가운데 → 엉덩이 가운데. 세로획 자모의 기둥이 됩니다 */
+  const spineKey = !!(K && K.spine);
+  const drawSpine = (key)=>{
+    const ls=lm[11], rs=lm[12], lh=lm[23], rh=lm[24];
+    if(!(vis(ls)&&vis(rs)&&vis(lh)&&vis(rh))) return;
+    line((ls.x+rs.x)/2*W, (ls.y+rs.y)/2*H, (lh.x+rh.x)/2*W, (lh.y+rh.y)/2*H, key);
+  };
+
+  /* 연한 선 → 진한 글자 선 순서로 그려서 글자가 위로 올라오게 합니다 */
+  CONN.forEach(([a,b])=>{ if(!isKey(a,b)) seg(a,b,false); });
+  if(!spineKey) drawSpine(false);
+  if(!headKey)  drawHead(false);
+  CONN.forEach(([a,b])=>{ if(isKey(a,b)) seg(a,b,true); });
+  if(spineKey) drawSpine(true);
+  if(headKey)  drawHead(true);
+
+  /* 관절 점 */
+  const keyJoint = new Set();
+  if(K) CONN.forEach(([a,b])=>{ if(isKey(a,b)){ keyJoint.add(a); keyJoint.add(b); } });
   [11,12,13,14,15,16,23,24,25,26,27,28].forEach(i=>{
     if(!vis(lm[i])) return;
-    octx.beginPath(); octx.arc(lm[i].x*W, lm[i].y*H, Math.max(4,W*0.0062), 0, 7); octx.fill();
+    const k = keyJoint.has(i);
+    octx.fillStyle = k ? PAL.keyDot[g] : PAL.dot[g];
+    octx.beginPath();
+    octx.arc(lm[i].x*W, lm[i].y*H, k ? Math.max(6,W*0.0092) : Math.max(4,W*0.0062), 0, 7);
+    octx.fill();
   });
 }
 
 /* 카메라 없이도 선 모양을 확인할 수 있게 열어 둡니다 */
-window.__pose = { draw:drawPose, conn:CONN };
+window.__pose = { draw:drawPose, conn:CONN, keyOf, SEG, jamo:JAMO, fig:(j,done)=>stickSVG(j.fig,!!done,figKeys(j)) };
 
 let tickAt=0;
 function loop(){
@@ -694,15 +812,16 @@ function loop(){
   if(!lm){ drawPose(null,W,H,false); setHint('몸 전체가 화면에 보이게 서 주세요'); resetHold(); return; }
 
   const f = features(lm,W,H);
-  if(!f.ok){ drawPose(lm,W,H,false); setHint('조금 뒤로 물러서서 팔이 다 보이게 해 주세요'); resetHold(); return; }
+  const keys = keyOf(cur, f);
+  if(!f.ok){ drawPose(lm,W,H,false,keys); setHint('조금 뒤로 물러서서 팔이 다 보이게 해 주세요'); resetHold(); return; }
   if(cur && cur.legs && !f.legsVisible){
-    drawPose(lm,W,H,false); setHint('다리까지 보이게 뒤로 물러서 주세요'); resetHold(); return;
+    drawPose(lm,W,H,false,keys); setHint('다리까지 보이게 뒤로 물러서 주세요'); resetHold(); return;
   }
 
   const list = cur.cond(f, S.tol);
   const met = list.filter(c=>c[1]).length;
   const all = met === list.length;
-  drawPose(lm,W,H,all);
+  drawPose(lm,W,H,all,keys);
 
   if(passed){ setHint('잘했어요!'); return; }
 
