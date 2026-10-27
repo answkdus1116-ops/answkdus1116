@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#140a1e">
+<title>자연쌤의 할로윈 사진관</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+<link rel="stylesheet" href="playkit.css">
+<style>
+@font-face{font-family:'MemomentKkukkukk';src:url('./fonts/MemomentKkukkukk.ttf') format('truetype');font-display:swap}
+:root{
+  --ink:#fff3e0; --dim:#c3a9d6;
+  --orange:#ff8a1f; --orange2:#ffb347;
+  --purple:#7b3fa0; --grape:#2a1540;
+  --line:rgba(255,170,60,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0; background:#140a1e; color:var(--ink);
+  font-family:'MemomentKkukkukk','Noto Sans KR',sans-serif;
+  overflow:hidden; user-select:none;
+}
+/* 밤하늘 + 달 */
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(circle at 78% 14%, rgba(255,214,120,.22) 0 14%, transparent 42%),
+    radial-gradient(1.6px 1.6px at 12% 22%, #fff8 0 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 31% 9%,  #fff6 0 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 58% 28%, #fff7 0 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 88% 44%, #fff5 0 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 44% 58%, #fff4 0 50%, transparent 51%),
+    linear-gradient(#1d1030 0%, #140a1e 55%, #0d0714 100%);
+}
+
+.screen{position:fixed;inset:0;z-index:1;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;padding:18px;overflow:auto}
+.screen.on{display:flex}
+
+h1{margin:0;font-size:clamp(28px,7vw,52px);color:var(--orange2);
+   text-shadow:0 3px 0 #6a2d00, 0 0 26px rgba(255,138,31,.55);letter-spacing:1px}
+.sub{margin:0;color:var(--dim);font-size:clamp(15px,3.4vw,20px);text-align:center;word-break:keep-all}
+
+/* 큰 단추 */
+.big{
+  border:0; border-radius:26px; cursor:pointer;
+  font-family:inherit; font-size:clamp(22px,5vw,34px); font-weight:700;
+  padding:20px 34px; color:#2a1200;
+  background:linear-gradient(180deg,var(--orange2),var(--orange));
+  box-shadow:0 8px 0 #a04c00, 0 14px 30px rgba(255,138,31,.35);
+  transition:transform .09s ease, box-shadow .09s ease;
+  display:flex; align-items:center; gap:12px; justify-content:center;
+}
+.big:active{transform:translateY(6px);box-shadow:0 2px 0 #a04c00}
+.big.ghost{background:linear-gradient(180deg,#9b6bc4,#6d3a96);color:#fff;
+  box-shadow:0 8px 0 #3d1a5c, 0 14px 30px rgba(123,63,160,.4)}
+.big.ghost:active{box-shadow:0 2px 0 #3d1a5c}
+.big.small{font-size:clamp(17px,3.6vw,22px);padding:14px 22px;border-radius:20px}
+.big[disabled]{opacity:.45;pointer-events:none}
+
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* 모은 사탕 */
+.candy{display:flex;align-items:center;gap:8px;font-size:clamp(17px,3.6vw,22px);
+  color:var(--orange2);background:rgba(255,255,255,.07);border:2px solid var(--line);
+  border-radius:999px;padding:8px 18px}
+
+/* 카메라 */
+.camwrap{position:relative;width:min(92vw,620px);aspect-ratio:4/3;border-radius:22px;
+  overflow:hidden;background:#000;border:3px solid var(--line);
+  box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.camwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.camwrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.camstate{position:absolute;left:0;right:0;bottom:0;padding:8px 12px;font-size:15px;
+  color:#ffe9c9;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:center}
+.count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  font-size:min(42vw,260px);font-weight:900;color:#fff;
+  text-shadow:0 0 40px #ff8a1f,0 0 90px #ff8a1f}
+.count.on{display:flex}
+.flash{position:fixed;inset:0;z-index:30;background:#fff;opacity:0;pointer-events:none}
+
+/* 테마 고르기 */
+.themes{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:12px;width:min(92vw,620px)}
+.th{border:3px solid var(--line);border-radius:20px;background:rgba(255,255,255,.06);
+  color:var(--ink);font-family:inherit;font-size:clamp(16px,3.6vw,21px);padding:16px 10px;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.th .em{font-size:clamp(34px,8vw,52px);line-height:1}
+.th.on{border-color:var(--orange2);background:rgba(255,138,31,.22);
+  box-shadow:0 0 0 4px rgba(255,138,31,.2)}
+
+/* 결과 */
+.shotbox{position:relative;width:min(92vw,620px);border-radius:22px;overflow:hidden;
+  border:3px solid var(--orange);box-shadow:0 14px 44px rgba(0,0,0,.65);background:#0b0612}
+.shotbox canvas{display:block;width:100%;height:auto}
+.busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(10,5,18,.72);font-size:clamp(18px,4vw,24px);color:var(--orange2)}
+.busy.on{display:flex}
+
+/* 설정 */
+.gear{position:fixed;top:12px;right:12px;z-index:5;width:52px;height:52px;border-radius:50%;
+  border:2px solid var(--line);background:rgba(255,255,255,.08);color:var(--ink);
+  font-size:24px;cursor:pointer}
+.sheet{position:fixed;inset:0;z-index:20;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(8,4,14,.72)}
+.sheet.on{display:flex}
+.panel{width:min(96vw,560px);max-height:88vh;overflow:auto;background:#241337;
+  border:3px solid var(--line);border-radius:24px 24px 12px 12px;padding:18px}
+.panel h2{margin:2px 0 14px;font-size:22px;color:var(--orange2)}
+.field{margin-bottom:14px}
+.field > label{display:block;margin-bottom:7px;color:var(--dim);font-size:16px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:2px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);
+  font-family:inherit;font-size:16px;padding:9px 15px;border-radius:14px;cursor:pointer}
+.opt.on{background:var(--orange);border-color:var(--orange2);color:#2a1200;font-weight:700}
+select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:100%;
+  background:#1a0e28;color:var(--ink);border:2px solid var(--line)}
+.note{color:#b79acb;font-size:14px;line-height:1.5;word-break:keep-all}
+</style>
+<script src="guard.js"></script>
+</head>
+<body>
+
+<button class="gear" id="btnGear" title="설정">⚙️</button>
+
+<!-- ═══════════ 홈 ═══════════ -->
+<section id="home" class="screen on">
+  <div style="font-size:clamp(60px,16vw,120px);line-height:1">🎃</div>
+  <h1>할로윈 사진관</h1>
+  <p class="sub">사진을 찍으면 할로윈 세상으로 바뀌어요!</p>
+  <button class="big" id="btnGo">📸 &nbsp;사진 찍기</button>
+  <div class="candy">🍬 <span id="candyN">0</span>개 모았어요</div>
+  <p class="sub" style="font-size:14px;color:#9b84ae" id="loadNote">그림을 불러오는 중…</p>
+</section>
+
+<!-- ═══════════ 촬영 ═══════════ -->
+<section id="shoot" class="screen">
+  <h1 style="font-size:clamp(22px,5vw,34px)" id="shootTitle">🧙 마녀의 밤</h1>
+  <div class="camwrap" id="camwrap">
+    <video id="cam" autoplay playsinline muted></video>
+    <canvas id="ovl"></canvas>
+    <div class="count" id="count">3</div>
+    <div class="camstate" id="camstate">카메라를 준비하고 있어요…</div>
+  </div>
+  <button class="big" id="btnShot">📸 &nbsp;찰칵!</button>
+  <div class="row">
+    <button class="big ghost small" id="btnTheme">🎨 다른 테마</button>
+    <button class="big ghost small" id="btnRetryCam">🔄 카메라 다시</button>
+    <button class="big ghost small" id="btnBack1">🏠 그만</button>
+  </div>
+  <p class="sub" style="font-size:14px;color:#9b84ae">화면을 아무 데나 눌러도 찍혀요 · 스페이스/엔터</p>
+</section>
+
+<!-- ═══════════ 결과 ═══════════ -->
+<section id="done" class="screen">
+  <h1 style="font-size:clamp(22px,5vw,34px)">✨ 완성!</h1>
+  <div class="shotbox">
+    <canvas id="art"></canvas>
+    <div class="busy" id="busy">🎃 꾸미는 중…</div>
+  </div>
+  <div class="row">
+    <button class="big" id="btnSave">💾 &nbsp;저장하기</button>
+    <button class="big ghost" id="btnNext">🎨 &nbsp;다른 모습으로</button>
+  </div>
+  <div class="row">
+    <button class="big ghost small" id="btnAgain">📸 다시 찍기</button>
+    <button class="big ghost small" id="btnBack2">🏠 그만</button>
+  </div>
+</section>
+
+<!-- ═══════════ 설정 ═══════════ -->
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2>설정</h2>
+
+    <div class="field"><label>테마 고르기</label>
+      <div class="opts" id="optPick">
+        <button class="opt" data-v="auto">차례대로</button>
+        <button class="opt" data-v="choose">내가 고르기</button>
+      </div>
+    </div>
+
+    <div class="field"><label>셋 셀까요?</label>
+      <div class="opts" id="optCount">
+        <button class="opt" data-v="0">바로 찍기</button>
+        <button class="opt" data-v="3">3초</button>
+        <button class="opt" data-v="5">5초</button>
+      </div>
+    </div>
+
+    <div class="field"><label>배경 바꾸기</label>
+      <div class="opts" id="optCut">
+        <button class="opt" data-v="true">할로윈 배경으로</button>
+        <button class="opt" data-v="false">찍은 그대로</button>
+      </div>
+      <p class="note">배경이 이상하게 잘리면 ‘찍은 그대로’ 를 골라 보세요.</p>
+    </div>
+
+    <div class="field"><label>소리</label>
+      <div class="opts" id="optSound">
+        <button class="opt" data-v="true">켜기</button>
+        <button class="opt" data-v="false">끄기</button>
+      </div>
+    </div>
+
+    <div class="field"><label>말로 알려주기</label>
+      <div class="opts" id="optVoice">
+        <button class="opt" data-v="true">켜기</button>
+        <button class="opt" data-v="false">끄기</button>
+      </div>
+    </div>
+
+    <div class="field"><label>카메라 고르기</label>
+      <select id="camSel"><option value="">자동으로 고르기</option></select>
+      <p class="note" id="camInfo"></p>
+    </div>
+
+    <div class="row">
+      <button class="big small" id="btnClose">닫기</button>
+      <button class="big ghost small" id="btnResetCandy">🍬 사탕 지우기</button>
+    </div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script src="playkit.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════
+   자연쌤의 할로윈 사진관
+   사진을 찍으면 ① 배경을 할로윈 풍경으로 바꾸고
+                ② 얼굴을 찾아 머리 위에 장식을 얹고
+                ③ 박쥐·유령·호박으로 꾸며 한 장을 완성합니다.
+   그림은 모두 openclipart.org 의 CC0(퍼블릭 도메인) 자료입니다.
+   ══════════════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const A = 'halloween/';
+
+/* ---------- 1. 테마 ----------
+   back  : 사람 뒤에 깔리는 그림
+   head  : 얼굴을 찾으면 머리 위에 얹을 그림
+   front : 사람 앞에 올리는 꾸밈
+   fit   : 'cover' 화면 가득 / 'bottom' 아래쪽에 가로로 꽉
+   그 밖에는 x,y(가운데 위치 비율) + w(가로 비율) + rot(기울기) */
+const THEMES = [
+  { id:'witch', name:'마녀의 밤', em:'🧙', say:'마녀로 변신!',
+    sky:['#2b1a4a','#120a24'],
+    back:[ {src:'bg-village.svg', fit:'cover'} ],
+    head:{ src:'hat.svg', w:2.6, gap:-0.45 },
+    front:[ {src:'bat-black.svg',x:.14,y:.13,w:.13,rot:-14},
+            {src:'bat-black.svg',x:.87,y:.20,w:.09,rot:13},
+            {src:'jack.svg',     x:.11,y:.88,w:.20},
+            {src:'candy.svg',    x:.90,y:.90,w:.12,rot:16} ] },
+
+  { id:'pumpkin', name:'호박 마을', em:'🎃', say:'호박 친구가 되었어요!',
+    sky:['#ff9a3c','#4a2270'],
+    back:[ {src:'moonbats.svg', x:.85,y:.15,w:.18},
+           {src:'sil-land.svg',  x:.50,b:1.00,w:1.00} ],
+    head:{ src:'pumpkin-head.svg', w:1.35, gap:-0.05 },
+    front:[ {src:'pumpkin3d.svg',x:.10,y:.86,w:.19},
+            {src:'pumpkin.svg',  x:.89,y:.89,w:.17},
+            {src:'bat-cute.svg', x:.21,y:.15,w:.10,rot:-8},
+            {src:'candy.svg',    x:.90,y:.58,w:.10,rot:-14} ] },
+
+  { id:'ghost', name:'유령의 성', em:'👻', say:'유령 친구들이 놀러 왔어요!',
+    sky:['#1d2b64','#0b1026'],
+    back:[ {src:'sil-castle.svg', x:.66,y:.52,w:.52} ],
+    head:{ src:'ghost.svg', w:1.25, gap:0.15 },
+    front:[ {src:'ghosts2.svg',x:.85,y:.76,w:.26},
+            {src:'boo.svg',    x:.13,y:.32,w:.21,rot:-6} ] },
+
+  { id:'bat', name:'박쥐 숲', em:'🦇', say:'박쥐가 날아왔어요!',
+    sky:['#7b4a8a','#1d0f24'],
+    back:[ {src:'moonbats.svg', x:.81,y:.14,w:.18},
+           {src:'sil-tree.svg',  x:.07,b:1.00,w:.26},
+           {src:'sil-tree.svg',  x:.27,b:1.04,w:.17},
+           {src:'sil-tree.svg',  x:.73,b:1.03,w:.19},
+           {src:'sil-tree.svg',  x:.94,b:.99,w:.28} ],
+    head:{ src:'bat-head.svg', w:2.4, gap:-0.25 },
+    front:[ {src:'bat-black.svg',x:.17,y:.22,w:.14,rot:-18},
+            {src:'bat-black.svg',x:.81,y:.13,w:.10,rot:14},
+            {src:'spider.svg',   x:.91,y:.45,w:.10},
+            {src:'tombstone.svg',x:.21,y:.89,w:.21},
+            {src:'skull.svg',    x:.62,y:.93,w:.11,rot:9} ] }
+];
+
+/* ---------- 2. 그림 불러오기 ---------- */
+const imgCache = new Map();   // 이름 → 약속
+const ready    = new Map();   // 이름 → 다 받아 둔 그림
+function loadImg(name){
+  if(imgCache.has(name)) return imgCache.get(name);
+  const p = new Promise((res, rej) => {
+    const im = new Image();
+    im.onload  = () => { ready.set(name, im); res(im); };
+    im.onerror = () => rej(new Error(name));
+    im.src = A + name;
+  });
+  imgCache.set(name, p);
+  return p;
+}
+/* 이미 받아 둔 그림만 꺼내 씁니다(기다리지 않음) */
+const peek = name => ready.get(name) || null;
+/* 작은 그림은 미리, 큰 배경은 쓸 때 받습니다 */
+const EAGER = ['hat.svg','pumpkin-head.svg','bat-head.svg','ghost.svg','web.svg',
+               'bat-black.svg','bat-cute.svg','jack.svg','candy.svg','pumpkin.svg',
+               'pumpkin3d.svg','ghosts2.svg','boo.svg','spider.svg','skull.svg',
+               'tombstone.svg','moonbats.svg','sil-tree.svg','sil-graves.svg','sil-land.svg'];
+let eagerDone = 0;
+Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
+  eagerDone++;
+  $('#loadNote').textContent = eagerDone >= EAGER.length ? '준비 끝! 🎃'
+    : `그림을 불러오는 중… ${eagerDone}/${EAGER.length}`;
+}))).then(() => { setTimeout(() => $('#loadNote').textContent = '', 1200); });
+
+function themeImgs(t){
+  const names = [...t.back.map(l=>l.src), ...t.front.map(l=>l.src)];
+  if(t.head) names.push(t.head.src);
+  names.push('web.svg');
+  return Promise.allSettled([...new Set(names)].map(loadImg));
+}
+
+/* ---------- 3. 설정 ---------- */
+const CFG = PK.load('halloween', {
+  pick:'auto', count:3, cutout:true, sound:true, voice:true, rate:0.9, camId:''
+});
+let candy = +(localStorage.getItem('pk-halloween-candy') || 0);
+const paintCandy = () => $('#candyN').textContent = candy;
+paintCandy();
+
+/* ---------- 4. 화면 넘기기 ---------- */
+const screens = { home:$('#home'), shoot:$('#shoot'), done:$('#done') };
+let where = 'home';
+function show(name){
+  where = name;
+  Object.entries(screens).forEach(([k, el]) => el.classList.toggle('on', k === name));
+}
+
+/* ══════════════════════════════════════════════════════
+   5. 카메라
+   까맣게 나오는 일이 없도록 play() 오류를 삼키지 않고,
+   멈춰 있으면 알려 주고 다시 시도할 수 있게 합니다.
+   ══════════════════════════════════════════════════════ */
+const video = $('#cam'), ovl = $('#ovl'), octx = ovl.getContext('2d');
+const camstate = $('#camstate');
+let stream = null, camTimer = 0;
+
+function setState(t){ camstate.textContent = t; }
+
+async function listCams(){
+  try{
+    const ds = await navigator.mediaDevices.enumerateDevices();
+    const cams = ds.filter(d => d.kind === 'videoinput');
+    const sel = $('#camSel');
+    sel.innerHTML = '<option value="">자동으로 고르기</option>' +
+      cams.map((c,i) => `<option value="${c.deviceId}">${(c.label||('카메라 '+(i+1)))}</option>`).join('');
+    sel.value = CFG.camId || '';
+    $('#camInfo').textContent = cams.length ? `찾은 카메라 ${cams.length}대` : '카메라를 못 찾았어요';
+  }catch(e){}
+}
+
+async function startCam(){
+  stopCam();
+  setState('카메라를 켜는 중…');
+  $('#btnShot').disabled = true;
+  const want = CFG.camId
+    ? { deviceId:{ exact:CFG.camId }, width:{ideal:960}, height:{ideal:720} }
+    : { facingMode:'user', width:{ideal:960}, height:{ideal:720} };
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:want, audio:false });
+  }catch(err){
+    if(CFG.camId){                       // 고른 카메라가 안 되면 자동으로 한 번 더
+      try{ stream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false }); }
+      catch(e2){ return camFail(e2); }
+    }else return camFail(err);
+  }
+  video.srcObject = stream;
+  try{ await video.play(); }
+  catch(err){ return camFail(err); }
+  listCams();
+  initMP();
+  watchStall();
+  setState('얼굴을 찾는 중…');
+  $('#btnShot').disabled = false;
+}
+function camFail(err){
+  const why = ({
+    NotAllowedError:'카메라를 쓰도록 허락해 주세요',
+    NotFoundError:'카메라를 찾지 못했어요',
+    NotReadableError:'다른 앱이 카메라를 쓰고 있어요. 그 앱을 닫고 다시 눌러 주세요',
+    OverconstrainedError:'이 카메라는 쓸 수 없어요. 설정에서 다른 카메라를 골라 보세요'
+  })[err && err.name] || '카메라를 열 수 없어요';
+  setState('⚠️ ' + why);
+  $('#btnShot').disabled = true;
+  listCams();
+}
+/* 화면이 까맣게 멈춰 있는지 지켜봅니다 */
+function watchStall(){
+  clearInterval(camTimer);
+  let last = -1, still = 0;
+  camTimer = setInterval(() => {
+    if(!stream) return;
+    const t = video.currentTime;
+    if(t === last){ if(++still === 4) setState('⚠️ 화면이 멈춰 있어요. ‘카메라 다시’ 를 눌러 주세요'); }
+    else { still = 0; }
+    last = t;
+  }, 700);
+}
+function stopCam(){
+  clearInterval(camTimer);
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  octx.clearRect(0, 0, ovl.width, ovl.height);
+}
+
+/* ---------- 6. 얼굴 찾기 · 배경 오리기 ---------- */
+let faceMesh = null, seg = null, faces = null, segReady = false, raf = 0, tick = 0;
+const segCanvas = document.createElement('canvas');
+
+function initMP(){
+  const cdn = n => f => `https://cdn.jsdelivr.net/npm/@mediapipe/${n}/${f}`;
+  if(typeof FaceMesh === 'function' && !faceMesh){
+    try{
+      faceMesh = new FaceMesh({ locateFile: cdn('face_mesh') });
+      faceMesh.setOptions({ maxNumFaces:3, refineLandmarks:false,
+                            minDetectionConfidence:.5, minTrackingConfidence:.5 });
+      faceMesh.onResults(r => { faces = (r.multiFaceLandmarks && r.multiFaceLandmarks.length)
+                                        ? r.multiFaceLandmarks : null; });
+    }catch(e){ faceMesh = null; }
+  }
+  if(typeof SelfieSegmentation === 'function' && !seg){
+    try{
+      seg = new SelfieSegmentation({ locateFile: cdn('selfie_segmentation') });
+      seg.setOptions({ modelSelection:1 });
+      seg.onResults(r => {
+        const m = r.segmentationMask; if(!m) return;
+        segCanvas.width = m.width; segCanvas.height = m.height;
+        const c = segCanvas.getContext('2d');
+        c.clearRect(0, 0, m.width, m.height); c.drawImage(m, 0, 0);
+        segReady = true;
+      });
+    }catch(e){ seg = null; }
+  }
+  startLoop();
+}
+let fmBusy = false, segBusy = false;
+function startLoop(){
+  if(raf) return;
+  const step = () => {
+    raf = requestAnimationFrame(step);
+    if(!stream || video.readyState < 2) return;
+    tick++;
+    if(faceMesh && !fmBusy){
+      fmBusy = true;
+      try{ faceMesh.send({ image:video }).catch(()=>{}).finally(()=>{ fmBusy = false; }); }
+      catch(e){ fmBusy = false; }
+    }
+    if(seg && !segBusy && CFG.cutout && tick % 4 === 0){
+      segBusy = true;
+      try{ seg.send({ image:video }).catch(()=>{}).finally(()=>{ segBusy = false; }); }
+      catch(e){ segBusy = false; }
+    }
+    drawPreview();
+  };
+  step();
+}
+
+/* 미리보기 : 머리 장식만 얹어서 보여 줍니다(가볍게) */
+let hintAt = 0;
+function drawPreview(){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if(!vw) return;
+  if(ovl.width !== vw){ ovl.width = vw; ovl.height = vh; }
+  octx.clearRect(0, 0, vw, vh);
+  const t = THEMES[themeIdx];
+  const im = peek(t.head.src);
+  if(faces && im){
+    faces.forEach(lm => placeHead(octx, im, t.head, lm, vw, vh));
+  }
+  const now = performance.now();
+  if(now - hintAt > 900){
+    hintAt = now;
+    setState(faces ? `좋아요! ${t.em} ${t.name} · 찰칵을 눌러요` : '얼굴이 보이게 서 주세요');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   7. 머리 장식 얹기
+   두 눈으로 얼굴의 크기와 기울기를, 10번 점으로 이마 끝을 잡습니다.
+   (미리보기·완성 사진 모두 거울처럼 좌우를 뒤집어 그립니다)
+   ══════════════════════════════════════════════════════ */
+function headInfo(lm, W, H){
+  if(!lm || !lm[33] || !lm[263] || !lm[10]) return null;
+  const P = i => ({ x:(1 - lm[i].x) * W, y:lm[i].y * H });
+  const a = P(33), b = P(263);
+  const Lp = a.x <= b.x ? a : b, Rp = a.x <= b.x ? b : a;
+  const d = Math.hypot(Rp.x - Lp.x, Rp.y - Lp.y) || 1;
+  const ang = Math.atan2(Rp.y - Lp.y, Rp.x - Lp.x);
+  return { top:P(10), d, ang, up:{ x:Math.sin(ang), y:-Math.cos(ang) } };
+}
+function placeHead(ctx, im, spec, lm, W, H){
+  const f = headInfo(lm, W, H);
+  if(!f) return;
+  const w = spec.w * f.d;
+  const h = w * im.naturalHeight / im.naturalWidth;
+  const off = h / 2 + spec.gap * f.d;          // gap: 머리끝에서 그림 아래끝까지
+  const cx = f.top.x + f.up.x * off;
+  let   cy = f.top.y + f.up.y * off;
+  cy = Math.max(cy, h * 0.52);                 // 위로 잘려 안 보이지 않게
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(f.ang);
+  ctx.drawImage(im, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
+/* ---------- 8. 꾸밈 그림 한 장 그리기 ---------- */
+function drawLayer(ctx, im, L, W, H){
+  const r = im.naturalWidth / im.naturalHeight;
+  if(L.fit === 'cover'){
+    const s = Math.max(W / im.naturalWidth, H / im.naturalHeight);
+    const w = im.naturalWidth * s, h = im.naturalHeight * s;
+    ctx.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+    return;
+  }
+  const w = W * L.w, h = w / r;
+  const cx = W * L.x;
+  const cy = (L.b !== undefined) ? H * L.b - h / 2 : H * L.y;
+  ctx.save();
+  ctx.translate(cx, cy);
+  if(L.rot) ctx.rotate(L.rot * Math.PI / 180);
+  ctx.drawImage(im, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════════
+   9. 찰칵 : 그 순간을 얼려 둡니다
+   ══════════════════════════════════════════════════════ */
+const shot = { w:0, h:0, frame:document.createElement('canvas'),
+               mask:document.createElement('canvas'), faces:null, hasMask:false };
+function freeze(){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  shot.w = vw; shot.h = vh;
+  shot.frame.width = vw; shot.frame.height = vh;
+  const fc = shot.frame.getContext('2d');
+  fc.save(); fc.translate(vw, 0); fc.scale(-1, 1);     // 거울처럼
+  fc.drawImage(video, 0, 0, vw, vh);
+  fc.restore();
+
+  shot.hasMask = segReady && CFG.cutout;
+  if(shot.hasMask){
+    shot.mask.width = vw; shot.mask.height = vh;
+    const mc = shot.mask.getContext('2d');
+    mc.clearRect(0, 0, vw, vh);
+    mc.save(); mc.translate(vw, 0); mc.scale(-1, 1);
+    try{ mc.filter = 'blur(3px)'; }catch(e){}           // 오려낸 가장자리를 부드럽게
+    mc.drawImage(segCanvas, 0, 0, vw, vh);
+    mc.filter = 'none'; mc.restore();
+  }
+  shot.faces = faces ? faces.map(f => f.map(p => ({ x:p.x, y:p.y }))) : null;
+}
+
+/* ---------- 10. 한 장 완성하기 ---------- */
+const art = $('#art');
+async function compose(){
+  const t = THEMES[themeIdx];
+  $('#busy').classList.add('on');
+  art.getContext('2d').clearRect(0, 0, art.width, art.height);
+  await themeImgs(t);
+  try{ await document.fonts.ready; }catch(e){}
+
+  const W = shot.w || 960, H = shot.h || 720;
+  art.width = W; art.height = H;
+  const c = art.getContext('2d');
+  c.clearRect(0, 0, W, H);
+
+  if(shot.hasMask){
+    /* 밤하늘 → 뒤 풍경 → 오려낸 사람 */
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, t.sky[0]); g.addColorStop(1, t.sky[1]);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    t.back.forEach(L => { const im = peek(L.src); if(im) drawLayer(c, im, L, W, H); });
+
+    const cut = document.createElement('canvas');
+    cut.width = W; cut.height = H;
+    const cc = cut.getContext('2d');
+    cc.drawImage(shot.mask, 0, 0, W, H);
+    cc.globalCompositeOperation = 'source-in';
+    cc.drawImage(shot.frame, 0, 0, W, H);
+    c.drawImage(cut, 0, 0);
+  }else{
+    c.drawImage(shot.frame, 0, 0, W, H);
+    c.fillStyle = 'rgba(40,10,60,.22)'; c.fillRect(0, 0, W, H);   // 할로윈 느낌의 보랏빛
+  }
+
+  /* 머리 장식 */
+  const hi = peek(t.head.src);
+  if(hi && shot.faces) shot.faces.forEach(lm => placeHead(c, hi, t.head, lm, W, H));
+
+  /* 앞쪽 꾸밈 */
+  t.front.forEach(L => { const im = peek(L.src); if(im) drawLayer(c, im, L, W, H); });
+
+  drawFrame(c, W, H, t);
+  $('#busy').classList.remove('on');
+}
+
+/* ---------- 11. 사진 테두리 ---------- */
+function drawFrame(c, W, H, t){
+  /* 아래쪽을 살짝 어둡게 해서 글자가 잘 보이게 합니다 */
+  const sg = c.createLinearGradient(0, H * 0.78, 0, H);
+  sg.addColorStop(0, 'rgba(12,5,20,0)');
+  sg.addColorStop(1, 'rgba(12,5,20,.66)');
+  c.fillStyle = sg; c.fillRect(0, H * 0.78, W, H * 0.22);
+
+  const web = peek('web.svg');
+  if(web){
+    const s = W * 0.34;
+    c.save(); c.globalAlpha = .55;
+    c.drawImage(web, -s * 0.5, -s * 0.5, s, s);
+    c.save(); c.translate(W, 0); c.scale(-1, 1);
+    c.drawImage(web, -s * 0.5, -s * 0.5, s, s);
+    c.restore(); c.restore();
+  }
+  const pad = Math.round(W * 0.012), lw = Math.max(6, W * 0.012);
+  c.lineWidth = lw; c.strokeStyle = '#ff8a1f';
+  c.strokeRect(pad + lw / 2, pad + lw / 2, W - 2 * pad - lw, H - 2 * pad - lw);
+
+  const txt = 'HAPPY HALLOWEEN';
+  const fs = Math.round(W * 0.052);
+  c.font = `700 ${fs}px 'MemomentKkukkukk','Noto Sans KR',sans-serif`;
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  const y = H - Math.round(H * 0.055);
+  c.lineWidth = Math.max(4, fs * 0.22); c.strokeStyle = 'rgba(20,6,30,.85)';
+  c.lineJoin = 'round'; c.strokeText(txt, W / 2, y);
+  c.fillStyle = '#ffc24a'; c.fillText(txt, W / 2, y);
+}
+
+/* ══════════════════════════════════════════════════════
+   12. 버튼과 흐름
+   ══════════════════════════════════════════════════════ */
+let themeIdx = 0, counting = false;
+
+function setTheme(i, speak){
+  themeIdx = (i + THEMES.length) % THEMES.length;
+  const t = THEMES[themeIdx];
+  $('#shootTitle').textContent = `${t.em} ${t.name}`;
+  themeImgs(t);
+  paintThemes();
+  if(speak) PK.say(t.name);
+}
+function paintThemes(){
+  const box = $('#themeBox');
+  if(box) [...box.children].forEach((b, i) => b.classList.toggle('on', i === themeIdx));
+}
+
+/* 테마 고르기 판 (설정 안이 아니라 촬영 화면에서 바로) */
+(function buildThemePicker(){
+  const wrap = document.createElement('div');
+  wrap.className = 'themes'; wrap.id = 'themeBox';
+  wrap.innerHTML = THEMES.map(t =>
+    `<button class="th"><span class="em">${t.em}</span>${t.name}</button>`).join('');
+  wrap.style.display = 'none';
+  $('#shoot').insertBefore(wrap, $('#btnShot'));
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('.th'); if(!b) return;
+    setTheme([...wrap.children].indexOf(b), true);
+    PK.beep('pick');
+  });
+})();
+function toggleThemeBox(){
+  const w = $('#themeBox');
+  w.style.display = w.style.display === 'none' ? 'grid' : 'none';
+  PK.beep('tap');
+}
+
+/* ---------- 찍기 ---------- */
+function shoot(){
+  if(counting || where !== 'shoot' || $('#btnShot').disabled) return;
+  counting = true;
+  const n = +CFG.count;
+  if(!n) return void fire();
+  const box = $('#count');
+  let k = n;
+  box.classList.add('on'); box.textContent = k;
+  PK.say(String(k)); PK.beep('hint');
+  const iv = setInterval(() => {
+    k--;
+    if(k <= 0){ clearInterval(iv); box.classList.remove('on'); fire(); return; }
+    box.textContent = k; PK.say(String(k)); PK.beep('hint');
+  }, 1000);
+}
+function fire(){
+  freeze();
+  const f = $('#flash');
+  f.style.transition = 'none'; f.style.opacity = '1';
+  requestAnimationFrame(() => { f.style.transition = 'opacity .45s ease'; f.style.opacity = '0'; });
+  PK.beep('good'); PK.buzz([40]);
+  counting = false;
+  candy++; localStorage.setItem('pk-halloween-candy', candy); paintCandy();
+  show('done');
+  compose().then(() => {
+    PK.cheer(THEMES[themeIdx].em, THEMES[themeIdx].say, 1500);
+  });
+}
+
+/* ---------- 저장 ---------- */
+function save(){
+  art.toBlob(b => {
+    if(!b){ PK.say('저장할 수 없어요'); return; }
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `할로윈_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    PK.beep('win'); PK.say('저장했어요');
+  }, 'image/png');
+}
+
+/* ---------- 버튼 연결 ---------- */
+$('#btnGo').onclick = async () => {
+  show('shoot');
+  if(CFG.pick === 'auto') setTheme(themeIdx, false);
+  $('#themeBox').style.display = CFG.pick === 'choose' ? 'grid' : 'none';
+  PK.say('얼굴이 보이게 서 주세요');
+  await startCam();
+};
+$('#btnShot').onclick = shoot;
+$('#btnTheme').onclick = toggleThemeBox;
+$('#btnRetryCam').onclick = () => { PK.beep('tap'); startCam(); };
+$('#btnBack1').onclick = () => { stopCam(); PK.hush(); show('home'); };
+$('#btnBack2').onclick = () => { stopCam(); PK.hush(); show('home'); };
+$('#btnAgain').onclick = async () => {
+  show('shoot');
+  if(CFG.pick === 'auto') setTheme(themeIdx + 1, true);
+  if(!stream) await startCam();
+};
+$('#btnNext').onclick = () => { PK.beep('pick'); setTheme(themeIdx + 1, true); compose(); };
+$('#btnSave').onclick = save;
+
+/* 화면 아무 데나 눌러도 찍히게 (스위치 사용 학생용) */
+$('#camwrap').addEventListener('click', shoot);
+addEventListener('keydown', e => {
+  if(e.code === 'Space' || e.code === 'Enter'){
+    if(where === 'shoot'){ e.preventDefault(); shoot(); }
+    else if(where === 'home'){ e.preventDefault(); $('#btnGo').click(); }
+  }
+});
+
+/* ---------- 설정 ---------- */
+$('#btnGear').onclick = () => { $('#sheet').classList.add('on'); listCams(); PK.beep('tap'); };
+$('#btnClose').onclick = () => { $('#sheet').classList.remove('on'); PK.beep('tap'); };
+$('#sheet').addEventListener('click', e => { if(e.target === $('#sheet')) $('#btnClose').click(); });
+$('#btnResetCandy').onclick = () => {
+  candy = 0; localStorage.setItem('pk-halloween-candy', 0); paintCandy(); PK.beep('tap');
+};
+$('#camSel').onchange = e => { CFG.camId = e.target.value; PK.save('halloween', CFG); if(stream) startCam(); };
+
+PK.bindOpts([['optPick','pick'], ['optCount','count'], ['optCut','cutout'],
+             ['optSound','sound'], ['optVoice','voice']], CFG, 'halloween', k => {
+  if(k === 'pick') $('#themeBox').style.display = CFG.pick === 'choose' ? 'grid' : 'none';
+});
+
+setTheme(0, false);
+</script>
+</body>
+</html>
