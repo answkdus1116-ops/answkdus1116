@@ -291,7 +291,18 @@ const THEMES = [
             {src:'bat-black.svg',x:.81,y:.13,w:.10,rot:14},
             {src:'spider.svg',   x:.91,y:.45,w:.10},
             {src:'tombstone.svg',x:.21,y:.89,w:.21},
-            {src:'skull.svg',    x:.62,y:.93,w:.11,rot:9} ] }
+            {src:'skull.svg',    x:.62,y:.93,w:.11,rot:9} ] },
+
+  { id:'dracula', name:'드라큘라 성', em:'🧛', say:'드라큘라로 변신!',
+    sky:['#9c182b','#330912'],
+    back:[ {src:'sil-castle.svg', x:.78,y:.54,w:.46},
+           {src:'candle.svg',    x:.07,b:1.00,w:.12} ],
+    face:{ src:'fangs.svg', w:1.22, y:0.00 },
+    wear:{ src:'cape.svg', w:7.2, y:2.5 },
+    neck:{ src:'bowtie.svg', w:1.2, y:0.62 },
+    front:[ {src:'cat.svg',       x:.13,y:.86,w:.16},
+            {src:'bat-black.svg', x:.33,y:.13,w:.12,rot:-12},
+            {src:'bat-black.svg', x:.60,y:.08,w:.08,rot:10} ] }
 ];
 
 /* ---------- 2. 그림 불러오기 ---------- */
@@ -315,7 +326,7 @@ const EAGER = ['hat.svg','pumpkin-head.svg','bat-head.svg','ghost.svg','web.svg'
                'bat-black.svg','bat-cute.svg','jack.svg','candy.svg','pumpkin.svg',
                'pumpkin3d.svg','ghosts2.svg','boo.svg','spider.svg','skull.svg',
                'tombstone.svg','moonbats.svg','sil-tree.svg','sil-graves.svg','sil-land.svg',
-               'wings.svg','bowtie.svg'];
+               'wings.svg','bowtie.svg','fangs.svg','cat.svg','candle.svg'];
 let eagerDone = 0;
 Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
   eagerDone++;
@@ -326,6 +337,7 @@ Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
 function themeImgs(t){
   const names = [...t.back.map(l=>l.src), ...t.front.map(l=>l.src)];
   if(t.head) names.push(t.head.src);
+  if(t.face) names.push(t.face.src);
   if(t.wear) names.push(t.wear.src);
   if(t.neck) names.push(t.neck.src);
   names.push('web.svg');
@@ -485,9 +497,11 @@ function drawPreview(){
   if(ovl.width !== vw){ ovl.width = vw; ovl.height = vh; }
   octx.clearRect(0, 0, vw, vh);
   const t = THEMES[themeIdx];
-  const im = peek(t.head.src);
-  if(faces && im){
-    faces.forEach(lm => placeHead(octx, im, t.head, lm, vw, vh));
+  if(faces){
+    const hi = t.head && peek(t.head.src);
+    if(hi) faces.forEach(lm => placeHead(octx, hi, t.head, lm, vw, vh));
+    const fi = t.face && peek(t.face.src);
+    if(fi) faces.forEach(lm => placeFace(octx, fi, t.face, lm, vw, vh));
   }
   const now = performance.now();
   if(now - hintAt > 900){
@@ -533,6 +547,27 @@ function placeHead(ctx, im, spec, lm, W, H){
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(f.ang);
+  ctx.drawImage(im, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
+/* ---------- 7-1-2. 입에 붙이는 것 (송곳니) ----------
+   입꼬리 두 점으로 입의 너비와 기울기를 재서 입 위에 포개 놓습니다. */
+function placeFace(ctx, im, spec, lm, W, H){
+  if(!lm || !lm[61] || !lm[291]) return;
+  const P = i => ({ x:(1 - lm[i].x) * W, y:lm[i].y * H });
+  const a = P(61), b = P(291);
+  const Lp = a.x <= b.x ? a : b, Rp = a.x <= b.x ? b : a;
+  const m = Math.hypot(Rp.x - Lp.x, Rp.y - Lp.y) || 1;
+  const ang = Math.atan2(Rp.y - Lp.y, Rp.x - Lp.x);
+  const up = { x:Math.sin(ang), y:-Math.cos(ang) };
+  const w = spec.w * m;
+  const h = w * im.naturalHeight / im.naturalWidth;
+  const cx = (Lp.x + Rp.x) / 2 + up.x * spec.y * m;
+  const cy = (Lp.y + Rp.y) / 2 + up.y * spec.y * m;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ang);
   ctx.drawImage(im, -w / 2, -h / 2, w, h);
   ctx.restore();
 }
@@ -667,8 +702,12 @@ async function compose(){
   const ni = t.neck && peek(t.neck.src);
   if(ni && shot.faces) shot.faces.forEach(lm => placeWear(c, ni, t.neck, lm, W, H));
 
-  /* 머리 장식 */
-  const hi = peek(t.head.src);
+  /* 송곳니 */
+  const fi = t.face && peek(t.face.src);
+  if(fi && shot.faces) shot.faces.forEach(lm => placeFace(c, fi, t.face, lm, W, H));
+
+  /* 머리 장식 (없는 테마도 있습니다) */
+  const hi = t.head && peek(t.head.src);
   if(hi && shot.faces) shot.faces.forEach(lm => placeHead(c, hi, t.head, lm, W, H));
 
   /* 앞쪽 꾸밈 */

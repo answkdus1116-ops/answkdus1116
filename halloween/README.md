@@ -35,3 +35,6 @@ openclipart 에 올라온 그림은 전부 **CC0 1.0 (퍼블릭 도메인)** 이
 | cape.svg | 복장 · 망토 (색은 앱에서 바꿔 씁니다) | https://openclipart.org/detail/328114/superhero-cape |
 | wings.svg | 복장 · 날개 | https://openclipart.org/detail/244122/eagle-wings-silhouette |
 | bowtie.svg | 복장 · 나비넥타이 | https://openclipart.org/detail/323445/bow |
+| fangs.svg | 드라큘라 송곳니 (입에 붙입니다) | https://openclipart.org/detail/86875/halloween-teeth2 |
+| cat.svg | 꾸미기 · 검은 고양이 | https://openclipart.org/detail/348615/black-cat-with-transparency |
+| candle.svg | 꾸미기 · 촛대 | https://openclipart.org/detail/287925/fancy-candelabra-silhouette |
