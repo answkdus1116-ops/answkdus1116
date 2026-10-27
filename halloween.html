@@ -249,7 +249,7 @@ const THEMES = [
   { id:'witch', name:'마녀의 밤', em:'🧙', say:'마녀로 변신!',
     sky:['#2b1a4a','#120a24'],
     back:[ {src:'bg-village.svg', fit:'cover'} ],
-    head:{ src:'hat.svg', w:2.6, gap:-0.14 },
+    head:{ src:'hat.svg', w:2.4, gap:-0.05 },
     wear:{ src:'cape.svg', w:7.2, y:2.5, color:'#7b39b8', lift:'#2e2e2e' },
     front:[ {src:'bat-black.svg',x:.14,y:.13,w:.13,rot:-14},
             {src:'bat-black.svg',x:.87,y:.20,w:.09,rot:13},
@@ -508,17 +508,28 @@ function headInfo(lm, W, H){
   const Lp = a.x <= b.x ? a : b, Rp = a.x <= b.x ? b : a;
   const d = Math.hypot(Rp.x - Lp.x, Rp.y - Lp.y) || 1;
   const ang = Math.atan2(Rp.y - Lp.y, Rp.x - Lp.x);
-  return { top:P(10), d, ang, up:{ x:Math.sin(ang), y:-Math.cos(ang) } };
+  const up = { x:Math.sin(ang), y:-Math.cos(ang) };
+  /* 10번 점은 이마 끝이라 정수리보다 한참 아래입니다.
+     여기서 더 올려 잡지 않으면 모자가 이마·눈을 덮습니다. */
+  const brow = P(10);
+  const top = { x:brow.x + up.x * 0.62 * d, y:brow.y + up.y * 0.62 * d };
+  return { top, brow, d, ang, up };
 }
 function placeHead(ctx, im, spec, lm, W, H){
   const f = headInfo(lm, W, H);
   if(!f) return;
-  const w = spec.w * f.d;
-  const h = w * im.naturalHeight / im.naturalWidth;
+  let w = spec.w * f.d;
+  let h = w * im.naturalHeight / im.naturalWidth;
+  /* 화면 위로 잘릴 것 같으면 얼굴 쪽으로 내리지 않고 그림을 조금 줄입니다.
+     (내리면 얼굴을 가리고, 그냥 두면 모자 끝이 잘립니다) */
+  const room = f.top.y - spec.gap * f.d;
+  if(h > room){
+    const k = Math.max(0.55, room / h);
+    w *= k; h *= k;
+  }
   const off = h / 2 + spec.gap * f.d;          // gap: 머리끝에서 그림 아래끝까지
   const cx = f.top.x + f.up.x * off;
-  let   cy = f.top.y + f.up.y * off;
-  cy = Math.max(cy, h * 0.52);                 // 위로 잘려 안 보이지 않게
+  const cy = f.top.y + f.up.y * off;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(f.ang);
