@@ -196,7 +196,7 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
         <button class="opt" data-v="true">할로윈 배경으로</button>
         <button class="opt" data-v="false">찍은 그대로</button>
       </div>
-      <p class="note">배경이 이상하게 잘리면 ‘찍은 그대로’ 를 골라 보세요.</p>
+      <p class="note">배경이 이상하게 잘리면 ‘찍은 그대로’ 를 골라 보세요.<br>망토와 날개는 몸 뒤에 들어가서 ‘할로윈 배경으로’ 일 때만 보입니다.</p>
     </div>
 
     <div class="field"><label>소리</label>
@@ -249,7 +249,8 @@ const THEMES = [
   { id:'witch', name:'마녀의 밤', em:'🧙', say:'마녀로 변신!',
     sky:['#2b1a4a','#120a24'],
     back:[ {src:'bg-village.svg', fit:'cover'} ],
-    head:{ src:'hat.svg', w:2.6, gap:-0.45 },
+    head:{ src:'hat.svg', w:2.6, gap:-0.14 },
+    wear:{ src:'cape.svg', w:7.2, y:2.5, color:'#7b39b8', lift:'#2e2e2e' },
     front:[ {src:'bat-black.svg',x:.14,y:.13,w:.13,rot:-14},
             {src:'bat-black.svg',x:.87,y:.20,w:.09,rot:13},
             {src:'jack.svg',     x:.11,y:.88,w:.20},
@@ -260,6 +261,8 @@ const THEMES = [
     back:[ {src:'moonbats.svg', x:.85,y:.15,w:.18},
            {src:'sil-land.svg',  x:.50,b:1.00,w:1.00} ],
     head:{ src:'pumpkin-head.svg', w:1.35, gap:-0.05 },
+    wear:{ src:'cape.svg', w:7.0, y:2.5, color:'#ef7a16', lift:'#4e4e4e' },
+    neck:{ src:'bowtie.svg', w:1.2, y:0.62 },
     front:[ {src:'pumpkin3d.svg',x:.10,y:.86,w:.19},
             {src:'pumpkin.svg',  x:.89,y:.89,w:.17},
             {src:'bat-cute.svg', x:.21,y:.15,w:.10,rot:-8},
@@ -269,6 +272,8 @@ const THEMES = [
     sky:['#1d2b64','#0b1026'],
     back:[ {src:'sil-castle.svg', x:.66,y:.52,w:.52} ],
     head:{ src:'ghost.svg', w:1.25, gap:0.15 },
+    wear:{ src:'cape.svg', w:7.0, y:2.5, color:'#eef4ff', lift:'#a6a6a6' },
+    neck:{ src:'bowtie.svg', w:1.2, y:0.62 },
     front:[ {src:'ghosts2.svg',x:.85,y:.76,w:.26},
             {src:'boo.svg',    x:.13,y:.32,w:.21,rot:-6} ] },
 
@@ -280,6 +285,8 @@ const THEMES = [
            {src:'sil-tree.svg',  x:.73,b:1.03,w:.19},
            {src:'sil-tree.svg',  x:.94,b:.99,w:.28} ],
     head:{ src:'bat-head.svg', w:2.4, gap:-0.25 },
+    wear:{ src:'wings.svg', w:6.6, y:1.20 },
+    neck:{ src:'bowtie.svg', w:1.2, y:0.62 },
     front:[ {src:'bat-black.svg',x:.17,y:.22,w:.14,rot:-18},
             {src:'bat-black.svg',x:.81,y:.13,w:.10,rot:14},
             {src:'spider.svg',   x:.91,y:.45,w:.10},
@@ -307,7 +314,8 @@ const peek = name => ready.get(name) || null;
 const EAGER = ['hat.svg','pumpkin-head.svg','bat-head.svg','ghost.svg','web.svg',
                'bat-black.svg','bat-cute.svg','jack.svg','candy.svg','pumpkin.svg',
                'pumpkin3d.svg','ghosts2.svg','boo.svg','spider.svg','skull.svg',
-               'tombstone.svg','moonbats.svg','sil-tree.svg','sil-graves.svg','sil-land.svg'];
+               'tombstone.svg','moonbats.svg','sil-tree.svg','sil-graves.svg','sil-land.svg',
+               'wings.svg','bowtie.svg'];
 let eagerDone = 0;
 Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
   eagerDone++;
@@ -318,6 +326,8 @@ Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
 function themeImgs(t){
   const names = [...t.back.map(l=>l.src), ...t.front.map(l=>l.src)];
   if(t.head) names.push(t.head.src);
+  if(t.wear) names.push(t.wear.src);
+  if(t.neck) names.push(t.neck.src);
   names.push('web.svg');
   return Promise.allSettled([...new Set(names)].map(loadImg));
 }
@@ -516,6 +526,46 @@ function placeHead(ctx, im, spec, lm, W, H){
   ctx.restore();
 }
 
+/* ---------- 7-2. 옷 색 바꾸기 ----------
+   주름(밝고 어두움)은 그대로 두고 색만 입혀서, 망토 하나로 여러 색을 씁니다. */
+const painted = new Map();
+function recolor(im, color, lift){
+  const key = im.src + '|' + color + '|' + (lift || '-');
+  if(painted.has(key)) return painted.get(key);
+  const W = im.naturalWidth, H = im.naturalHeight;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.drawImage(im, 0, 0);
+  if(lift){                                    // 옷감을 조금 밝게 (진한 색 그림이라 그냥 칠하면 어두워집니다)
+    x.globalCompositeOperation = 'screen';
+    x.fillStyle = lift; x.fillRect(0, 0, W, H);
+  }
+  x.globalCompositeOperation = 'color';   // 색만 덮어쓰기
+  x.fillStyle = color; x.fillRect(0, 0, W, H);
+  x.globalCompositeOperation = 'destination-in';   // 원래 비어 있던 곳은 그대로
+  x.drawImage(im, 0, 0);
+  painted.set(key, c);
+  return c;
+}
+
+/* ---------- 7-3. 몸에 옷 입히기 ----------
+   턱 아래로 내려가며 어깨를 덮도록, 얼굴 크기에 맞춰 놓습니다. */
+function placeWear(ctx, im, spec, lm, W, H){
+  const f = headInfo(lm, W, H);
+  if(!f || !lm[152]) return;
+  const chin = { x:(1 - lm[152].x) * W, y:lm[152].y * H };
+  const w = spec.w * f.d;
+  const h = w * (im.naturalHeight || im.height) / (im.naturalWidth || im.width);
+  const cx = chin.x - f.up.x * spec.y * f.d;
+  const cy = chin.y - f.up.y * spec.y * f.d;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(f.ang);
+  ctx.drawImage(im, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
 /* ---------- 8. 꾸밈 그림 한 장 그리기 ---------- */
 function drawLayer(ctx, im, L, W, H){
   const r = im.naturalWidth / im.naturalHeight;
@@ -583,6 +633,13 @@ async function compose(){
     c.fillStyle = g; c.fillRect(0, 0, W, H);
     t.back.forEach(L => { const im = peek(L.src); if(im) drawLayer(c, im, L, W, H); });
 
+    /* 망토·날개는 몸 뒤에 */
+    const wi = t.wear && peek(t.wear.src);
+    if(wi && shot.faces){
+      const dressed = t.wear.color ? recolor(wi, t.wear.color, t.wear.lift) : wi;
+      shot.faces.forEach(lm => placeWear(c, dressed, t.wear, lm, W, H));
+    }
+
     const cut = document.createElement('canvas');
     cut.width = W; cut.height = H;
     const cc = cut.getContext('2d');
@@ -594,6 +651,10 @@ async function compose(){
     c.drawImage(shot.frame, 0, 0, W, H);
     c.fillStyle = 'rgba(40,10,60,.22)'; c.fillRect(0, 0, W, H);   // 할로윈 느낌의 보랏빛
   }
+
+  /* 나비넥타이는 몸 앞에 */
+  const ni = t.neck && peek(t.neck.src);
+  if(ni && shot.faces) shot.faces.forEach(lm => placeWear(c, ni, t.neck, lm, W, H));
 
   /* 머리 장식 */
   const hi = peek(t.head.src);

@@ -32,3 +32,6 @@ openclipart 에 올라온 그림은 전부 **CC0 1.0 (퍼블릭 도메인)** 이
 | tombstone.svg | 꾸미기 · 묘비 | https://openclipart.org/detail/320827/tombstone |
 | candy.svg | 꾸미기 · 사탕 | https://openclipart.org/detail/86425/halloween-candy-corn |
 | web.svg | 꾸미기 · 거미줄 | https://openclipart.org/detail/307273/intricate-spider-web-style-2 |
+| cape.svg | 복장 · 망토 (색은 앱에서 바꿔 씁니다) | https://openclipart.org/detail/328114/superhero-cape |
+| wings.svg | 복장 · 날개 | https://openclipart.org/detail/244122/eagle-wings-silhouette |
+| bowtie.svg | 복장 · 나비넥타이 | https://openclipart.org/detail/323445/bow |
