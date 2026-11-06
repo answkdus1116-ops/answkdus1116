@@ -93,9 +93,17 @@ h1{margin:0;font-size:clamp(28px,7vw,52px);color:var(--orange2);
   box-shadow:0 0 0 4px rgba(255,138,31,.2)}
 
 /* 결과 */
-.shotbox{position:relative;width:min(92vw,620px);border-radius:22px;overflow:hidden;
+.shotbox{position:relative;width:auto;max-width:96vw;border-radius:22px;overflow:hidden;
   border:3px solid var(--orange);box-shadow:0 14px 44px rgba(0,0,0,.65);background:#0b0612}
-.shotbox canvas{display:block;width:100%;height:auto}
+.shotbox canvas{display:block;width:auto;height:auto;max-width:96vw;
+  max-height:calc(100vh - 230px);cursor:zoom-in}
+
+/* 저장될 모습 그대로 화면 가득 보기 */
+.viewer{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+  background:rgba(4,8,16,.95);padding:8px}
+.viewer.on{display:flex}
+.viewer img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.viewer .x{position:fixed;top:14px;right:14px;z-index:41}
 .busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
   background:rgba(10,5,18,.72);font-size:clamp(18px,4vw,24px);color:var(--orange2)}
 .busy.on{display:flex}
@@ -155,8 +163,8 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
 </section>
 
 <!-- ═══════════ 결과 ═══════════ -->
-<section id="done" class="screen">
-  <h1 style="font-size:clamp(22px,5vw,34px)">✨ 완성!</h1>
+<section id="done" class="screen" style="gap:10px;padding:10px">
+  <h1 style="font-size:clamp(17px,3.6vw,24px);margin:2px 0">✨ 완성! <span style="font-size:.7em;opacity:.75">사진을 누르면 크게 보여요</span></h1>
   <div class="shotbox">
     <canvas id="art"></canvas>
     <div class="busy" id="busy">🎃 꾸미는 중…</div>
@@ -166,6 +174,7 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
     <button class="big ghost" id="btnNext">🎨 &nbsp;다른 모습으로</button>
   </div>
   <div class="row">
+    <button class="big ghost small" id="btnBig">🔍 크게 보기</button>
     <button class="big ghost small" id="btnAgain">📸 다시 찍기</button>
     <button class="big ghost small" id="btnBack2">🏠 그만</button>
   </div>
@@ -223,6 +232,11 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
       <button class="big ghost small" id="btnResetCandy">🍬 사탕 지우기</button>
     </div>
   </div>
+</div>
+
+<div class="viewer" id="viewer">
+  <img id="viewImg" alt="완성한 사진">
+  <button class="big small x" id="btnViewClose">✕ 닫기</button>
 </div>
 
 <div class="flash" id="flash"></div>
@@ -851,6 +865,19 @@ $('#btnAgain').onclick = async () => {
 };
 $('#btnNext').onclick = () => { PK.beep('pick'); setTheme(themeIdx + 1, true); compose(); };
 $('#btnSave').onclick = save;
+
+/* ---------- 저장될 모습 그대로 크게 보기 ---------- */
+function openViewer(){
+  if(!art.width) return;
+  try{ $('#viewImg').src = art.toDataURL('image/png'); }catch(e){ return; }
+  $('#viewer').classList.add('on'); PK.beep('tap');
+}
+function closeViewer(){ $('#viewer').classList.remove('on'); }
+$('#btnBig').onclick = openViewer;
+art.onclick = openViewer;
+$('#viewer').onclick = closeViewer;
+$('#btnViewClose').onclick = e => { e.stopPropagation(); closeViewer(); };
+addEventListener('keydown', e => { if(e.key === 'Escape') closeViewer(); });
 
 /* 화면 아무 데나 눌러도 찍히게 (스위치 사용 학생용) */
 $('#camwrap').addEventListener('click', shoot);

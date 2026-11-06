@@ -95,9 +95,17 @@ h1{margin:0;font-size:clamp(28px,7vw,52px);color:var(--gold);
   box-shadow:0 0 0 4px rgba(255,216,107,.18)}
 
 /* 결과 */
-.shotbox{position:relative;width:min(92vw,620px);border-radius:22px;overflow:hidden;
+.shotbox{position:relative;width:auto;max-width:96vw;border-radius:22px;overflow:hidden;
   border:3px solid var(--gold);box-shadow:0 14px 44px rgba(0,0,0,.6);background:#081529}
-.shotbox canvas{display:block;width:100%;height:auto}
+.shotbox canvas{display:block;width:auto;height:auto;max-width:96vw;
+  max-height:calc(100vh - 230px);cursor:zoom-in}
+
+/* 저장될 모습 그대로 화면 가득 보기 */
+.viewer{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+  background:rgba(4,8,16,.95);padding:8px}
+.viewer.on{display:flex}
+.viewer img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.viewer .x{position:fixed;top:14px;right:14px;z-index:41}
 .busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
   background:rgba(8,21,41,.74);font-size:clamp(18px,4vw,24px);color:var(--gold)}
 .busy.on{display:flex}
@@ -157,8 +165,8 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
 </section>
 
 <!-- ═══════════ 결과 ═══════════ -->
-<section id="done" class="screen">
-  <h1 style="font-size:clamp(22px,5vw,34px)">✨ 완성!</h1>
+<section id="done" class="screen" style="gap:10px;padding:10px">
+  <h1 style="font-size:clamp(17px,3.6vw,24px);margin:2px 0">✨ 완성! <span style="font-size:.7em;opacity:.75">사진을 누르면 크게 보여요</span></h1>
   <div class="shotbox">
     <canvas id="art"></canvas>
     <div class="busy" id="busy">🎃 꾸미는 중…</div>
@@ -168,6 +176,7 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
     <button class="big ghost" id="btnNext">🎨 &nbsp;다른 모습으로</button>
   </div>
   <div class="row">
+    <button class="big ghost small" id="btnBig">🔍 크게 보기</button>
     <button class="big ghost small" id="btnAgain">📸 다시 찍기</button>
     <button class="big ghost small" id="btnBack2">🏠 그만</button>
   </div>
@@ -225,6 +234,11 @@ select{font-family:inherit;font-size:15px;padding:9px;border-radius:12px;width:1
       <button class="big ghost small" id="btnResetCandy">🎁 선물 지우기</button>
     </div>
   </div>
+</div>
+
+<div class="viewer" id="viewer">
+  <img id="viewImg" alt="완성한 사진">
+  <button class="big small x" id="btnViewClose">✕ 닫기</button>
 </div>
 
 <div class="flash" id="flash"></div>
@@ -655,16 +669,31 @@ function drawGround(c, W, H){
   c.lineTo(W, H);
   c.closePath(); c.fill();
 }
-function drawSnow(c, W, H, n, maxR, alpha){
+function drawSnow(c, W, H, n, maxR, alpha, keepOff){
   c.save();
   for(let i = 0; i < n; i++){
     const x = Math.random() * W, y = Math.random() * H;
     const r = (0.35 + Math.random() * 0.65) * maxR;
+    /* 얼굴 위에는 눈을 뿌리지 않습니다 */
+    if(keepOff && keepOff.some(f => Math.hypot(x - f.x, y - f.y) < f.r + r)) continue;
     c.globalAlpha = alpha * (0.45 + Math.random() * 0.55);
     c.fillStyle = '#ffffff';
     c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
   }
   c.restore();
+}
+
+/* 얼굴이 있는 자리(동그라미)를 알려 줍니다 */
+function faceZones(W, H){
+  if(!shot.faces) return null;
+  const out = [];
+  shot.faces.forEach(lm => {
+    const f = headInfo(lm, W, H);
+    if(!f) return;
+    const eye = { x:(f.top.x - f.up.x * 0.62 * f.d), y:(f.top.y - f.up.y * 0.62 * f.d) };
+    out.push({ x:eye.x + f.up.x * -0.45 * f.d, y:eye.y + f.up.y * -0.45 * f.d, r:1.55 * f.d });
+  });
+  return out.length ? out : null;
 }
 
 /* ---------- 8. 꾸밈 그림 한 장 그리기 ---------- */
@@ -734,7 +763,7 @@ async function compose(){
     c.fillStyle = g; c.fillRect(0, 0, W, H);
     if(t.ground) drawGround(c, W, H);
     t.back.forEach(L => { const im = peek(L.src); if(im) drawLayer(c, im, L, W, H); });
-    if(t.snow) drawSnow(c, W, H, Math.round(W * 0.075), W * 0.009, .55);   // 멀리 내리는 눈
+    if(t.snow) drawSnow(c, W, H, Math.round(W * 0.06), W * 0.008, .5);     // 멀리 내리는 눈(사람 뒤)
 
     /* 망토·날개는 몸 뒤에 */
     const wi = t.wear && peek(t.wear.src);
@@ -771,7 +800,8 @@ async function compose(){
   /* 앞쪽 꾸밈 */
   t.front.forEach(L => { const im = peek(L.src); if(im) drawLayer(c, im, L, W, H); });
 
-  if(t.snow) drawSnow(c, W, H, Math.round(W * 0.055), W * 0.016, .85);     // 가까이 내리는 눈
+  /* 가까이 내리는 눈은 얼굴을 피해서 성글게 */
+  if(t.snow) drawSnow(c, W, H, Math.round(W * 0.018), W * 0.011, .7, faceZones(W, H));
 
   drawFrame(c, W, H, t);
   $('#busy').classList.remove('on');
@@ -924,6 +954,19 @@ $('#btnAgain').onclick = async () => {
 };
 $('#btnNext').onclick = () => { PK.beep('pick'); setTheme(themeIdx + 1, true); compose(); };
 $('#btnSave').onclick = save;
+
+/* ---------- 저장될 모습 그대로 크게 보기 ---------- */
+function openViewer(){
+  if(!art.width) return;
+  try{ $('#viewImg').src = art.toDataURL('image/png'); }catch(e){ return; }
+  $('#viewer').classList.add('on'); PK.beep('tap');
+}
+function closeViewer(){ $('#viewer').classList.remove('on'); }
+$('#btnBig').onclick = openViewer;
+art.onclick = openViewer;
+$('#viewer').onclick = closeViewer;
+$('#btnViewClose').onclick = e => { e.stopPropagation(); closeViewer(); };
+addEventListener('keydown', e => { if(e.key === 'Escape') closeViewer(); });
 
 /* 화면 아무 데나 눌러도 찍히게 (스위치 사용 학생용) */
 $('#camwrap').addEventListener('click', shoot);
