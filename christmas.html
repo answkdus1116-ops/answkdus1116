@@ -260,7 +260,7 @@ const A = 'christmas/';
    head  : 얼굴을 찾으면 머리 위에 얹을 그림
    front : 사람 앞에 올리는 꾸밈
    face  : 코·입에 붙일 그림 (빨간 코, 당근 코)
-   wear  : 몸 뒤에 입히는 망토
+   wear  : 몸 뒤에 입히는 망토 / coat : 몸 앞에 입는 옷 / belt : 허리띠
    fit   : 'cover' 화면 가득(zoom 으로 더 당겨 자르기)
    그 밖에는 x, y(가운데 위치 비율) 또는 b(아래끝 위치) + w(가로 비율) + rot(기울기)
    ground: 바닥에 눈을 깔기 / snow: 눈 내리기 */
@@ -270,6 +270,8 @@ const THEMES = [
     back:[ {src:'bg-cabin.svg', fit:'cover', zoom:1.05} ],
     head:{ src:'hat-santa.svg', w:2.7, gap:-0.04, ax:0.38, ay:0.55 },
     wear:{ src:'cape.svg', w:7.2, y:2.5 },
+    coat:{ src:'coat.svg', w:5.0, y:0.30, ax:0.50, ay:0.06 },
+    belt:{ src:'belt.svg', w:3.4, y:2.40 },
     front:[ {src:'gift.svg',  x:.11,y:.87,w:.19,rot:-5},
             {src:'gift2.svg', x:.90,y:.90,w:.17,rot:6},
             {src:'deer.svg',  x:.79,y:.21,w:.22,rot:-8} ],
@@ -284,6 +286,7 @@ const THEMES = [
            {src:'sil-pine.svg',  x:.93,b:.82,w:.09} ],
     head:{ src:'antlers.svg', w:3.5, gap:-0.14, tint:'#8a5a2e' },
     face:{ src:'nose-red.svg', w:0.46, y:0.00, at:'nose', ay:0.36 },
+    coat:{ src:'vest.svg', w:4.2, y:0.30, ax:0.50, ay:0.03, color:'#9a5324', lift:'#4a4a4a' },
     front:[ {src:'pine.svg',     x:.07,b:1.03,w:.18},
             {src:'rudolph.svg',  x:.89,y:.79,w:.17},
             {src:'snowflake.svg',x:.16,y:.17,w:.10} ],
@@ -296,6 +299,7 @@ const THEMES = [
            {src:'sil-pine.svg', x:.93,b:.85,w:.12} ],
     face:{ src:'nose-carrot.svg', w:0.52, y:0.00, at:'nose', rot:-101, ax:0.88, ay:0.12 },
     wear:{ src:'cape.svg', w:7.0, y:2.5, color:'#3f8fd0', lift:'#6e6e6e' },
+    coat:{ src:'coat.svg', w:5.0, y:0.30, ax:0.50, ay:0.06, color:'#4aa3e0', lift:'#3a3a3a' },
     front:[ {src:'snowman.svg',  x:.85,y:.73,w:.26},
             {src:'gift.svg',     x:.12,y:.89,w:.17,rot:-6},
             {src:'snowflake.svg',x:.14,y:.19,w:.11} ],
@@ -307,6 +311,8 @@ const THEMES = [
            {src:'tree.svg', x:.11,b:.94,w:.21} ],
     head:{ src:'hat-elf.svg', w:2.5, gap:-0.04, ax:0.55, ay:0.86 },
     wear:{ src:'cape.svg', w:7.0, y:2.5, color:'#2fa05a', lift:'#4e4e4e' },
+    coat:{ src:'vest.svg', w:4.2, y:0.30, ax:0.50, ay:0.03, color:'#2aa35b', lift:'#3a3a3a' },
+    belt:{ src:'belt.svg', w:3.0, y:2.20 },
     front:[ {src:'gift.svg',  x:.10,y:.88,w:.20,rot:-6},
             {src:'gift2.svg', x:.29,y:.94,w:.15,rot:5},
             {src:'elf.svg',   x:.91,y:.78,w:.13},
@@ -319,6 +325,7 @@ const THEMES = [
            {src:'tree.svg', x:.86,b:.95,w:.27} ],
     head:{ src:'star.svg', w:1.7, gap:0.18, ay:0.90 },
     wear:{ src:'cape.svg', w:7.0, y:2.5, color:'#1f9150', lift:'#3e3e3e' },
+    coat:{ src:'coat.svg', w:5.0, y:0.30, ax:0.50, ay:0.06, color:'#1f9150', lift:'#3a3a3a' },
     front:[ {src:'ball.svg',     x:.13,y:.40,w:.10},
             {src:'ball.svg',     x:.89,y:.51,w:.08},
             {src:'gift.svg',     x:.12,y:.89,w:.18},
@@ -348,7 +355,7 @@ const EAGER = ['hat-santa.svg','hat-elf.svg','antlers.svg','star.svg',
                'nose-red.svg','nose-carrot.svg','cape.svg','bg-cabin.svg',
                'sil-pine.svg','sil-mount.svg','pine.svg','tree.svg','snowman.svg',
                'gift.svg','gift2.svg','snowflake.svg','rudolph.svg','deer.svg',
-               'elf.svg','ball.svg','candy.svg'];
+               'elf.svg','ball.svg','candy.svg','coat.svg','vest.svg','belt.svg'];
 let eagerDone = 0;
 Promise.allSettled(EAGER.map(n => loadImg(n).finally(() => {
   eagerDone++;
@@ -361,6 +368,8 @@ function themeImgs(t){
   if(t.head) names.push(t.head.src);
   if(t.face) names.push(t.face.src);
   if(t.wear) names.push(t.wear.src);
+  if(t.coat) names.push(t.coat.src);
+  if(t.belt) names.push(t.belt.src);
   if(t.neck) names.push(t.neck.src);
   names.push('snowflake.svg');   // 모서리 눈송이
   return Promise.allSettled([...new Set(names)].map(loadImg));
@@ -646,8 +655,13 @@ function placeWear(ctx, im, spec, lm, W, H){
   const chin = { x:(1 - lm[152].x) * W, y:lm[152].y * H };
   const w = spec.w * f.d;
   const h = w * (im.naturalHeight || im.height) / (im.naturalWidth || im.width);
-  const cx = chin.x - f.up.x * spec.y * f.d;
-  const cy = chin.y - f.up.y * spec.y * f.d;
+  /* ax, ay = 그림 안에서 턱 아래 기준점에 맞출 자리 (기본은 한가운데) */
+  const ax = spec.ax !== undefined ? spec.ax : 0.5;
+  const ay = spec.ay !== undefined ? spec.ay : 0.5;
+  const dx = (ax - 0.5) * w, dy = (ay - 0.5) * h;
+  const ca = Math.cos(f.ang), sa = Math.sin(f.ang);
+  const cx = chin.x - f.up.x * spec.y * f.d - (dx * ca - dy * sa);
+  const cy = chin.y - f.up.y * spec.y * f.d - (dx * sa + dy * ca);
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(f.ang);
@@ -783,6 +797,15 @@ async function compose(){
     c.drawImage(shot.frame, 0, 0, W, H);
     c.fillStyle = 'rgba(30,80,140,.16)'; c.fillRect(0, 0, W, H);  // 겨울 느낌의 푸른빛
   }
+
+  /* 몸 앞에 입는 옷 : 코트·조끼 그리고 허리띠 */
+  const ci = t.coat && peek(t.coat.src);
+  if(ci && shot.faces){
+    const worn = t.coat.color ? recolor(ci, t.coat.color, t.coat.lift) : ci;
+    shot.faces.forEach(lm => placeWear(c, worn, t.coat, lm, W, H));
+  }
+  const bi = t.belt && peek(t.belt.src);
+  if(bi && shot.faces) shot.faces.forEach(lm => placeWear(c, bi, t.belt, lm, W, H));
 
   /* 목에 거는 것(있으면) 은 몸 앞에 */
   const ni = t.neck && peek(t.neck.src);

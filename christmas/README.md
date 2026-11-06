@@ -24,6 +24,9 @@ openclipart 에 올라온 그림은 전부 **CC0 1.0 (퍼블릭 도메인)** 이
 | nose-red.svg | 얼굴 · 루돌프 빨간 코 (배경 지우고 잘라 씀) | https://openclipart.org/detail/276236/red-sphere |
 | nose-carrot.svg | 얼굴 · 눈사람 당근 코 (잎을 빼고 잘라 씀) | https://openclipart.org/detail/312770/carrot |
 | cape.svg | 복장 · 망토 (색은 앱에서 바꿔 씁니다) | https://openclipart.org/detail/328114/superhero-cape |
+| coat.svg | 복장 · 몸 앞에 입는 코트 (색은 앱에서 바꿔 씁니다) | https://openclipart.org/detail/234422/red-overcoat |
+| vest.svg | 복장 · 몸 앞에 입는 조끼 (여백 잘라 씀) | https://openclipart.org/detail/345454/blue-and-black-formal-wear-waistcoat-vest |
+| belt.svg | 복장 · 허리띠 | https://openclipart.org/detail/345436/thin-black-belt-with-silver-buckle |
 | snowman.svg | 꾸미기 · 눈사람 | https://openclipart.org/detail/301212/two-ball-snowman |
 | rudolph.svg | 꾸미기 · 루돌프 얼굴 | https://openclipart.org/detail/353870/rudolph-the-red-nose-reindeer |
 | deer.svg | 꾸미기 · 달리는 순록 | https://openclipart.org/detail/326247/red-nosed-reindeer |
