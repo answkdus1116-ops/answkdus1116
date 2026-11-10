@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1f7ac0">
-<title>즐거운 낚시터</title>
+<title>독도 낚시터</title>
 <script src="guard.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&display=swap');
@@ -128,6 +128,9 @@
     box-shadow:0 8px 0 var(--go-dark);
   }
   .big:active{transform:translateY(5px);box-shadow:0 3px 0 var(--go-dark);}
+  .big.free{margin-top:8px;font-size:clamp(18px,3.6vw,28px);padding:13px 12px;
+    background:#1f8fb8;box-shadow:0 7px 0 #115d79;}
+  .big.free:active{box-shadow:0 3px 0 #115d79;}
   .big[disabled]{background:#98a6b5;box-shadow:0 8px 0 #7d8996;}
 
   /* ---------- 연타 ---------- */
@@ -188,7 +191,17 @@
   #book .panel .big{position:sticky;bottom:0;}
 
   /* 도감 */
-  #bookGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+  #infoPic img{width:100%;max-height:min(26vh,200px);object-fit:cover;border-radius:18px;display:block;}
+  #infoPic .draw{display:flex;align-items:center;justify-content:center;height:170px;
+    background:#eef5fa;border-radius:18px;}
+  #infoList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  #infoList li{font-size:19px;line-height:1.35;color:var(--ink);background:#f3f8fc;
+    border-radius:14px;padding:9px 13px;word-break:keep-all;}
+  /* 도감이 길어져도 닫기 단추는 늘 아래에 붙어 있게 */
+  #book .panel > .big{position:sticky;bottom:-20px;z-index:2;}
+  #bookGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+  .bcard .ph{width:100%;height:84px;object-fit:cover;border-radius:10px;display:block;margin-bottom:4px;}
+  .bcard .ft{font-size:13px;color:#6b7a88;line-height:1.35;word-break:keep-all;margin-top:2px;}
   .bcard{
     background:#f5f9fd;border:3px solid #e3ebf3;border-radius:16px;padding:8px 4px;
     text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;
@@ -207,7 +220,7 @@
 
 <div id="top">
   <div class="chip" id="fishChip">🪣 <span id="count">0</span></div>
-  <div id="say">낚싯대를 내려 보세요</div>
+  <div id="say">독도 바다에 낚싯대를 내려 보세요</div>
   <div class="chip" id="starChip">⭐ <span id="stars">0</span></div>
   <button class="iconbtn" id="openBook" title="도감">📖</button>
   <button class="iconbtn" id="bgmBtn" title="배경음악 켜기·끄기">🎵</button>
@@ -228,6 +241,16 @@
         <stop id="sea0" offset="0" stop-color="#4bb3e8"/><stop id="sea1" offset="1" stop-color="#1668a8"/>
       </linearGradient>
       <radialGradient id="orbG"><stop id="orb0" offset="0" stop-color="#fff3b0"/><stop id="orb1" offset="1" stop-color="#ffd54a"/></radialGradient>
+      <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#51706a"/><stop offset=".3" stop-color="#3e5a57"/>
+        <stop offset="1" stop-color="#27403f"/>
+      </linearGradient>
+      <linearGradient id="fadeV" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#000"/><stop offset=".09" stop-color="#fff"/>
+      </linearGradient>
+      <mask id="bgFade" maskUnits="userSpaceOnUse" x="0" y="118" width="1000" height="559">
+        <rect x="0" y="118" width="1000" height="559" fill="url(#fadeV)"/>
+      </mask>
       <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="7" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -259,7 +282,15 @@
 
     <!-- 바다 -->
     <rect x="-1200" y="260" width="3400" height="1400" fill="url(#sea)"/>
-    <path id="wave" d="M0 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H0Z" fill="#8fd6f7" opacity=".55"/>
+
+    <!-- 독도 배경 그림.
+         그림 속 수면(세로 25.7% 지점)이 장면의 수면(y=262) 에 오도록 놓았습니다.
+         위쪽과 좌우는 살짝 흐려서 하늘·바다 색과 자연스럽게 이어집니다. -->
+    <rect x="-1200" y="668" width="3400" height="700" fill="url(#deep)"/>
+    <image id="bgPic" href="dokdo/bg.png" x="0" y="118" width="1000" height="559"
+           preserveAspectRatio="none" mask="url(#bgFade)"/>
+    <rect id="bgTint" x="-1200" y="-800" width="3400" height="2600" fill="#0a1937" opacity="0" pointer-events="none"/>
+    <path id="wave" d="M0 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H0Z" fill="#bfeaff" opacity=".22"/>
     <g id="shine" opacity=".45" fill="#bfeaff">
       <ellipse cx="200" cy="332" rx="70" ry="9"/><ellipse cx="700" cy="302" rx="90" ry="10"/>
     </g>
@@ -277,14 +308,14 @@
     </g>
 
     <!-- 바닥 -->
-    <rect id="groundBase" x="-1200" y="668" width="3400" height="1200" fill="#e6cf9b"/>
-    <path id="ground" d="M-1200 640 q120 -34 250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 V700 H-1200Z" fill="#e6cf9b"/>
-    <g id="weeds" fill="#3f9a63">
+    <rect id="groundBase" x="-1200" y="668" width="3400" height="1200" fill="#e6cf9b" opacity="0"/>
+    <path id="ground" opacity="0" d="M-1200 640 q120 -34 250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 t250 -10 t250 -6 t250 8 t250 -12 V700 H-1200Z" fill="#e6cf9b"/>
+    <g id="weeds" fill="#3f9a63" opacity="0">
       <path class="weed" d="M120 640q-14-56 8-96q10 44 22 96z"/>
       <path class="weed" d="M156 640q-6-42 16-70q4 34 8 70z"/>
       <path class="weed" d="M842 640q-16-60 6-100q12 46 24 100z"/>
     </g>
-    <g id="rocks" fill="#9fb0bd"><ellipse cx="430" cy="648" rx="46" ry="18"/><ellipse cx="650" cy="656" rx="34" ry="13"/></g>
+    <g id="rocks" fill="#9fb0bd" opacity="0"><ellipse cx="430" cy="648" rx="46" ry="18"/><ellipse cx="650" cy="656" rx="34" ry="13"/></g>
     <g id="bubbles"></g>
     <g id="snow"></g>
 
@@ -343,9 +374,18 @@
   </div>
 
   <!-- 도감 -->
+  <div id="info" class="sheet" hidden>
+    <div class="panel">
+      <div id="infoPic"></div>
+      <h2 id="infoName">생물</h2>
+      <ul id="infoList"></ul>
+      <button class="big" id="closeInfo">알았어요!</button>
+    </div>
+  </div>
+
   <div id="book" class="sheet" hidden>
     <div class="panel">
-      <h2>📖 물고기 도감 <span id="bookCount" style="font-size:19px;color:#8a97a5"></span></h2>
+      <h2>📖 독도 바다 도감 <span id="bookCount" style="font-size:19px;color:#8a97a5"></span></h2>
       <div id="bookGrid"></div>
       <button class="big" id="closeBook">닫기</button>
     </div>
@@ -427,6 +467,14 @@
         </div>
       </div>
       <div class="field">
+        <span>생물 정보 보여주기</span>
+        <div class="opts" id="optInfo">
+          <button class="opt" data-v="1">처음 잡을 때만</button>
+          <button class="opt" data-v="2">잡을 때마다</button>
+          <button class="opt" data-v="0">안 보기</button>
+        </div>
+      </div>
+      <div class="field">
         <span>배경음악</span>
         <div class="opts" id="optBgm">
           <button class="opt" data-v="1">켜기</button>
@@ -434,13 +482,14 @@
         </div>
       </div>
       <button class="big" id="closeSetup">시작하기</button>
-      <button class="big reset" id="resetAll">통발 비우기</button>
+      <button class="big reset" id="resetAll">🌊 모두 바다로 놓아주기</button>
     </div>
   </div>
 </div>
 
 <div id="bottom">
   <button class="big" id="mainBtn">🎣 낚싯대 내리기</button>
+  <button class="big free" id="freeBtn" hidden>🌊 바다로 놓아주기</button>
 </div>
 
 <script>
@@ -472,32 +521,63 @@ const ROD_X = 560, REST_Y = 150;
    night: 밤에만
    mul  : 연타 횟수 배수   star: 주는 별   w: 나올 확률
    ========================================================= */
+/* 독도 바다에 사는 친구들.
+   그림은 openclipart(CC0), 사진은 위키미디어 공용의 자유 이용 사진입니다.
+   img = 헤엄치는 모습(그림) · photo = 도감에 보여 줄 실제 사진 · fact = 한 줄 설명 */
+const DOK = 'dokdo/';
 const SPECIES = [
-  { key:'o', kind:'draw', shape:'fish', c:'#ff8a3d', name:'주황 물고기', size:1, mul:1, w:10 },
-  { key:'y', kind:'draw', shape:'fish', c:'#ffd54a', name:'노랑 물고기', size:1, mul:1, w:10 },
-  { key:'p', kind:'draw', shape:'fish', c:'#ff6f91', name:'분홍 물고기', size:1, mul:1, w:10 },
-  { key:'g', kind:'draw', shape:'fish', c:'#7ee0c0', name:'초록 물고기', size:1, mul:1, w:10 },
-  { key:'v', kind:'draw', shape:'fish', c:'#b79cff', name:'보라 물고기', size:1, mul:1, w:10 },
-  { key:'b', kind:'draw', shape:'fish', c:'#5ac8fa', name:'파랑 물고기', size:1, mul:1, w:10 },
+  { key:'q', kind:'img', img:'squid.svg',   name:'살오징어',   size:1.15, mul:1,   w:11, cut:'squid.png',
+    info:["🦑 다리가 10개예요 (짧은 다리 8 + 긴 팔 2)","🌙 밤에 불빛을 보고 모여들어요","🎨 놀라면 몸 색깔이 확 바뀌어요","📍 독도 둘레 바다에서 많이 잡혀요"],
+    photo:'squid.jpg',   fact:'밤에 불빛을 보고 모여들어요. 독도 오징어가 유명해요.', snd:[392,523,659] },
+  { key:'r', kind:'img', img:'shrimp.svg',  name:'독도새우',   size:0.95, mul:1,   w:10, cut:'shrimp.png',
+    info:["🦐 다리가 10개예요","🔴 몸이 붉고 하얀 점이 있어요","🧊 차고 깊은 바위 틈에 살아요","💡 도화새우·닭새우·꽃새우를 '독도새우' 라고 불러요"],
+    photo:'shrimp.jpg',  fact:'도화새우·닭새우·꽃새우를 독도새우라고 불러요.', snd:[523,659,784] },
+  { key:'d', kind:'img', img:'dolldom.svg', name:'돌돔',       size:1.0,  mul:1,   w:11, cut:'dolldom.png',
+    info:["🐟 까만 세로 줄무늬가 일곱 줄쯤 있어요","🦷 이빨이 아주 단단해 소라 껍데기도 깨뜨려요","📍 독도 바위 둘레에 살아요"],
+    photo:'dolldom.jpg', fact:'까만 줄무늬가 있어요. 독도 바위 곁에 살아요.', snd:[440,554,659] },
+  { key:'j', kind:'img', img:'jari.svg',    name:'자리돔',     size:0.9,  mul:1,   w:11, photo:'jari.jpg', cut:'jari.png',
+    info:["🐟 손바닥보다 작아요","👨‍👩‍👧 떼를 지어 함께 헤엄쳐요","📍 따뜻한 바위 바다를 좋아해요"],
+    fact:'작고 동글동글해요. 떼를 지어 헤엄쳐요.', snd:[494,587,740] },
+  { key:'b', kind:'img', img:'bangeo.svg',  name:'방어',       size:1.3,  mul:1.5, w:7, photo:'bangeo.jpg', cut:'bangeo.png',
+    info:["🐟 1미터까지 자라는 큰 물고기예요","💨 아주 빠르게 헤엄쳐요","❄️ 겨울에 살이 통통해져요"],
+    fact:'아주 빠르게 헤엄치는 큰 물고기예요.', snd:[330,415,494,587] },
 
-  { key:'K', kind:'draw', shape:'fish', c:'#ff4f7b', name:'왕 물고기', size:1.7, mul:2, w:6,
-    special:true, star:1, snd:[330,392,523,659,784] },
-  { key:'O', kind:'emoji', e:'🐙', name:'문어',   size:1.3, mul:1.5, w:5, special:true, snd:[262,330,392,523] },
-  { key:'P', kind:'emoji', e:'🐡', name:'복어',   size:1.1, mul:1,   w:5, special:true, snd:[440,554,440,659] },
-  { key:'C', kind:'emoji', e:'🦀', name:'게',     size:1.1, mul:1,   w:4, special:true, snd:[523,494,523,587] },
-  { key:'T', kind:'emoji', e:'🐢', name:'거북이', size:1.4, mul:1.5, w:3, special:true, star:1, snd:[196,262,330,392] },
-  { key:'J', kind:'emoji', e:'💎', name:'보석',   size:1.1, mul:1,   w:3, special:true, star:2, snd:[1047,1319,1568,2093] },
+  { key:'o', kind:'img', img:'octopus.svg', name:'문어',       size:1.3,  mul:1.5, w:6, special:true, cut:'octopus.png',
+    info:["🐙 다리가 8개예요","💧 놀라면 먹물을 뿜고 도망가요","🧠 뚜껑도 열 만큼 똑똑해요","📍 바위 틈에 숨어 살아요"],
+    photo:'octopus.jpg', fact:'바위 틈에 숨어요. 다리가 여덟 개예요.', snd:[262,330,392,523] },
+  { key:'c', kind:'img', img:'conch.svg',   name:'소라',       size:0.95, mul:1,   w:8, special:true, cut:'conch.png',
+    info:["🐚 다리가 1개예요 (넓적한 발로 기어요)","🏠 껍데기가 바로 집이에요","🌿 미역과 다시마를 먹어요"],
+    photo:'conch.jpg',   fact:'단단한 껍데기 속에 몸을 숨겨요.', snd:[523,494,523,587] },
+  { key:'a', kind:'img', img:'abalone.svg', name:'전복',       size:0.9,  mul:1,   w:7, special:true, cut:'abalone.png',
+    info:["🐚 다리가 1개예요","🪨 바위에 꽉 붙어 잘 안 떨어져요","🌿 미역을 먹고 자라요"],
+    photo:'abalone.jpg', fact:'바위에 딱 붙어 미역을 먹고 자라요.', snd:[392,440,523] },
+  { key:'u', kind:'img', img:'urchin.svg',  name:'성게',       size:0.9,  mul:1,   w:6, special:true, photo:'urchin.jpg', cut:'urchin.png',
+    info:["🌵 가시가 뾰족뾰족해요","🦶 아주 작은 발이 수백 개 있어요","⚠️ 만지면 아파요. 눈으로만 봐요"],
+    fact:'가시가 뾰족뾰족해요. 조심조심!', snd:[587,523,587,659] },
+  { key:'s', kind:'img', img:'star.png', name:'불가사리', size:1.05, mul:1, w:5, special:true, photo:'star.jpg', cut:'star.png',
+    info:["⭐ 팔이 5개예요","👀 팔 끝마다 작은 눈이 있어요","🔁 팔이 떨어져도 다시 자라요"],
+    fact:'팔이 다섯 개예요. 천천히 움직여요.', snd:[523,659,784] },
 
-  { key:'F', kind:'draw', shape:'firefly', c:'#ffe98a', name:'반딧불 물고기', size:1, mul:1, w:8,
-    night:true, special:true, snd:[659,784,988,1175] },
-  { key:'L', kind:'draw', shape:'jelly',   c:'#c9a8ff', name:'해파리', size:1.1, mul:1, w:7,
-    night:true, special:true, snd:[392,466,587,698] },
-  { key:'S', kind:'draw', shape:'star',    c:'#ffd54a', name:'불가사리', size:1, mul:1, w:5,
-    night:true, special:true, star:1, snd:[784,988,1175,1568] },
+  { key:'t', kind:'img', img:'turtle.svg',  name:'바다거북',   size:1.35, mul:2,   w:3, special:true, star:1, cut:'turtle.png',
+    info:["🐢 다리가 4개예요 (지느러미처럼 생겼어요)","🌬️ 숨을 쉬러 물 위로 올라와요","💚 아주 귀한 손님이에요. 꼭 바다로 놓아 주세요"],
+    photo:'turtle.jpg',  fact:'아주 귀한 손님이에요. 꼭 바다로 놓아 주세요.', snd:[196,262,330,392] },
+  { key:'g', kind:'img', img:'gull.svg',    name:'괭이갈매기', size:1.15, mul:1.5, w:3, special:true, star:1, cut:'gull.png',
+    info:["🐦 다리가 2개예요","🐱 고양이 같은 소리로 울어서 '괭이' 갈매기예요","📍 독도에 수만 마리가 모여 살아요"],
+    photo:'gull.jpg',    fact:'독도를 지키는 새예요. 고양이 같은 소리를 내요.', snd:[1047,1319,1568] },
 
-  { key:'B', kind:'draw', shape:'fish', c:'#dfe9f2', name:'빙어', size:.8, mul:1, w:12, mode:'ice' },
-  { key:'N', kind:'emoji', e:'🐧', name:'펭귄', size:1.4, mul:1.5, w:5, mode:'ice',
-    special:true, star:1, snd:[330,392,330,523] }
+  { key:'f', kind:'draw', shape:'firefly', c:'#ffe98a', name:'야광 물고기', size:1, mul:1, w:7,
+    night:true, fact:'깜깜한 밤에만 반짝이며 나타나요.', snd:[784,988,1175] },
+  { key:'l', kind:'draw', shape:'jelly', c:'#c9a8ff', name:'해파리', size:1.05, mul:1, w:6,
+    night:true, fact:'둥실둥실 떠다녀요. 만지면 따가워요.', snd:[330,415,494] },
+
+  { key:'B', kind:'draw', shape:'fish', c:'#dfe9f2', name:'빙어', size:.8, mul:1, w:12, mode:'ice',
+    info:["✨ 스스로 빛을 내요","🌙 깜깜한 밤에만 만날 수 있어요"],
+    info:["🪼 다리(촉수)가 아주 많아요","💧 몸의 95%가 물이에요","⚠️ 만지면 따가워요"],
+    info:["🐟 아주 작고 몸이 비쳐 보여요","❄️ 차가운 물을 좋아해요"],
+    fact:'얼음 아래에 사는 작은 물고기예요.' },
+  { key:'N', kind:'emoji', e:'🐧', name:'펭귄', size:1.4, mul:1.5, w:5, mode:'ice', special:true, star:1,
+    info:["🐧 다리가 2개예요","🏊 날개로 물속을 헤엄쳐요"],
+    fact:'가끔 얼음 위로 놀러 와요.', snd:[523,659,784,1047] }
 ];
 const byKey = k => SPECIES.find(s => s.key === k) || SPECIES[0];
 
@@ -515,6 +595,14 @@ function pickSpecies(){
 
 /* ---------- 그림 ---------- */
 function shapeMarkup(sp){
+  if(sp.kind === 'img'){
+    /* 네모 안에 비율을 지키며 넣습니다 (가로세로를 따로 적지 않아도 됩니다).
+       cut 은 배경을 지운 실제 사진입니다. */
+    const z = 118 * sp.size;
+    const src = sp.cut ? (DOK + 'cut/' + sp.cut) : (DOK + sp.img);
+    return '<image href="' + src + '" x="' + (-z/2) + '" y="' + (-z/2) +
+           '" width="' + z + '" height="' + z + '" preserveAspectRatio="xMidYMid meet"/>';
+  }
   if(sp.kind === 'emoji')
     return '<text y="' + (20*sp.size) + '" font-size="' + (64*sp.size) + '" text-anchor="middle">' + sp.e + '</text>';
 
@@ -550,6 +638,9 @@ function shapeMarkup(sp){
 /* 크게 보여 줄 때 : 이모지는 이모지, 그린 친구는 제 색 그대로 */
 function iconHTML(sp, w, h){
   if(sp.kind === 'emoji') return sp.e;
+  if(sp.kind === 'img')
+    return '<img src="' + DOK + (sp.cut ? 'cut/' + sp.cut : sp.img) +
+           '" alt="" style="height:' + h + ';width:auto;vertical-align:middle">';
   return '<svg viewBox="-66 -56 160 112" width="' + w + '" height="' + h +
          '" style="display:inline-block;vertical-align:middle">' +
          shapeMarkup(Object.assign({}, sp, { size:1 })) + '</svg>';
@@ -558,18 +649,19 @@ function iconHTML(sp, w, h){
 /* ---------- 설정 ---------- */
 /* 잡은 기록은 물고기를 만들 때(시간대 계산) 이미 필요하므로 먼저 읽습니다 */
 let caught = [], seen = [];
-try{ caught = JSON.parse(localStorage.getItem('fishing-caught') || '[]'); }catch(e){}
-try{ seen = JSON.parse(localStorage.getItem('fishing-seen') || '[]'); }catch(e){}
+try{ caught = JSON.parse(localStorage.getItem('dokdo-caught') || '[]'); }catch(e){}
+try{ seen = JSON.parse(localStorage.getItem('dokdo-seen') || '[]'); }catch(e){}
 
 const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea',
-              cycle:180, pick:'touch', quest:1 };
+              cycle:180, pick:'touch', quest:1, info:1 };
 let cfg = Object.assign({}, DEF);
-try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('fishing-cfg') || '{}')); }catch(e){}
-function saveCfg(){ try{ localStorage.setItem('fishing-cfg', JSON.stringify(cfg)); }catch(e){} }
+try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('dokdo-cfg') || '{}')); }catch(e){}
+function saveCfg(){ try{ localStorage.setItem('dokdo-cfg', JSON.stringify(cfg)); }catch(e){} }
 
 const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],
                 ['optSpecial','special'],['optBgm','bgm'],['optWait','wait'],
-                ['optMode','mode'],['optCycle','cycle'],['optPick','pick'],['optQuest','quest']];
+                ['optMode','mode'],['optCycle','cycle'],['optPick','pick'],['optQuest','quest'],
+                ['optInfo','info']];
 function paintOpts(){
   OPTMAP.forEach(([box,key]) => {
     [...$(box).children].forEach(b =>
@@ -587,13 +679,14 @@ OPTMAP.forEach(([box,key]) => {
     if(key === 'quest'){ if(cfg.quest) newMission(); else { mission = null; $('mission').hidden = true; } }
   });
 });
+$('freeBtn').addEventListener('click', e => { e.preventDefault(); freeLast(); });
 $('openSetup').addEventListener('click', () => { setup.hidden = false; paintOpts(); });
 $('closeSetup').addEventListener('click', () => { setup.hidden = true; });
 $('resetAll').addEventListener('click', () => {
   caught.length = 0; saveCaught();
   bonusStars = 0; saveBonus();
   drawTank(); refreshCounts(); newMission();
-  setup.hidden = true; applyLook(); tell('다시 시작해요!');
+  setup.hidden = true; applyLook(); tell('모두 바다로 돌려보냈어요 🌊');
 });
 
 /* ---------- 소리 ---------- */
@@ -627,13 +720,13 @@ let dayT = 0.34;                                   // 아침에서 시작합니�
 
 const CYCLE = {
   sea:[
-    { t:0.00, sky:['#0b1533','#28406c'], sea:['#122c4e','#071628'], orb:['#ffffff','#dfe7f5'] }, // 밤
-    { t:0.16, sky:['#42406e','#c98a86'], sea:['#2b4a72','#0e2a48'], orb:['#ffe9d0','#ffab7a'] }, // 새벽
-    { t:0.32, sky:['#ffd9a8','#fff1de'], sea:['#5fc0e8','#1f74b0'], orb:['#fff3b0','#ffb45a'] }, // 아침
-    { t:0.52, sky:['#bfe9ff','#e9f7ff'], sea:['#4bb3e8','#1668a8'], orb:['#fff3b0','#ffd54a'] }, // 낮
-    { t:0.72, sky:['#ff9f6b','#ffd7a8'], sea:['#4a86c0','#123f6e'], orb:['#fff0c0','#ff7e4a'] }, // 노을
-    { t:0.87, sky:['#4b3f78','#d98a72'], sea:['#26456c','#0c223c'], orb:['#ffd9c0','#ff8a5a'] }, // 땅거미
-    { t:1.00, sky:['#0b1533','#28406c'], sea:['#122c4e','#071628'], orb:['#ffffff','#dfe7f5'] }
+    { t:0.00, sky:['#0b1533','#28406c'], sea:['#0f4a5e','#06212e'], orb:['#ffffff','#dfe7f5'], tint:['#0a1937',.55] }, // 밤
+    { t:0.16, sky:['#42406e','#c98a86'], sea:['#2a6d7d','#0b3141'], orb:['#ffe9d0','#ffab7a'], tint:['#5a3c6e',.30] }, // 새벽
+    { t:0.32, sky:['#ffd9a8','#fff1de'], sea:['#6cc9c6','#13627f'], orb:['#fff3b0','#ffb45a'], tint:['#ffc78c',.14] }, // 아침
+    { t:0.52, sky:['#caebf4','#e6f5ef'], sea:['#7ed4ce','#156d94'], orb:['#fff3b0','#ffd54a'], tint:['#ffffff',.00] }, // 낮
+    { t:0.72, sky:['#ff9f6b','#ffd7a8'], sea:['#4f9fae','#0e4a63'], orb:['#fff0c0','#ff7e4a'], tint:['#ff8a3c',.20] }, // 노을
+    { t:0.87, sky:['#4b3f78','#d98a72'], sea:['#235a70','#0a2a3a'], orb:['#ffd9c0','#ff8a5a'], tint:['#3c2d5f',.40] }, // 땅거미
+    { t:1.00, sky:['#0b1533','#28406c'], sea:['#0f4a5e','#06212e'], orb:['#ffffff','#dfe7f5'], tint:['#0a1937',.55] }
   ],
   ice:[
     { t:0.00, sky:['#0a1633','#2c4470'], sea:['#12314f','#07182c'], orb:['#ffffff','#e4ecfa'] },
@@ -688,6 +781,16 @@ function applyLook(){
   $('orb1').setAttribute('stop-color', mix(a.orb[1], b.orb[1], f));
   $('ground').setAttribute('fill', GROUND[cfg.mode]);
   $('groundBase').setAttribute('fill', GROUND[cfg.mode]);
+
+  /* 배경 그림 위에 시간대 색을 얇게 덮습니다 (바다 모드에서만) */
+  const tn = $('bgTint');
+  if(a.tint && b.tint){
+    tn.setAttribute('fill', mix(a.tint[0], b.tint[0], f));
+    tn.setAttribute('opacity', (a.tint[1] + (b.tint[1] - a.tint[1]) * f).toFixed(3));
+  }else{
+    tn.setAttribute('opacity', 0);
+  }
+  $('bgPic').setAttribute('opacity', cfg.mode === 'ice' ? 0 : 1);
 
   /* 해는 0.20 에 왼쪽에서 떠서 0.86 에 오른쪽으로 지고,
      달은 그 사이(밤 동안)에 같은 길을 지나갑니다.
@@ -759,7 +862,7 @@ function makeFish(y, base, sp){
   fish.push(f);
   return f;
 }
-const SLOTS = [[350,.9],[430,1.15],[505,.75],[575,1.0],[625,.85]];
+const SLOTS = [[330,.9],[395,1.15],[455,.75],[515,1.0],[565,.85]];
 function respawnAll(){
   fish.forEach(f => f.el.remove());
   fish.length = 0;
@@ -769,13 +872,14 @@ respawnAll();
 
 function drawFish(f){
   const bob = Math.sin(f.t) * 6;
+  const flip = f.sp.cut ? 1 : f.dir;        // 사진은 뒤집으면 어색해서 그대로 둡니다
   f.el.setAttribute('transform',
-    'translate(' + f.x.toFixed(1) + ',' + (f.y + bob).toFixed(1) + ') scale(' + f.dir + ',1)');
+    'translate(' + f.x.toFixed(1) + ',' + (f.y + bob).toFixed(1) + ') scale(' + flip + ',1)');
 }
 
 /* ---------- 통발과 도감 ---------- */
-function saveCaught(){ try{ localStorage.setItem('fishing-caught', JSON.stringify(caught.slice(-60))); }catch(e){} }
-function saveSeen(){ try{ localStorage.setItem('fishing-seen', JSON.stringify(seen)); }catch(e){} }
+function saveCaught(){ try{ localStorage.setItem('dokdo-caught', JSON.stringify(caught.slice(-60))); }catch(e){} }
+function saveSeen(){ try{ localStorage.setItem('dokdo-seen', JSON.stringify(seen)); }catch(e){} }
 
 function drawTank(){
   tankFish.innerHTML = '';
@@ -806,8 +910,24 @@ let bonusStars = 0;
 try{ bonusStars = +(localStorage.getItem('fishing-bonus') || 0) || 0; }catch(e){}
 function saveBonus(){ try{ localStorage.setItem('fishing-bonus', bonusStars); }catch(e){} }
 
+/* 가장 마지막에 잡은 친구를 바다로 돌려보냅니다.
+   잡는 재미와 함께 '놓아주는' 것도 배우도록 늘 눌러 둘 수 있게 두었습니다. */
+function freeLast(){
+  if(!caught.length) return;
+  const sp = byKey(caught[caught.length - 1]);
+  caught.pop(); saveCaught();
+  bonusStars += 1; saveBonus();
+  refreshCounts(); drawTank();
+  splash(ROD_X, 268, 16);
+  sparkle(ROD_X, 300, 16);
+  chime([392,523,659,784], 'sine');
+  buzz([40,30,40]);
+  tell(sp.name + ' 를 바다로 돌려보냈어요! 고마워요 🌊');
+}
+
 function refreshCounts(){
   countEl.textContent = caught.length;
+  $('freeBtn').hidden = !caught.length;
   starsEl.textContent = caught.reduce((a,k) => a + (byKey(k).star || 0), 0) + bonusStars;
 }
 
@@ -819,14 +939,32 @@ function drawBook(){
     const d = document.createElement('div');
     d.className = 'bcard ' + (got ? 'got' : 'miss');
     const tag = sp.mode === 'ice' ? '❄️ 얼음낚시' : (sp.night ? '🌙 밤에만' : '');
-    d.innerHTML = '<div class="pic">' + (got ? iconHTML(sp, '58px', '40px') : '?') + '</div>' +
+    const pic = got
+      ? (sp.photo ? '<img class="ph" src="' + DOK + 'photo/' + sp.photo + '" alt="">'
+                  : '<div class="pic">' + iconHTML(sp, '58px', '46px') + '</div>')
+      : '<div class="pic">?</div>';
+    d.innerHTML = pic +
                   '<div class="nm">' + (got ? sp.name : '???') + '</div>' +
-                  (tag ? '<div class="tag">' + tag + '</div>' : '');
+                  (tag ? '<div class="tag">' + tag + '</div>' : '') +
+                  (got && sp.fact ? '<div class="ft">' + sp.fact + '</div>' : '');
     if(!got) d.querySelector('.pic').style.filter = 'none';   // 물음표는 그대로 보이게
     grid.appendChild(d);
   });
   $('bookCount').textContent = seen.length + ' / ' + SPECIES.length;
 }
+/* 잡은 생물의 정보를 사진과 함께 보여 줍니다.
+   설정에서 '처음 잡을 때만 / 잡을 때마다 / 안 보기' 를 고를 수 있습니다. */
+const infoBox = $('info');
+function showInfo(sp){
+  $('infoPic').innerHTML = sp.photo
+    ? '<img src="' + DOK + 'photo/' + sp.photo + '" alt="">'
+    : '<div class="draw">' + iconHTML(sp, '130px', '120px') + '</div>';
+  $('infoName').textContent = sp.name;
+  $('infoList').innerHTML = (sp.info || []).map(t => '<li>' + t + '</li>').join('');
+  infoBox.hidden = false;
+}
+$('closeInfo').addEventListener('click', () => { infoBox.hidden = true; });
+
 $('openBook').addEventListener('click', () => { drawBook(); book.hidden = false; });
 $('closeBook').addEventListener('click', () => { book.hidden = true; });
 
@@ -1031,7 +1169,7 @@ document.addEventListener('keydown', e => {
   if(e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter'){
     e.preventDefault();
     if(state === 'bite') onTap();
-    else if(state === 'idle' && setup.hidden && book.hidden) lower();
+    else if(state === 'idle' && setup.hidden && book.hidden && infoBox.hidden) lower();
   }
 });
 
@@ -1060,6 +1198,8 @@ function done(){
   tank.classList.add('pop'); setTimeout(() => tank.classList.remove('pop'), 260);
   fishChip.classList.remove('pop'); void fishChip.offsetWidth; fishChip.classList.add('pop');
 
+  if(cfg.info === 2 || (cfg.info === 1 && first)) setTimeout(() => showInfo(sp), 1600);
+
   const questWin = missionCatch(sp);
   const milestone = !questWin && caught.length % 5 === 0;
   if(milestone){
@@ -1071,7 +1211,7 @@ function done(){
   setTimeout(() => {
     cheer.hidden = true;
     const i = fish.indexOf(target); if(i > -1) fish.splice(i, 1);
-    makeFish(340 + Math.random() * 280, .8 + Math.random() * .4);
+    makeFish(325 + Math.random() * 245, .8 + Math.random() * .4);
     target = null;
     ensureMissionFish();               // 목표 친구를 다시 채워 둡니다
     setHook(REST_Y);
