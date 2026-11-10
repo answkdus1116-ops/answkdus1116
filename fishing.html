@@ -191,7 +191,8 @@
   #book .panel .big{position:sticky;bottom:0;}
 
   /* 도감 */
-  #infoPic img{width:100%;max-height:min(26vh,200px);object-fit:cover;border-radius:18px;display:block;}
+  #infoPic img{width:100%;max-height:min(32vh,240px);object-fit:contain;background:#eaf3f8;
+    border-radius:18px;display:block;}
   #infoPic .draw{display:flex;align-items:center;justify-content:center;height:170px;
     background:#eef5fa;border-radius:18px;}
   #infoList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
@@ -200,7 +201,7 @@
   /* 도감이 길어져도 닫기 단추는 늘 아래에 붙어 있게 */
   #book .panel > .big{position:sticky;bottom:-20px;z-index:2;}
   #bookGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
-  .bcard .ph{width:100%;height:84px;object-fit:cover;border-radius:10px;display:block;margin-bottom:4px;}
+  .bcard .ph{width:100%;height:84px;object-fit:contain;background:#eef5fa;border-radius:10px;display:block;margin-bottom:4px;}
   .bcard .ft{font-size:13px;color:#6b7a88;line-height:1.35;word-break:keep-all;margin-top:2px;}
   .bcard{
     background:#f5f9fd;border:3px solid #e3ebf3;border-radius:16px;padding:8px 4px;
@@ -234,16 +235,16 @@
        남는 자리는 아래 배경 사각형들을 넓게 그려서 채웁니다. -->
   <svg id="scene" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="118" x2="0" y2="262">
         <stop id="sky0" offset="0" stop-color="#bfe9ff"/><stop id="sky1" offset="1" stop-color="#e9f7ff"/>
       </linearGradient>
-      <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="sea" gradientUnits="userSpaceOnUse" x1="0" y1="262" x2="0" y2="677">
         <stop id="sea0" offset="0" stop-color="#4bb3e8"/><stop id="sea1" offset="1" stop-color="#1668a8"/>
       </linearGradient>
       <radialGradient id="orbG"><stop id="orb0" offset="0" stop-color="#fff3b0"/><stop id="orb1" offset="1" stop-color="#ffd54a"/></radialGradient>
       <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#51706a"/><stop offset=".3" stop-color="#3e5a57"/>
-        <stop offset="1" stop-color="#27403f"/>
+        <stop offset="0" stop-color="#4e6662"/><stop offset=".35" stop-color="#3e5a57"/>
+        <stop offset="1" stop-color="#2a4342"/>
       </linearGradient>
       <linearGradient id="fadeV" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#000"/><stop offset=".09" stop-color="#fff"/>
@@ -289,6 +290,8 @@
     <rect x="-1200" y="668" width="3400" height="700" fill="url(#deep)"/>
     <image id="bgPic" href="dokdo/bg.png" x="0" y="118" width="1000" height="559"
            preserveAspectRatio="none" mask="url(#bgFade)"/>
+    <image id="bgPic2" href="dokdo/bg.png" x="0" y="118" width="1000" height="559"
+           preserveAspectRatio="none" transform="translate(0,1354) scale(1,-1)" opacity=".9"/>
     <rect id="bgTint" x="-1200" y="-800" width="3400" height="2600" fill="#0a1937" opacity="0" pointer-events="none"/>
     <path id="wave" d="M0 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H0Z" fill="#bfeaff" opacity=".22"/>
     <g id="shine" opacity=".45" fill="#bfeaff">
@@ -722,9 +725,9 @@ const CYCLE = {
   sea:[
     { t:0.00, sky:['#0b1533','#28406c'], sea:['#0f4a5e','#06212e'], orb:['#ffffff','#dfe7f5'], tint:['#0a1937',.55] }, // 밤
     { t:0.16, sky:['#42406e','#c98a86'], sea:['#2a6d7d','#0b3141'], orb:['#ffe9d0','#ffab7a'], tint:['#5a3c6e',.30] }, // 새벽
-    { t:0.32, sky:['#ffd9a8','#fff1de'], sea:['#6cc9c6','#13627f'], orb:['#fff3b0','#ffb45a'], tint:['#ffc78c',.14] }, // 아침
-    { t:0.52, sky:['#caebf4','#e6f5ef'], sea:['#7ed4ce','#156d94'], orb:['#fff3b0','#ffd54a'], tint:['#ffffff',.00] }, // 낮
-    { t:0.72, sky:['#ff9f6b','#ffd7a8'], sea:['#4f9fae','#0e4a63'], orb:['#fff0c0','#ff7e4a'], tint:['#ff8a3c',.20] }, // 노을
+    { t:0.32, sky:['#ffd9a8','#fff1de'], sea:['#6cc9c6','#44585a'], orb:['#fff3b0','#ffb45a'], tint:['#ffc78c',.14] }, // 아침
+    { t:0.52, sky:['#caebf4','#e3f3e7'], sea:['#7ed4ce','#86a295'], orb:['#fff3b0','#ffd54a'], tint:['#ffffff',.00] }, // 낮
+    { t:0.72, sky:['#ff9f6b','#ffd7a8'], sea:['#4f9fae','#35474a'], orb:['#fff0c0','#ff7e4a'], tint:['#ff8a3c',.20] }, // 노을
     { t:0.87, sky:['#4b3f78','#d98a72'], sea:['#235a70','#0a2a3a'], orb:['#ffd9c0','#ff8a5a'], tint:['#3c2d5f',.40] }, // 땅거미
     { t:1.00, sky:['#0b1533','#28406c'], sea:['#0f4a5e','#06212e'], orb:['#ffffff','#dfe7f5'], tint:['#0a1937',.55] }
   ],
@@ -791,6 +794,7 @@ function applyLook(){
     tn.setAttribute('opacity', 0);
   }
   $('bgPic').setAttribute('opacity', cfg.mode === 'ice' ? 0 : 1);
+  $('bgPic2').setAttribute('opacity', cfg.mode === 'ice' ? 0 : .9);
 
   /* 해는 0.20 에 왼쪽에서 떠서 0.86 에 오른쪽으로 지고,
      달은 그 사이(밤 동안)에 같은 길을 지나갑니다.
