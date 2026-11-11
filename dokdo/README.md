@@ -29,7 +29,7 @@
 | 괭이갈매기 | photo/gull.jpg · cut/gull.png | CC BY 2.0 | Andy Reago &amp; Chrissy McClarren | [Black-tailed Gull (23698697404).jpg](https://commons.wikimedia.org/wiki/File:Black-tailed_Gull_(23698697404).jpg) |
 
 ## 그림 (openclipart, CC0 퍼블릭 도메인)
-사진이 없는 친구(야광 물고기·해파리·빙어·펭귄)와 예비용 그림입니다.
+사진을 못 불러왔을 때를 대비한 예비 그림입니다. 평소에는 쓰이지 않습니다.
 
 | 파일 | 원본 |
 |---|---|
@@ -38,6 +38,10 @@
 | octopus.svg | https://openclipart.org/detail/204658/red-cartoon-octopus |
 | conch.svg | https://openclipart.org/detail/254646/conch |
 | turtle.svg | https://openclipart.org/detail/305851/birthday-turtle (글자 지움) |
+
+## 등장 생물
+독도 바다에 실제로 사는 12종만 나옵니다.
+살오징어·독도새우·돌돔·자리돔·방어·문어·소라·전복·성게·불가사리·바다거북·괭이갈매기
 | dolldom.svg | https://openclipart.org/detail/354709/angelfish |
 | jari.svg | https://openclipart.org/detail/343027/tropical-fish-isolated |
 | bangeo.svg | https://openclipart.org/detail/340717/simple-big-fish-cartoon |

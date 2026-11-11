@@ -399,13 +399,6 @@
     <div class="panel">
       <h2>⚙️ 설정</h2>
       <div class="field">
-        <span>낚시터</span>
-        <div class="opts" id="optMode">
-          <button class="opt" data-v="sea">🌊 바다</button>
-          <button class="opt" data-v="ice">❄️ 얼음낚시</button>
-        </div>
-      </div>
-      <div class="field">
         <span>몇 번 눌러야 잡히나요?</span>
         <div class="opts" id="optTaps">
           <button class="opt" data-v="2">2번</button>
@@ -520,7 +513,7 @@ const ROD_X = 560, REST_Y = 150;
 
 /* =========================================================
    나오는 친구들
-   mode : 'ice' 면 얼음낚시에서만, 없으면 어디서나
+   night : 밤에만 나타납니다
    night: 밤에만
    mul  : 연타 횟수 배수   star: 주는 별   w: 나올 확률
    ========================================================= */
@@ -568,19 +561,6 @@ const SPECIES = [
     info:["🐦 다리가 2개예요","🐱 고양이 같은 소리로 울어서 '괭이' 갈매기예요","📍 독도에 수만 마리가 모여 살아요"],
     photo:'gull.jpg',    fact:'독도를 지키는 새예요. 고양이 같은 소리를 내요.', snd:[1047,1319,1568] },
 
-  { key:'f', kind:'draw', shape:'firefly', c:'#ffe98a', name:'야광 물고기', size:1, mul:1, w:7,
-    night:true, fact:'깜깜한 밤에만 반짝이며 나타나요.', snd:[784,988,1175] },
-  { key:'l', kind:'draw', shape:'jelly', c:'#c9a8ff', name:'해파리', size:1.05, mul:1, w:6,
-    night:true, fact:'둥실둥실 떠다녀요. 만지면 따가워요.', snd:[330,415,494] },
-
-  { key:'B', kind:'draw', shape:'fish', c:'#dfe9f2', name:'빙어', size:.8, mul:1, w:12, mode:'ice',
-    info:["✨ 스스로 빛을 내요","🌙 깜깜한 밤에만 만날 수 있어요"],
-    info:["🪼 다리(촉수)가 아주 많아요","💧 몸의 95%가 물이에요","⚠️ 만지면 따가워요"],
-    info:["🐟 아주 작고 몸이 비쳐 보여요","❄️ 차가운 물을 좋아해요"],
-    fact:'얼음 아래에 사는 작은 물고기예요.' },
-  { key:'N', kind:'emoji', e:'🐧', name:'펭귄', size:1.4, mul:1.5, w:5, mode:'ice', special:true, star:1,
-    info:["🐧 다리가 2개예요","🏊 날개로 물속을 헤엄쳐요"],
-    fact:'가끔 얼음 위로 놀러 와요.', snd:[523,659,784,1047] }
 ];
 const byKey = k => SPECIES.find(s => s.key === k) || SPECIES[0];
 
@@ -659,11 +639,12 @@ const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea
               cycle:180, pick:'touch', quest:1, info:1 };
 let cfg = Object.assign({}, DEF);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('dokdo-cfg') || '{}')); }catch(e){}
+cfg.mode = 'sea';                      // 독도 낚시터는 바다 한 곳입니다
 function saveCfg(){ try{ localStorage.setItem('dokdo-cfg', JSON.stringify(cfg)); }catch(e){} }
 
 const OPTMAP = [['optTaps','taps'],['optSpeed','speed'],['optSound','sound'],
                 ['optSpecial','special'],['optBgm','bgm'],['optWait','wait'],
-                ['optMode','mode'],['optCycle','cycle'],['optPick','pick'],['optQuest','quest'],
+                ['optCycle','cycle'],['optPick','pick'],['optQuest','quest'],
                 ['optInfo','info']];
 function paintOpts(){
   OPTMAP.forEach(([box,key]) => {
@@ -942,7 +923,7 @@ function drawBook(){
     const got = seen.indexOf(sp.key) > -1;
     const d = document.createElement('div');
     d.className = 'bcard ' + (got ? 'got' : 'miss');
-    const tag = sp.mode === 'ice' ? '❄️ 얼음낚시' : (sp.night ? '🌙 밤에만' : '');
+    const tag = sp.night ? '🌙 밤에만' : '';
     const pic = got
       ? (sp.photo ? '<img class="ph" src="' + DOK + 'photo/' + sp.photo + '" alt="">'
                   : '<div class="pic">' + iconHTML(sp, '58px', '46px') + '</div>')
