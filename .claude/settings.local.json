@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m '웹앱 파일 추가 *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git checkout *)",
+      "Bash(git commit -m 'Merge remote-tracking branch '\\\\''origin/main'\\\\'' *)",
+      "Bash(node serve.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/family-ritual.html)",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(curl -s -m 20 \"https://api.github.com/repos/answkdus1116-ops/answkdus1116\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -m 20 \"https://api.github.com/repos/answkdus1116-ops/answkdus1116/pages\")",
+      "Bash(grep -i \"\\\\.html$\")",
+      "Bash(git rm *)"
     ]
   }
 }
