@@ -8,6 +8,13 @@
 화면 아래쪽은 같은 그림을 위아래로 뒤집어 한 장 더 깔아서,
 어떤 화면 비율에서도 바닥이 끊기지 않고 이어지게 했습니다.
 
+## 배경 그림 bg.png
+선생님이 주신 독도 그림입니다.
+화면이 넓을 때 좌우 여백까지 채우려고 **그림을 좌우로 뒤집어 이어 붙입니다.**
+그대로 이어 붙이면 '독도 · 동도 · 서도' 글씨까지 거꾸로 한 번 더 나와서,
+그림에서는 글씨를 지우고 앱에서 글자로 다시 그립니다.
+원래 그림은 `bg-original.png` 로 남겨 두었습니다.
+
 ## 생물 사진 (위키미디어 공용)
 자유 이용이 가능한 사진만 골랐습니다.
 **cut/** 은 같은 사진에서 배경을 지운 것(헤엄치는 모습),
@@ -16,17 +23,18 @@
 | 생물 | 파일 | 라이선스 | 만든 이 | 원본 |
 |---|---|---|---|---|
 | 살오징어 | photo/squid.jpg · cut/squid.png | Public domain | Benard Chazal, Antoine | [Todarodes sagittatus 1.jpg](https://commons.wikimedia.org/wiki/File:Todarodes_sagittatus_1.jpg) |
-| 독도새우 | photo/shrimp.jpg · cut/shrimp.png | CC BY-SA 4.0 | Totti | [Pandalus borealis Hakkeijima.jpg](https://commons.wikimedia.org/wiki/File:Pandalus_borealis_Hakkeijima.jpg) |
+| 독도새우(도화새우) 사진 | photo/shrimp.jpg | CC BY-SA 2.5 | OpenCage | [Pandalopsis japonica by OpenCage.jpg](https://commons.wikimedia.org/wiki/File:Pandalopsis_japonica_by_OpenCage.jpg) |
+| 독도새우 헤엄치는 모습 | cut/shrimp.png | CC BY-SA 4.0 | Totti | [Pandalus borealis Hakkeijima.jpg](https://commons.wikimedia.org/wiki/File:Pandalus_borealis_Hakkeijima.jpg) |
 | 돌돔 | photo/dolldom.jpg · cut/dolldom.png | CC BY-SA 3.0 | E-190 | [Shimadai.jpg](https://commons.wikimedia.org/wiki/File:Shimadai.jpg) |
 | 자리돔 | photo/jari.jpg · cut/jari.png | CC BY-SA 4.0 | Kuknam kim | [K230914자리돔.jpg](https://commons.wikimedia.org/wiki/File:K230914%EC%9E%90%EB%A6%AC%EB%8F%94.jpg) |
 | 방어 | photo/bangeo.jpg · cut/bangeo.png | CC BY-SA 3.0 | - | [Buri.jpg](https://commons.wikimedia.org/wiki/File:Buri.jpg) |
-| 문어 | photo/octopus.jpg · cut/octopus.png | CC BY-SA 3.0 | Kirt L. Onthank | [E dofleini closeup.jpg](https://commons.wikimedia.org/wiki/File:E_dofleini_closeup.jpg) |
+| 문어(대왕문어) 사진 | photo/octopus.jpg | Public domain | Bachrach44 / The High Fin Sperm Whale | [Enteroctopus dofleini in aquarium crop.jpg](https://commons.wikimedia.org/wiki/File:Enteroctopus_dofleini_in_aquarium_crop.jpg) |
+| 문어 헤엄치는 모습 | cut/octopus.png | CC BY 4.0 | Jerome Huet (Ifremer) | [Poulpe de récif (Octopus cyanea) (Ifremer 00764-87587).jpg](https://commons.wikimedia.org/wiki/File:Poulpe_de_r%C3%A9cif_(Octopus_cyanea)_(Ifremer_00764-87587).jpg) |
 | 성게 | photo/urchin.jpg · cut/urchin.png | CC BY-SA 3.0 | André-Philippe D. Picard | [Face orale oursin vert (Strongylocentrot](https://commons.wikimedia.org/wiki/File:Face_orale_oursin_vert_(Strongylocentrotus_droebachiensis).jpg) |
 | 불가사리 | photo/star.jpg · cut/star.png | CC BY 3.0 | division, CSIRO | [CSIRO ScienceImage 873 Asterias amurensi](https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_873_Asterias_amurensis_Northern_Pacific_Seastar.jpg) |
 | 바다거북 | photo/turtle.jpg · cut/turtle.png | CC BY-SA 3.0 | Brocken Inaglory | [Green turtle swimming in Kona May 2010.j](https://commons.wikimedia.org/wiki/File:Green_turtle_swimming_in_Kona_May_2010.jpg) |
 | 소라 | photo/conch.jpg · cut/conch.png | Public domain | Takahashi | [Turbo cornutus 1.jpg](https://commons.wikimedia.org/wiki/File:Turbo_cornutus_1.jpg) |
 | 전복 | photo/abalone.jpg · cut/abalone.png | Public domain | Jan Delsing | [Haliotis discus.jpg](https://commons.wikimedia.org/wiki/File:Haliotis_discus.jpg) |
-| 괭이갈매기 | photo/gull.jpg · cut/gull.png | CC BY 2.0 | Andy Reago &amp; Chrissy McClarren | [Black-tailed Gull (23698697404).jpg](https://commons.wikimedia.org/wiki/File:Black-tailed_Gull_(23698697404).jpg) |
 
 ## 그림 (openclipart, CC0 퍼블릭 도메인)
 사진을 못 불러왔을 때를 대비한 예비 그림입니다. 평소에는 쓰이지 않습니다.
@@ -43,11 +51,13 @@
 | bangeo.svg | https://openclipart.org/detail/340717/simple-big-fish-cartoon |
 | abalone.svg | https://openclipart.org/detail/355067/clam-isolated |
 | urchin.svg | https://openclipart.org/detail/354943/urchin |
-| gull.svg | https://openclipart.org/detail/320405/seagull-standing |
 
 ## 등장 생물
-독도 바다에 실제로 사는 12종만 나옵니다.
-살오징어·독도새우·돌돔·자리돔·방어·문어·소라·전복·성게·불가사리·바다거북·괭이갈매기
+독도 바다에 실제로 사는 11종만 나옵니다.
+살오징어·독도새우·돌돔·자리돔·방어·문어·소라·전복·성게·불가사리·바다거북
+
+괭이갈매기는 독도의 새이지만 바닷속에 살지 않아 낚을 대상에서 뺐습니다.
+대신 배경 그림 속 하늘에서 날고 있습니다.
 
 ## 배경 지우기(누끼) 방법
 가장자리에서 색이 비슷한 부분만 조심스럽게 지우고,
@@ -56,8 +66,14 @@
 전복·돌돔처럼 바탕이 흰 사진은 '색이 옅고 밝은 곳'을 지우는 방식,
 독도새우처럼 바탕이 푸르거나 어두운 사진은 '붉은 기가 도는 곳만 남기는' 방식을 썼습니다.
 
-### 독도새우 사진에 대해
-독도새우는 도화새우·물렁가시붉은새우·가시배새우 세 가지를 함께 부르는 이름입니다.
-자유 이용이 가능하면서 **살아 있고 옆으로 누운 모습**인 사진을 찾다 보니,
-같은 Pandalus 무리인 북쪽분홍새우(Pandalus borealis) 수조 사진을 골랐습니다.
-생김새가 거의 같아 수업에 쓰기에 무리가 없지만, 종이 정확히 같지는 않습니다.
+### 사진과 '헤엄치는 모습' 이 다른 두 생물
+독도새우와 문어는, **정보 팝업에 쓰는 사진**과 **헤엄치는 누끼**의 출처가 다릅니다.
+
+- **정보 팝업**에는 종이 정확한 사진을 씁니다.
+  독도새우 → 도화새우(Pandalopsis japonica), 문어 → 대왕문어(Enteroctopus dofleini).
+- **헤엄치는 누끼**는 배경이 단순해 깨끗하게 오려지면서
+  한눈에 그 생물로 보이는 사진을 골랐습니다.
+  독도새우 → 북쪽분홍새우(같은 Pandalus 무리), 문어 → Octopus cyanea.
+
+종이 정확한 사진들은 바위·자갈 배경이라 누끼가 깨끗하게 떨어지지 않았습니다.
+아이들이 보는 설명 사진은 정확하게, 헤엄치는 모습은 또렷하게 하려고 이렇게 나누었습니다.

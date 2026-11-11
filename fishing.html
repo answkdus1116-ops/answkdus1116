@@ -191,6 +191,8 @@
   #book .panel .big{position:sticky;bottom:0;}
 
   /* 도감 */
+  .bcard.tapme{cursor:pointer;}
+  .bcard.tapme:active{transform:scale(.96);}
   #infoPic img{width:100%;max-height:min(32vh,240px);object-fit:contain;background:#eaf3f8;
     border-radius:18px;display:block;}
   #infoPic .draw{display:flex;align-items:center;justify-content:center;height:170px;
@@ -249,8 +251,8 @@
       <linearGradient id="fadeV" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#000"/><stop offset=".09" stop-color="#fff"/>
       </linearGradient>
-      <mask id="bgFade" maskUnits="userSpaceOnUse" x="0" y="118" width="1000" height="559">
-        <rect x="0" y="118" width="1000" height="559" fill="url(#fadeV)"/>
+      <mask id="bgFade" maskUnits="userSpaceOnUse" x="-1200" y="118" width="3400" height="559">
+        <rect x="-1200" y="118" width="3400" height="559" fill="url(#fadeV)"/>
       </mask>
       <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="7" result="b"/>
@@ -288,12 +290,31 @@
          그림 속 수면(세로 25.7% 지점)이 장면의 수면(y=262) 에 오도록 놓았습니다.
          위쪽과 좌우는 살짝 흐려서 하늘·바다 색과 자연스럽게 이어집니다. -->
     <rect x="-1200" y="668" width="3400" height="700" fill="url(#deep)"/>
-    <image id="bgPic" href="dokdo/bg.png" x="0" y="118" width="1000" height="559"
-           preserveAspectRatio="none" mask="url(#bgFade)"/>
-    <image id="bgPic2" href="dokdo/bg.png" x="0" y="118" width="1000" height="559"
-           preserveAspectRatio="none" transform="translate(0,1354) scale(1,-1)" opacity=".9"/>
+    <g id="bgPic" mask="url(#bgFade)">
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"/>
+      <!-- 좌우 여백 : 좌우로 뒤집어 이어 붙입니다 (맞닿는 색이 같아 이음매가 안 보입니다) -->
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
+             transform="scale(-1,1)"/>
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
+             transform="translate(2000,0) scale(-1,1)"/>
+    </g>
+    <!-- 아래 여백 : 위아래로 뒤집어 이어 붙입니다 -->
+    <g id="bgPic2" opacity=".9">
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
+             transform="translate(0,1354) scale(1,-1)"/>
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
+             transform="translate(0,1354) scale(-1,-1)"/>
+      <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
+             transform="translate(2000,1354) scale(-1,-1)"/>
+    </g>
+    <g id="islandLabels" font-family="Jua, sans-serif" text-anchor="middle" font-weight="700"
+       fill="#30414e" stroke="#ffffff" stroke-linejoin="round" paint-order="stroke" pointer-events="none">
+      <text x="498" y="222" font-size="68" stroke-width="7">독도</text>
+      <text x="794" y="216" font-size="23" stroke-width="4">동도</text>
+      <text x="908" y="216" font-size="23" stroke-width="4">서도</text>
+    </g>
     <rect id="bgTint" x="-1200" y="-800" width="3400" height="2600" fill="#0a1937" opacity="0" pointer-events="none"/>
-    <path id="wave" d="M0 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H0Z" fill="#bfeaff" opacity=".22"/>
+    <path id="wave" d="M-1200 262 q62 -16 125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 t125 0 V300 H-1200Z" fill="#bfeaff" opacity=".22"/>
     <g id="shine" opacity=".45" fill="#bfeaff">
       <ellipse cx="200" cy="332" rx="70" ry="9"/><ellipse cx="700" cy="302" rx="90" ry="10"/>
     </g>
@@ -557,10 +578,6 @@ const SPECIES = [
   { key:'t', kind:'img', img:'turtle.svg',  name:'바다거북',   size:1.35, mul:2,   w:3, special:true, star:1, cut:'turtle.png',
     info:["🐢 다리가 4개예요 (지느러미처럼 생겼어요)","🌬️ 숨을 쉬러 물 위로 올라와요","💚 아주 귀한 손님이에요. 꼭 바다로 놓아 주세요"],
     photo:'turtle.jpg',  fact:'아주 귀한 손님이에요. 꼭 바다로 놓아 주세요.', snd:[196,262,330,392] },
-  { key:'g', kind:'img', img:'gull.svg',    name:'괭이갈매기', size:1.15, mul:1.5, w:3, special:true, star:1, cut:'gull.png',
-    info:["🐦 다리가 2개예요","🐱 고양이 같은 소리로 울어서 '괭이' 갈매기예요","📍 독도에 수만 마리가 모여 살아요"],
-    photo:'gull.jpg',    fact:'독도를 지키는 새예요. 고양이 같은 소리를 내요.', snd:[1047,1319,1568] },
-
 ];
 const byKey = k => SPECIES.find(s => s.key === k) || SPECIES[0];
 
@@ -636,7 +653,7 @@ try{ caught = JSON.parse(localStorage.getItem('dokdo-caught') || '[]'); }catch(e
 try{ seen = JSON.parse(localStorage.getItem('dokdo-seen') || '[]'); }catch(e){}
 
 const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea',
-              cycle:180, pick:'touch', quest:1, info:1 };
+              cycle:180, pick:'touch', quest:1, info:2 };
 let cfg = Object.assign({}, DEF);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem('dokdo-cfg') || '{}')); }catch(e){}
 cfg.mode = 'sea';                      // 독도 낚시터는 바다 한 곳입니다
@@ -774,8 +791,6 @@ function applyLook(){
   }else{
     tn.setAttribute('opacity', 0);
   }
-  $('bgPic').setAttribute('opacity', cfg.mode === 'ice' ? 0 : 1);
-  $('bgPic2').setAttribute('opacity', cfg.mode === 'ice' ? 0 : .9);
 
   /* 해는 0.20 에 왼쪽에서 떠서 0.86 에 오른쪽으로 지고,
      달은 그 사이(밤 동안)에 같은 길을 지나갑니다.
@@ -933,6 +948,10 @@ function drawBook(){
                   (tag ? '<div class="tag">' + tag + '</div>' : '') +
                   (got && sp.fact ? '<div class="ft">' + sp.fact + '</div>' : '');
     if(!got) d.querySelector('.pic').style.filter = 'none';   // 물음표는 그대로 보이게
+    if(got){                                   // 눌러서 정보를 다시 볼 수 있습니다
+      d.classList.add('tapme');
+      d.addEventListener('click', () => showInfo(sp));
+    }
     grid.appendChild(d);
   });
   $('bookCount').textContent = seen.length + ' / ' + SPECIES.length;
