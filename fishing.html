@@ -120,6 +120,24 @@
   }
   #tankSvg{position:relative;width:100%;height:100%;display:block;z-index:2;}
 
+  /* 유튜브 노래 창 */
+  #ytBox{
+    position:absolute;left:10px;bottom:10px;z-index:4;width:min(232px,46%);
+    background:#0d3550;border:3px solid #a9c6dd;border-radius:14px;overflow:hidden;
+    box-shadow:0 6px 16px rgba(0,0,0,.35);
+  }
+  #ytFrame{position:relative;width:100%;aspect-ratio:16/9;background:#000;}
+  #ytFrame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+  #ytTip{font-size:12px;color:#d9ecf8;text-align:center;padding:3px 5px;line-height:1.25;}
+  #ytUrl{
+    width:100%;box-sizing:border-box;font-family:inherit;font-size:17px;
+    padding:11px 13px;border:3px solid #cfe0ec;border-radius:14px;color:var(--ink);
+    background:#f7fbfe;
+  }
+  #ytUrl:focus{outline:none;border-color:#ffa23d;}
+  .hint{margin:0;font-size:15px;line-height:1.45;color:#5a6b7d;word-break:keep-all;}
+  .hint a{color:#1f7ab8;}
+
   /* 통발에서 바다로 돌아가는 친구 */
   #freeLayer{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;}
   #freeLayer .esc{position:absolute;left:0;top:0;transform-origin:50% 50%;
@@ -404,6 +422,12 @@
   <!-- 바다로 돌려보낸 친구가 헤엄쳐 가는 자리 -->
   <div id="freeLayer"></div>
 
+  <!-- 유튜브 노래 창 -->
+  <div id="ytBox" hidden>
+    <div id="ytFrame"></div>
+    <div id="ytTip">노래가 안 나오면 ▶ 를 한 번 눌러 주세요</div>
+  </div>
+
   <div id="tapLayer" hidden>
     <div id="gaugeBox"><div id="gauge"></div><div id="gaugeFace">🐟</div></div>
     <button id="tapBtn">👆 눌러요!</button>
@@ -512,9 +536,21 @@
         <span>배경음악</span>
         <div class="opts" id="optBgm">
           <button class="opt" data-v="2">🎵 독도 노래</button>
+          <button class="opt" data-v="3">📺 유튜브</button>
           <button class="opt" data-v="1">🌊 바다 소리</button>
           <button class="opt" data-v="0">끄기</button>
         </div>
+      </div>
+      <div class="field">
+        <span>유튜브 노래 주소</span>
+        <input id="ytUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+               placeholder="유튜브 주소를 붙여 넣으세요">
+        <p class="hint">
+          📺 유튜브 를 고르면 화면 왼쪽 아래에 작은 창으로 노래가 나옵니다.
+          저작권은 유튜브가 처리하니 <b>공식 영상</b>을 쓰시는 것이 좋습니다.
+          <a href="https://www.youtube.com/results?search_query=%EB%8F%85%EB%8F%84%EB%8A%94+%EC%9A%B0%EB%A6%AC+%EB%95%85"
+             target="_blank" rel="noopener">유튜브에서 찾기 ↗</a>
+        </p>
       </div>
       <button class="big" id="closeSetup">시작하기</button>
       <button class="big reset" id="resetAll">🌊 모두 바다로 놓아주기</button>
@@ -675,6 +711,7 @@ const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea
               cycle:180, pick:'touch', quest:1, info:2, v:CFG_V };
 /* bgm : 0 끄기 · 1 바다 소리(aquarium.mp3) · 2 독도 노래 */
 DEF.bgm = 2;
+DEF.yt = '';                           // 선생님이 넣어 주실 유튜브 주소
 let cfg = Object.assign({}, DEF);
 let savedCfg = {};
 try{ savedCfg = JSON.parse(localStorage.getItem('dokdo-cfg') || '{}'); }catch(e){}
@@ -1589,16 +1626,55 @@ function songStop(){
   }
 }
 
+/* ---------- 유튜브 노래 ----------
+   '독도는 우리 땅' 처럼 저작권이 있는 노래는 우리가 음원을 넣는 대신
+   유튜브 공식 영상을 그대로 띄워서 듣습니다. 저작권 처리는 유튜브가 합니다.
+   유튜브 약관상 화면을 숨기면 안 되기 때문에 작은 창으로 보여 줍니다.
+   추적을 줄이려고 youtube-nocookie 주소를 씁니다. */
+function ytId(u){
+  u = String(u || '').trim();
+  if(/^[\w-]{11}$/.test(u)) return u;
+  const m = u.match(/(?:v=|\/embed\/|youtu\.be\/|\/shorts\/|\/live\/)([\w-]{11})/);
+  return m ? m[1] : '';
+}
+const ytBox = $('ytBox'), ytFrame = $('ytFrame'), ytInput = $('ytUrl');
+function ytShow(){
+  const id = ytId(cfg.yt);
+  if(!id){ ytHide(); tell('설정에서 유튜브 주소를 넣어 주세요 📺'); return; }
+  if(ytFrame.dataset.id === id && !ytBox.hidden) return;
+  ytFrame.dataset.id = id;
+  ytFrame.innerHTML =
+    '<iframe src="https://www.youtube-nocookie.com/embed/' + id +
+    '?autoplay=1&loop=1&playlist=' + id + '&rel=0&modestbranding=1&playsinline=1" ' +
+    'title="배경음악" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  ytBox.hidden = false;
+}
+function ytHide(){
+  ytBox.hidden = true;
+  ytFrame.innerHTML = '';
+  ytFrame.dataset.id = '';
+}
+ytInput.value = cfg.yt || '';
+ytInput.addEventListener('change', () => {
+  const id = ytId(ytInput.value);
+  if(ytInput.value.trim() && !id){ tell('유튜브 주소가 아닌 것 같아요 🤔'); return; }
+  cfg.yt = ytInput.value.trim(); saveCfg();
+  if(cfg.bgm === 3){ ytHide(); ytShow(); }
+  else if(id) tell('주소를 담았어요. 배경음악에서 📺 유튜브 를 골라 주세요');
+});
+
 /* ---------- 배경음악 ---------- */
 const bgm = $('bgm'), bgmBtn = $('bgmBtn');
 bgm.volume = .32;
 let bgmReady = false;
 let lastBgm = cfg.bgm || 2;                    // 껐다 켤 때 돌아올 곳
+const BGM_ICON = { 0:'🔇', 1:'🌊', 2:'🎵', 3:'📺' };
 function applyBgm(){
-  bgmBtn.textContent = cfg.bgm === 2 ? '🎵' : (cfg.bgm === 1 ? '🌊' : '🔇');
+  bgmBtn.textContent = BGM_ICON[cfg.bgm] || '🔇';
   bgmBtn.style.opacity = cfg.bgm ? '1' : '.5';
   if(cfg.bgm === 1 && bgmReady) bgm.play().catch(() => {}); else bgm.pause();
   if(cfg.bgm === 2 && bgmReady) songStart(); else songStop();
+  if(cfg.bgm === 3) ytShow(); else ytHide();
 }
 ['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, () => {
   if(bgmReady) return;
@@ -1609,7 +1685,7 @@ bgmBtn.addEventListener('click', () => {
   saveCfg(); paintOpts(); bgmReady = true; applyBgm();
 });
 document.addEventListener('visibilitychange', () => {
-  if(document.hidden){ bgm.pause(); songStop(); }
+  if(document.hidden){ bgm.pause(); songStop(); }   /* 유튜브 창은 그대로 둡니다 */
   else if(bgmReady) applyBgm();
 });
 applyBgm();
