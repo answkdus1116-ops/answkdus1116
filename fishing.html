@@ -258,6 +258,13 @@
       <linearGradient id="fadeV" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#000"/><stop offset=".09" stop-color="#fff"/>
       </linearGradient>
+      <linearGradient id="fadeDownG" gradientUnits="userSpaceOnUse" x1="0" y1="677" x2="0" y2="980">
+        <stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#8f8f8f"/>
+        <stop offset="1" stop-color="#000"/>
+      </linearGradient>
+      <mask id="bgFadeDown" maskUnits="userSpaceOnUse" x="-1200" y="677" width="3400" height="700">
+        <rect x="-1200" y="677" width="3400" height="700" fill="url(#fadeDownG)"/>
+      </mask>
       <mask id="bgFade" maskUnits="userSpaceOnUse" x="-1200" y="118" width="3400" height="559">
         <rect x="-1200" y="118" width="3400" height="559" fill="url(#fadeV)"/>
       </mask>
@@ -306,7 +313,7 @@
              transform="translate(2000,0) scale(-1,1)"/>
     </g>
     <!-- 아래 여백 : 위아래로 뒤집어 이어 붙입니다 -->
-    <g id="bgPic2" opacity=".9">
+    <g id="bgPic2" opacity=".9" mask="url(#bgFadeDown)">
       <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
              transform="translate(0,1354) scale(1,-1)"/>
       <image href="dokdo/bg.png" x="0" y="118" width="1000" height="559" preserveAspectRatio="none"
