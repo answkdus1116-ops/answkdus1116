@@ -706,12 +706,15 @@ let caught = [], seen = [];
 try{ caught = JSON.parse(localStorage.getItem('dokdo-caught') || '[]'); }catch(e){}
 try{ seen = JSON.parse(localStorage.getItem('dokdo-seen') || '[]'); }catch(e){}
 
-const CFG_V = 3;                       // 설정 판 번호
+const CFG_V = 4;                       // 설정 판 번호
 const DEF = { taps:5, speed:0.7, sound:1, special:1, bgm:1, wait:1300, mode:'sea',
               cycle:180, pick:'touch', quest:1, info:2, v:CFG_V };
 /* bgm : 0 끄기 · 1 바다 소리(aquarium.mp3) · 2 독도 노래 */
-DEF.bgm = 2;
-DEF.yt = '';                           // 선생님이 넣어 주실 유튜브 주소
+DEF.bgm = 3;
+/* '독도는 우리 땅' 유튜브 영상 (밀크티타임 채널).
+   우리가 음원을 복제하지 않고 유튜브 공식 영상을 그대로 띄우므로 저작권 걱정이 없습니다.
+   다른 영상으로 바꾸시려면 설정에서 주소만 바꿔 넣으시면 됩니다. */
+DEF.yt = 'https://youtu.be/L8o2WhrmfVY';
 let cfg = Object.assign({}, DEF);
 let savedCfg = {};
 try{ savedCfg = JSON.parse(localStorage.getItem('dokdo-cfg') || '{}'); }catch(e){}
@@ -720,6 +723,10 @@ cfg.mode = 'sea';                      // 독도 낚시터는 바다 한 곳입�
 const sv = savedCfg.v || 0;
 if(sv < 2) cfg.info = 2;               // 설명창이 다시 뜨도록
 if(sv < 3) cfg.bgm = 2;                // 새로 넣은 독도 노래로
+if(sv < 4){                            // '독도는 우리 땅' 유튜브 영상으로
+  cfg.bgm = 3;
+  if(!cfg.yt) cfg.yt = DEF.yt;
+}
 if(sv < CFG_V){
   cfg.v = CFG_V;
   try{ localStorage.setItem('dokdo-cfg', JSON.stringify(cfg)); }catch(e){}
