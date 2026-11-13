@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#7fb5e6">
+<title>눈사람 만들기</title>
+<script src="guard.js"></script>
+<link rel="stylesheet" href="playkit.css">
+<script src="playkit.js"></script>
+<style>
+  body{background:#dff0ff;}
+  .pk-stage{padding:0;gap:0;}
+
+  /* ---------- 무대 ---------- */
+  #stage{flex:1;min-height:0;width:100%;position:relative;overflow:hidden;}
+  #scene{width:100%;height:100%;display:block;}
+
+  /* 눈덩이 크기 재는 자 */
+  #meter{
+    position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:3;
+    width:min(460px,86%);background:rgba(255,255,255,.92);border:4px solid #a9c6dd;
+    border-radius:999px;padding:5px 8px;display:flex;align-items:center;gap:9px;
+    box-shadow:0 4px 12px rgba(40,70,100,.22);
+  }
+  #meterBar{flex:1;height:22px;background:#e6eef6;border-radius:999px;overflow:hidden;}
+  #meterFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#7fd1ff,#4a8fe0);
+             transition:width .12s linear;}
+  #meterTxt{flex:none;font-size:19px;color:#3a5a78;min-width:3.4em;text-align:right;}
+
+  /* 꾸미기 고르는 자리 */
+  #deco{
+    position:absolute;left:0;right:0;bottom:0;z-index:4;background:rgba(255,255,255,.95);
+    border-top:4px solid #a9c6dd;padding:6px 8px 8px;
+    box-shadow:0 -5px 16px rgba(40,70,100,.18);
+  }
+  #tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:5px;}
+  .tab{
+    flex:none;border:3px solid var(--pk-line);background:#f6fbff;border-radius:14px;
+    padding:7px 13px;font-family:inherit;font-size:19px;color:var(--pk-ink);cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab.on{border-color:var(--pk-go);background:#fff3e8;}
+  #items{display:flex;gap:7px;overflow-x:auto;min-height:84px;align-items:center;padding:3px 0 2px;}
+  .item{
+    flex:none;width:78px;height:78px;border:3px solid var(--pk-line);background:#fff;
+    border-radius:18px;cursor:pointer;padding:5px;display:flex;align-items:center;justify-content:center;
+  }
+  .item.on{border-color:var(--pk-go);background:#fff3e8;box-shadow:0 0 0 4px rgba(255,138,61,.22);}
+  .item img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;}
+  .item.none{font-size:17px;color:var(--pk-muted);flex-direction:column;gap:2px;}
+
+  /* 사진 찍기 */
+  #photo{position:absolute;inset:0;z-index:6;background:#0e2438;display:flex;
+         flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;}
+  #camWrap{position:relative;width:100%;flex:1;min-height:0;display:flex;
+           align-items:center;justify-content:center;}
+  #shotCv{max-width:100%;max-height:100%;border-radius:18px;background:#102b42;
+          box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  #cam{display:none;}
+  #photoBtns{flex:none;display:flex;gap:8px;width:100%;max-width:720px;}
+  #photoBtns .pk-big{font-size:clamp(19px,3.6vw,28px);padding:15px 8px;}
+  #camMsg{flex:none;color:#cfe6fa;font-size:18px;text-align:center;min-height:1.3em;}
+
+  /* 다 만든 사진 크게 보기 */
+  #viewer{position:absolute;inset:0;z-index:7;background:rgba(8,22,36,.95);
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
+  #viewer img{max-width:100%;max-height:72%;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.5);}
+  #viewer .row{display:flex;gap:8px;width:100%;max-width:720px;}
+  #viewer .pk-big{font-size:clamp(19px,3.6vw,28px);padding:15px 8px;}
+</style>
+</head>
+<body>
+
+<div class="pk-top">
+  <a class="pk-icon" href="index.html" title="목록으로">←</a>
+  <div class="pk-say" id="pkSay">눈밭에서 눈덩이를 굴려 보세요</div>
+  <button class="pk-icon" id="btnBack" title="앞 단계로" hidden>↩️</button>
+  <button class="pk-icon" id="btnSet" title="설정">⚙️</button>
+</div>
+
+<div class="pk-stage">
+  <div id="stage">
+    <!-- meet 으로 두어 어떤 화면에서도 눈밭 전체가 보이게 합니다.
+         남는 자리는 아래 하늘·눈밭을 넓게 그려서 채웁니다. -->
+    <svg id="scene" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8ec5f0"/><stop offset=".55" stop-color="#cfe7fa"/>
+          <stop offset="1" stop-color="#eef7ff"/>
+        </linearGradient>
+        <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9e9f6"/>
+        </linearGradient>
+        <radialGradient id="ballG" cx=".35" cy=".3" r=".8">
+          <stop offset="0" stop-color="#ffffff"/><stop offset=".65" stop-color="#f3f9ff"/>
+          <stop offset="1" stop-color="#cfe0ef"/>
+        </radialGradient>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="9"/>
+        </filter>
+      </defs>
+
+      <!-- 하늘 -->
+      <rect x="-700" y="-700" width="2400" height="1300" fill="url(#sky)"/>
+      <circle cx="170" cy="110" r="52" fill="#fff6c9" opacity=".85"/>
+      <g id="hills" fill="#eaf4fd">
+        <ellipse cx="190" cy="500" rx="360" ry="150"/>
+        <ellipse cx="760" cy="492" rx="300" ry="128"/>
+        <ellipse cx="520" cy="520" rx="420" ry="130"/>
+      </g>
+      <g id="trees"></g>
+
+      <!-- 눈밭 -->
+      <path d="M-700 470 h500 q180 -36 380 -8 q200 28 420 -6 q200 -30 400 10 h500 V1400 H-700Z" fill="url(#snow)"/>
+      <g id="trail" opacity=".85"></g>
+      <g id="done"></g>      <!-- 다 굴린 눈덩이 -->
+      <g id="man"></g>       <!-- 완성된 눈사람 -->
+      <g id="decoG"></g>     <!-- 꾸미기 -->
+      <g id="ballG2"></g>    <!-- 지금 굴리는 눈덩이 -->
+      <g id="flakes"></g>
+    </svg>
+
+    <div id="meter"><div id="meterBar"><div id="meterFill"></div></div><div id="meterTxt">0%</div></div>
+
+    <div id="deco" hidden>
+      <div id="tabs"></div>
+      <div id="items"></div>
+    </div>
+
+    <div id="photo" hidden>
+      <video id="cam" autoplay playsinline muted></video>
+      <div id="camWrap"><canvas id="shotCv"></canvas></div>
+      <div id="camMsg"></div>
+      <div id="photoBtns">
+        <button class="pk-big" id="btnSnap">📸 찰칵!</button>
+        <button class="pk-big ok" id="btnNoCam">🖼️ 눈사람만 저장</button>
+      </div>
+    </div>
+
+    <div id="viewer" hidden>
+      <img id="viewImg" alt="완성한 사진">
+      <div class="row">
+        <button class="pk-big ok" id="btnSave">💾 저장하기</button>
+        <button class="pk-big" id="btnAgain">📸 다시 찍기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pk-bottom">
+  <button class="pk-big" id="btnMain">👆 눌러서 굴리기</button>
+</div>
+
+<div class="pk-sheet" id="setSheet" hidden>
+  <div class="pk-panel">
+    <h2>⚙️ 설정</h2>
+    <div class="pk-field">
+      <span>눈덩이가 커지는 빠르기</span>
+      <div class="pk-opts" id="optGrow">
+        <button class="pk-opt" data-v="0.16">아주 빠르게</button>
+        <button class="pk-opt" data-v="0.095">빠르게</button>
+        <button class="pk-opt" data-v="0.06">보통</button>
+        <button class="pk-opt" data-v="0.038">천천히</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>눈 내리기</span>
+      <div class="pk-opts" id="optSnow">
+        <button class="pk-opt" data-v="1">내리기</button>
+        <button class="pk-opt" data-v="0">안 내리기</button>
+      </div>
+    </div>
+    <div class="pk-field">
+      <span>소리 / 말</span>
+      <div class="pk-opts" id="optSound">
+        <button class="pk-opt" data-v="true">소리 켜기</button>
+        <button class="pk-opt" data-v="false">소리 끄기</button>
+      </div>
+      <div class="pk-opts" id="optVoice">
+        <button class="pk-opt" data-v="true">말해 주기</button>
+        <button class="pk-opt" data-v="false">말 안 하기</button>
+      </div>
+    </div>
+    <button class="pk-big ok" id="btnClose">시작하기</button>
+    <button class="pk-big" id="btnReset">🔄 처음부터 다시</button>
+  </div>
+</div>
+
+<script src="snow/deco.js"></script>
+<script src="snowman.js"></script>
+</body>
+</html>

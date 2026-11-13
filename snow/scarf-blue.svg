@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 230">
+ <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#58b4ec"/><stop offset="1" stop-color="#2a76b8"/></linearGradient></defs>
+ <!-- 앞으로 늘어뜨린 자락 -->
+ <path d="M158 92 h56 q12 0 12 12 l-6 96 q-1 12 -13 12 h-40 q-12 0 -12 -12 l-9 -96 q-1 -12 12 -12z" fill="url(#g)"/>
+ <g stroke="#a3dcf8" stroke-width="5" opacity=".55" fill="none">
+  <path d="M152 118 h72"/><path d="M154 144 h70"/><path d="M156 170 h68"/></g>
+ <g fill="#2a76b8">
+  <rect x="164" y="208" width="10" height="20" rx="5"/><rect x="182" y="208" width="10" height="20" rx="5"/>
+  <rect x="200" y="208" width="10" height="20" rx="5"/></g>
+ <!-- 목을 감은 띠 -->
+ <path d="M14 46 Q130 108 246 46 L246 96 Q130 158 14 96 Z" fill="url(#g)"/>
+ <g stroke="#a3dcf8" stroke-width="6" opacity=".5" fill="none">
+  <path d="M44 62 Q130 118 216 62"/><path d="M26 84 Q130 142 234 84"/></g>
+ <path d="M14 46 Q130 108 246 46" fill="none" stroke="#a3dcf8" stroke-width="5" opacity=".7"/>
+</svg>
