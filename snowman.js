@@ -491,17 +491,87 @@ function paintSnowman(ctx, cx, bottomY, scale) {
   }
 }
 
+/* 전나무 한 그루 (눈이 소복이 쌓인) */
+function pine(ctx, x, baseY, h) {
+  const w = h * .40;
+  ctx.fillStyle = '#8a6a4a';
+  ctx.fillRect(x - h * .035, baseY - h * .14, h * .07, h * .16);
+  const layer = (topOff, half, y2, col) => {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(x, baseY - h + topOff);
+    ctx.lineTo(x + half, y2); ctx.lineTo(x - half, y2);
+    ctx.closePath(); ctx.fill();
+  };
+  layer(0, w, baseY - h * .30, '#3f7d5c');
+  layer(h * .28, w * .88, baseY - h * .08, '#4a8f69');
+  ctx.fillStyle = 'rgba(255,255,255,.9)';         /* 가지에 쌓인 눈 */
+  ctx.beginPath();
+  ctx.moveTo(x, baseY - h);
+  ctx.lineTo(x + w * .46, baseY - h * .66); ctx.lineTo(x - w * .46, baseY - h * .66);
+  ctx.closePath(); ctx.fill();
+}
+
+/* 내리는 눈은 자리를 미리 정해 두고 시간에 따라 떨어뜨립니다
+   (매 장면마다 새로 뿌리면 눈이 깜빡여 보입니다) */
+const PHOTO_SNOW = Array.from({ length: 90 }, () => ({
+  x: Math.random(), y: Math.random(), r: 1 + Math.random() * 3.4,
+  v: .012 + Math.random() * .05, w: Math.random() * 6.3
+}));
+
+/* 사진 배경 : 해 · 언덕 · 전나무 · 눈밭 · 내리는 눈 */
 function winterBack(ctx, W, H) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#8ec5f0'); g.addColorStop(.55, '#cfe7fa'); g.addColorStop(1, '#eef7ff');
+  g.addColorStop(0, '#86c0ee'); g.addColorStop(.5, '#cde6fa'); g.addColorStop(1, '#edf6ff');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  /* 해 */
+  ctx.globalAlpha = .8; ctx.fillStyle = '#fff6c9';
+  ctx.beginPath(); ctx.arc(W * .13, H * .16, H * .085, 0, 7); ctx.fill();
+  ctx.globalAlpha = .35;
+  ctx.beginPath(); ctx.arc(W * .13, H * .16, H * .13, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  const hz = H * .60;                              /* 눈밭이 시작하는 줄 */
+
+  /* 멀리 보이는 언덕 */
+  ctx.fillStyle = '#e4f0fb';
+  ctx.beginPath(); ctx.ellipse(W * .20, hz + H * .10, W * .44, H * .19, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(W * .80, hz + H * .09, W * .40, H * .17, 0, 0, 7); ctx.fill();
+
+  /* 멀리 있는 작은 나무들 */
+  pine(ctx, W * .36, hz + H * .01, H * .11);
+  pine(ctx, W * .45, hz + H * .02, H * .08);
+  pine(ctx, W * .60, hz + H * .01, H * .10);
+
+  /* 눈밭 */
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.ellipse(W * .5, H * 1.02, W * .9, H * .33, 0, 0, 7); ctx.fill();
-  ctx.globalAlpha = .9;
-  for (let i = 0; i < 70; i++) {
-    ctx.beginPath();
-    ctx.arc(Math.random() * W, Math.random() * H * .8, 1.5 + Math.random() * 3.5, 0, 7);
-    ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-10, hz + H * .06);
+  ctx.quadraticCurveTo(W * .28, hz - H * .04, W * .54, hz + H * .03);
+  ctx.quadraticCurveTo(W * .80, hz + H * .09, W + 10, hz + H * .01);
+  ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10);
+  ctx.closePath(); ctx.fill();
+
+  /* 가까이 있는 큰 나무들 (양쪽 가장자리) */
+  pine(ctx, W * .05, hz + H * .13, H * .40);
+  pine(ctx, W * .17, hz + H * .17, H * .27);
+  pine(ctx, W * .95, hz + H * .13, H * .42);
+  pine(ctx, W * .84, hz + H * .18, H * .26);
+
+  /* 눈 둔덕 */
+  ctx.fillStyle = '#f2f8ff';
+  ctx.beginPath(); ctx.ellipse(W * .30, H * .97, W * .22, H * .07, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(W * .72, H * .99, W * .26, H * .08, 0, 0, 7); ctx.fill();
+
+  /* 내리는 눈 */
+  const t = performance.now() / 1000;
+  ctx.fillStyle = '#ffffff';
+  for (const f of PHOTO_SNOW) {
+    const y = ((f.y + f.v * t) % 1) * H;
+    const x = (f.x * W + Math.sin(t * .8 + f.w) * 12 + W) % W;
+    ctx.globalAlpha = .55 + (f.r / 4.4) * .4;
+    ctx.beginPath(); ctx.arc(x, y, f.r, 0, 7); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
@@ -556,21 +626,17 @@ function drawShot(forSave) {
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
 
-  /* ① 늘 설원 배경 */
+  /* ① 늘 눈밭 풍경 */
   winterBack(ctx, W, H);
-  ctx.fillStyle = 'rgba(255,255,255,.95)';
-  ctx.beginPath(); ctx.ellipse(W * .5, H * 1.04, W * .8, H * .24, 0, 0, 7); ctx.fill();
 
-  const groundY = H * .94;
+  const groundY = H * .95;
   if (stream && video.videoWidth) {
     /* 눈사람은 오른쪽, 사람은 왼쪽. 키를 서로 맞춥니다 */
-    const sc = fitScale(W * .40, H * .74);
-    const manH = SNOW_H * sc;                      /* 눈사람 키 */
-    const gotPerson = drawPerson(ctx, W * .34, groundY, manH);
-    paintSnowman(ctx, W * .74, groundY, sc);
-    if (!gotPerson) { /* 사람을 아직 못 찾았으면 눈사람만 보입니다 */ }
+    const sc = fitScale(W * .56, H * .86);
+    drawPerson(ctx, W * .29, groundY, SNOW_H * sc);
+    paintSnowman(ctx, W * .71, groundY, sc);
   } else {
-    paintSnowman(ctx, W * .5, groundY, fitScale(W * .9, H * .84));
+    paintSnowman(ctx, W * .5, groundY, fitScale(W * .92, H * .86));
   }
   return cv;
 }
