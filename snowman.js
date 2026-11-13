@@ -105,29 +105,16 @@ function loop(now) {
 /* =========================================================
    눈덩이 굴리기
    ========================================================= */
-/* 눈 알갱이가 송송 박힌 느낌만 살짝 줍니다.
-   굵은 선을 넣으면 눈덩이가 예쁘지 않아서, 작은 점으로만 굴러가는 것을 보여 줍니다. */
-const GRAIN = [[-.46,-.12,.050],[-.14,.38,.042],[.30,-.36,.038],[.46,.12,.046],
-               [.04,-.56,.034],[-.56,.22,.036],[.20,.54,.040],[-.26,.60,.030],
-               [.58,-.14,.032],[-.04,.04,.030]];
-function ballTexture(r) {
-  return GRAIN.map(([x, y, s]) =>
-    '<circle cx="' + (x * r).toFixed(1) + '" cy="' + (y * r).toFixed(1) +
-    '" r="' + (s * r).toFixed(1) + '" fill="#d6e6f3" opacity=".85"/>').join('') +
-    '<ellipse cx="' + (-r * .34).toFixed(1) + '" cy="' + (-r * .4).toFixed(1) +
-    '" rx="' + (r * .3).toFixed(1) + '" ry="' + (r * .22).toFixed(1) +
-    '" fill="#ffffff" opacity=".55" transform="rotate(-24 ' + (-r * .34).toFixed(1) + ' ' + (-r * .4).toFixed(1) + ')"/>';
-}
+/* 눈덩이는 다 굴린 눈사람의 눈덩이와 똑같이, 아무 무늬 없이 매끈하게 그립니다.
+   굴러가는 것은 크기가 커지는 것과 바닥에 남는 자국으로 보여 줍니다. */
 function drawBall() {
   if (!ball) { gBall.innerHTML = ''; return; }
   const r = ball.r, y = GROUND - r;
   gBall.innerHTML =
     '<ellipse cx="' + ball.x.toFixed(1) + '" cy="' + (GROUND + 8) + '" rx="' + (r * .95).toFixed(1) +
       '" ry="' + (r * .2).toFixed(1) + '" fill="#9fbdd4" opacity=".4"/>' +
-    '<g transform="translate(' + ball.x.toFixed(1) + ',' + y.toFixed(1) + ') rotate(' + (ball.rot * 57.3).toFixed(1) + ')">' +
-      '<circle r="' + r.toFixed(1) + '" fill="url(#ballG)" stroke="#c6dbec" stroke-width="3"/>' +
-      ballTexture(r) +
-    '</g>';
+    '<circle cx="' + ball.x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) +
+      '" fill="url(#ballG)" stroke="#c6dbec" stroke-width="3"/>';
 }
 function drawTrail() {
   gTrail.innerHTML = trail.map(t =>
@@ -189,7 +176,7 @@ function finishBall() {
       '" ry="' + (keep.r * .2).toFixed(1) + '" fill="#9fbdd4" opacity=".4"/>' +
     '<g transform="translate(' + keep.x.toFixed(1) + ',' + (GROUND - keep.r).toFixed(1) + ')">' +
       '<circle r="' + keep.r.toFixed(1) + '" fill="url(#ballG)" stroke="#c6dbec" stroke-width="3"/>' +
-      ballTexture(keep.r) + '</g></g>');
+      '</g></g>');
   ball = null; drawBall();
   PK.cheer('⛄', PLAN[step].name + ' 완성!', 1500);
   setTimeout(() => {
@@ -402,25 +389,65 @@ function initSeg() {
   } catch (e) { seg = null; }
 }
 
-/* 설원 배경에 오려낸 사람을 그립니다 (거울처럼 좌우를 뒤집습니다) */
-function drawPerson(ctx, W, H) {
+/* 오려낸 사람이 화면에서 차지한 네모를 찾습니다 (0~1 비율).
+   이걸 알아야 사람을 눈사람 크기에 맞춰 줄이거나 키울 수 있습니다. */
+const boxCv = document.createElement('canvas');
+function personBox() {
+  if (!(segOn && segReady)) return null;
+  const W = 72, H = 54;
+  boxCv.width = W; boxCv.height = H;
+  const c = boxCv.getContext('2d');
+  c.clearRect(0, 0, W, H);
+  c.drawImage(segMask, 0, 0, W, H);
+  const d = c.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1, n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (d[(y * W + x) * 4] > 120) {           /* 흰 곳이 사람입니다 */
+      n++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0 || n < W * H * 0.01) return null;        /* 너무 작으면 사람이 아닙니다 */
+  return { x: x0 / W, y: y0 / H, w: (x1 - x0 + 1) / W, h: (y1 - y0 + 1) / H };
+}
+
+/* 설원 배경에 오려낸 사람을 그립니다.
+   눈사람과 키를 맞추고, 같은 바닥 줄에 서게 합니다. (거울처럼 좌우를 뒤집습니다) */
+function drawPerson(ctx, px, groundY, wantH) {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw) return false;
   const waited = performance.now() - camAt > 4000;
   if (!(segOn && segReady) && !waited) return false;   /* 아직 사람을 찾는 중 */
-  cutCv.width = W; cutCv.height = H;
+
+  /* 사람만 오려내서 작은 그림 한 장으로 */
+  cutCv.width = vw; cutCv.height = vh;
   const c = cutCv.getContext('2d');
-  c.clearRect(0, 0, W, H);
-  const sc = Math.max(W / vw, H / vh);
-  const dx = (W - vw * sc) / 2, dy = (H - vh * sc) / 2;
+  c.clearRect(0, 0, vw, vh);
   if (segOn && segReady) {
-    c.drawImage(segMask, dx, dy, vw * sc, vh * sc);
+    c.drawImage(segMask, 0, 0, vw, vh);
     c.globalCompositeOperation = 'source-in';
   }
-  c.drawImage(video, dx, dy, vw * sc, vh * sc);
+  c.drawImage(video, 0, 0, vw, vh);
   c.globalCompositeOperation = 'source-over';
-  ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);
-  ctx.drawImage(cutCv, 0, 0);
+
+  const b = personBox();
+  ctx.save();
+  if (b) {
+    /* 눈사람 키에 맞춰 줄이거나 키웁니다 */
+    const sx = b.x * vw, sy = b.y * vh, sw = b.w * vw, sh = b.h * vh;
+    const k = Math.min(4, wantH / sh);
+    const dw = sw * k, dh = sh * k;
+    ctx.translate(px, groundY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(cutCv, sx, sy, sw, sh, -dw / 2, -dh, dw, dh);
+  } else {
+    /* 사람 자리를 못 찾으면 화면에 꽉 차게 (누끼를 못 쓸 때) */
+    const W = ctx.canvas.width, H = ctx.canvas.height;
+    const s = Math.max(W / vw, H / vh);
+    ctx.translate(W, 0); ctx.scale(-1, 1);
+    ctx.drawImage(cutCv, (W - vw * s) / 2, (H - vh * s) / 2, vw * s, vh * s);
+  }
   ctx.restore();
   return true;
 }
@@ -432,6 +459,7 @@ function getImg(src) {
 
 /* 꾸미개까지 다 들어가는 넓이 (장면 좌표) */
 const SPAN_W = 680, SPAN_H = 610;
+const SNOW_H = (BODY.y + BODY.r) - (HEAD.y - HEAD.r);   // 눈사람 키 (꾸미개 뺀 눈덩이 두 개)
 function fitScale(w, h) { return Math.min(w / SPAN_W, h / SPAN_H); }
 
 /* 눈사람을 캔버스에 그립니다 (장면 좌표 → 캔버스 좌표) */
@@ -533,12 +561,17 @@ function drawShot(forSave) {
   ctx.fillStyle = 'rgba(255,255,255,.95)';
   ctx.beginPath(); ctx.ellipse(W * .5, H * 1.04, W * .8, H * .24, 0, 0, 7); ctx.fill();
 
-  /* ② 오려낸 사람 */
-  const gotPerson = (stream && video.videoWidth) ? drawPerson(ctx, W, H) : false;
-
-  /* ③ 내가 만든 눈사람 */
-  if (gotPerson) paintSnowman(ctx, W * .78, H * .96, fitScale(W * .42, H * .8));
-  else paintSnowman(ctx, W * .5, H * .94, fitScale(W * .9, H * .84));
+  const groundY = H * .94;
+  if (stream && video.videoWidth) {
+    /* 눈사람은 오른쪽, 사람은 왼쪽. 키를 서로 맞춥니다 */
+    const sc = fitScale(W * .40, H * .74);
+    const manH = SNOW_H * sc;                      /* 눈사람 키 */
+    const gotPerson = drawPerson(ctx, W * .34, groundY, manH);
+    paintSnowman(ctx, W * .74, groundY, sc);
+    if (!gotPerson) { /* 사람을 아직 못 찾았으면 눈사람만 보입니다 */ }
+  } else {
+    paintSnowman(ctx, W * .5, groundY, fitScale(W * .9, H * .84));
+  }
   return cv;
 }
 
