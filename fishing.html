@@ -127,7 +127,7 @@
     box-shadow:0 6px 16px rgba(0,0,0,.35);
   }
   #ytFrame{position:relative;width:100%;aspect-ratio:16/9;background:#000;}
-  #ytFrame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+  #ytFrame iframe, #ytFrame > div{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
   #ytTip{font-size:12px;color:#d9ecf8;text-align:center;padding:3px 5px;line-height:1.25;}
   #ytUrl{
     width:100%;box-sizing:border-box;font-family:inherit;font-size:17px;
@@ -1645,18 +1645,68 @@ function ytId(u){
   return m ? m[1] : '';
 }
 const ytBox = $('ytBox'), ytFrame = $('ytFrame'), ytInput = $('ytUrl');
-function ytShow(){
-  const id = ytId(cfg.yt);
-  if(!id){ ytHide(); tell('설정에서 유튜브 주소를 넣어 주세요 📺'); return; }
-  if(ytFrame.dataset.id === id && !ytBox.hidden) return;
-  ytFrame.dataset.id = id;
+let ytPlayer = null, ytApiAsked = false;
+
+/* 유튜브 조종 기능을 한 번만 불러옵니다.
+   못 불러오면(인터넷이 느리거나 막혀 있으면) 그냥 평범한 창으로 띄웁니다. */
+function ytApiLoad(cb){
+  if(window.YT && window.YT.Player) return cb();
+  if(!ytApiAsked){
+    ytApiAsked = true;
+    const sc = document.createElement('script');
+    sc.src = 'https://www.youtube.com/iframe_api';
+    sc.onerror = () => cb(true);
+    document.head.appendChild(sc);
+  }
+  const before = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = () => { if(before) try{ before(); }catch(e){} cb(); };
+  setTimeout(() => { if(!(window.YT && window.YT.Player)) cb(true); }, 5000);
+}
+
+/* 조종 기능 없이 띄우는 평범한 창 (예비) */
+function ytPlain(id){
   ytFrame.innerHTML =
     '<iframe src="https://www.youtube-nocookie.com/embed/' + id +
     '?autoplay=1&loop=1&playlist=' + id + '&rel=0&modestbranding=1&playsinline=1" ' +
     'title="배경음악" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+}
+
+function ytShow(){
+  const id = ytId(cfg.yt);
+  if(!id){ ytHide(); tell('설정에서 유튜브 주소를 넣어 주세요 📺'); return; }
+  if(ytFrame.dataset.id === id && !ytBox.hidden) return;
+  ytHide();
+  ytFrame.dataset.id = id;
   ytBox.hidden = false;
+  let built = false;
+  const build = (plain) => {
+    if(built || ytFrame.dataset.id !== id) return;   /* 그새 꺼졌으면 그만둡니다 */
+    built = true;
+    if(plain || !(window.YT && window.YT.Player)){ ytPlain(id); return; }
+    ytFrame.innerHTML = '<div id="ytPlayer"></div>';
+    try{
+      ytPlayer = new YT.Player('ytPlayer', {
+        host: 'https://www.youtube-nocookie.com',
+        videoId: id,
+        playerVars: { autoplay:1, loop:1, playlist:id, rel:0, modestbranding:1,
+                      playsinline:1, iv_load_policy:3, fs:0, disablekb:1 },
+        events: {
+          onReady: e => { try{ e.target.playVideo(); }catch(err){} },
+          onStateChange: e => {
+            /* 끝나도 다른 영상으로 넘어가지 않고 처음부터 다시 틉니다 */
+            if(e.data === YT.PlayerState.ENDED){
+              try{ e.target.seekTo(0, true); e.target.playVideo(); }catch(err){}
+            }
+          },
+          onError: () => { ytFrame.innerHTML = ''; ytPlain(id); }
+        }
+      });
+    }catch(err){ ytPlain(id); }
+  };
+  ytApiLoad(build);
 }
 function ytHide(){
+  if(ytPlayer){ try{ ytPlayer.destroy(); }catch(e){} ytPlayer = null; }
   ytBox.hidden = true;
   ytFrame.innerHTML = '';
   ytFrame.dataset.id = '';
