@@ -16,6 +16,7 @@
 | stone.svg | 돌멩이 (눈) |
 | eyes-googly.svg | 움직이는 눈 |
 | button-red / button-wood .svg | 단추 |
+| carrot-1 / carrot-2 / carrot-3 .svg | 당근 코 (초록 줄기 없이 주황색만) |
 | branch / branch-dark .svg | 나뭇가지 팔 |
 | smile-coal / smile-happy .svg | 입 |
 
@@ -31,9 +32,14 @@ openclipart 의 그림은 전부 CC0 라서 출처를 밝히지 않아도 되지
 | 파일 | 원본 |
 |---|---|
 | oc-santa-hat.svg | https://openclipart.org 'santa hat' 검색 결과 |
-| oc-carrot-a.svg · oc-carrot-b.svg · oc-carrot-c.svg | https://openclipart.org 'carrot' |
 | oc-mitt.svg | https://openclipart.org 'mitten' |
 | oc-button-red.svg · oc-button-line.svg | https://openclipart.org 'sewing button' |
 
 openclipart 그림은 CC0(퍼블릭 도메인)라서 마음대로 쓰고 고쳐도 됩니다.
 앱에 넣으면서 눈사람에 맞게 크기와 기울기만 `deco.js` 에서 맞췄습니다.
+
+## 당근을 새로 그린 까닭
+openclipart 당근은 모두 **초록 줄기와 잎**이 달려 있어서,
+눈사람 코로 붙이면 얼굴에 풀이 돋은 것처럼 보였습니다.
+그래서 **주황색만 있는 당근** 세 가지를 새로 그려 넣었습니다.
+그림이 처음부터 오른쪽을 보고 있어서 따로 돌릴 필요가 없습니다.

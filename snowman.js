@@ -19,7 +19,10 @@ const NS = 'http://www.w3.org/2000/svg';
 const DIR = 'snow/';                       // 꾸미기 그림이 있는 곳
 
 /* ---------- 설정 ---------- */
-const cfg = PK.load('snowman', { grow: 0.095, snow: 1, sound: true, voice: true, rate: 0.85 });
+const GROW_STEPS = [0.1, 0.07, 0.05, 0.034];
+const cfg = PK.load('snowman', { grow: 0.05, snow: 1, sound: true, voice: true, rate: 0.85 });
+/* 예전에 저장된 빠르기 값이면 기본으로 되돌립니다 */
+if (GROW_STEPS.indexOf(+cfg.grow) < 0) { cfg.grow = 0.05; PK.save('snowman', cfg); }
 
 /* ---------- 무대 좌표 ---------- */
 const GROUND = 592;                        // 눈덩이가 놓이는 바닥 줄
@@ -82,6 +85,14 @@ function makeFlakes() {
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(60, now - last) / 1000; last = now;
+  /* 눈덩이는 손가락을 곧바로 따라가지 않고, 무게만큼 천천히 따라옵니다.
+     커질수록 더 느려져서 "무거워진다"는 느낌이 납니다. */
+  if (phase === 'roll' && ball) {
+    const vmax = (560 - 320 * progress()) * dt;
+    let d = ball.tx - ball.x;
+    if (Math.abs(d) > vmax) d = (d > 0 ? 1 : -1) * vmax;
+    if (Math.abs(d) > .25) roll(d);
+  }
   for (const f of flakes) {
     f.y += f.v * dt; f.w += dt * 1.6;
     if (f.y > 710) { f.y = -10; f.x = Math.random() * 1000; }
@@ -94,12 +105,18 @@ function loop(now) {
 /* =========================================================
    눈덩이 굴리기
    ========================================================= */
+/* 눈 알갱이가 송송 박힌 느낌만 살짝 줍니다.
+   굵은 선을 넣으면 눈덩이가 예쁘지 않아서, 작은 점으로만 굴러가는 것을 보여 줍니다. */
+const GRAIN = [[-.46,-.12,.050],[-.14,.38,.042],[.30,-.36,.038],[.46,.12,.046],
+               [.04,-.56,.034],[-.56,.22,.036],[.20,.54,.040],[-.26,.60,.030],
+               [.58,-.14,.032],[-.04,.04,.030]];
 function ballTexture(r) {
-  return '<path d="M' + (-r * .55) + ' ' + (-r * .2) + ' a' + (r * .6) + ' ' + (r * .6) + ' 0 0 1 ' + (r * .9) + ' ' + (-r * .3) + '" ' +
-         'stroke="#dcebf7" stroke-width="' + (r * .09) + '" fill="none" stroke-linecap="round"/>' +
-         '<path d="M' + (-r * .2) + ' ' + (r * .55) + ' a' + (r * .55) + ' ' + (r * .55) + ' 0 0 0 ' + (r * .75) + ' ' + (-r * .25) + '" ' +
-         'stroke="#e6f2fb" stroke-width="' + (r * .08) + '" fill="none" stroke-linecap="round"/>' +
-         '<circle cx="' + (-r * .3) + '" cy="' + (-r * .45) + '" r="' + (r * .1) + '" fill="#fff"/>';
+  return GRAIN.map(([x, y, s]) =>
+    '<circle cx="' + (x * r).toFixed(1) + '" cy="' + (y * r).toFixed(1) +
+    '" r="' + (s * r).toFixed(1) + '" fill="#d6e6f3" opacity=".85"/>').join('') +
+    '<ellipse cx="' + (-r * .34).toFixed(1) + '" cy="' + (-r * .4).toFixed(1) +
+    '" rx="' + (r * .3).toFixed(1) + '" ry="' + (r * .22).toFixed(1) +
+    '" fill="#ffffff" opacity=".55" transform="rotate(-24 ' + (-r * .34).toFixed(1) + ' ' + (-r * .4).toFixed(1) + ')"/>';
 }
 function drawBall() {
   if (!ball) { gBall.innerHTML = ''; return; }
@@ -120,14 +137,20 @@ function drawTrail() {
 
 function newBall() {
   const P = PLAN[step];
-  ball = { x: XMIN + 40, r: P.from, rot: 0, dir: 1, mark: 0 };
+  ball = { x: XMIN + 40, tx: XMIN + 40, r: P.from, rot: 0, dir: 1, mark: 0 };
   trail = [];
   drawBall(); drawTrail(); meter();
   tell(P.say + ' — 끌거나, 아래 단추를 눌러요');
   PK.say(P.say);
 }
 
-/* 굴린 거리만큼 커집니다 */
+/* 지금 얼마나 커졌는지 (0 ~ 1) */
+function progress() {
+  const P = PLAN[step];
+  return ball ? Math.max(0, Math.min(1, (ball.r - P.from) / (P.to - P.from))) : 0;
+}
+
+/* 굴린 거리만큼 커집니다. 커질수록 눈이 덜 붙어서 더 많이 굴려야 합니다. */
 function roll(dx) {
   if (!ball || phase !== 'roll') return;
   const P = PLAN[step];
@@ -136,7 +159,7 @@ function roll(dx) {
   ball.x = nx;
   if (!moved) return;
   ball.rot += (dx > 0 ? 1 : -1) * moved / ball.r;
-  ball.r = Math.min(P.to, ball.r + moved * cfg.grow);
+  ball.r = Math.min(P.to, ball.r + moved * cfg.grow * (1 - .38 * progress()));
   ball.mark += moved;
   if (ball.mark > 15) {                      // 지나간 자리에 눈이 눌린 자국
     ball.mark = 0;
@@ -149,10 +172,9 @@ function roll(dx) {
 }
 
 function meter() {
-  const P = PLAN[step];
-  const p = ball ? Math.max(0, Math.min(1, (ball.r - P.from) / (P.to - P.from))) : 0;
+  const p = progress();
   $('meterFill').style.width = (p * 100).toFixed(0) + '%';
-  $('meterTxt').textContent = P.name + ' ' + (p * 100).toFixed(0) + '%';
+  $('meterTxt').textContent = PLAN[step].name + ' ' + (p * 100).toFixed(0) + '%';
 }
 
 function finishBall() {
@@ -304,7 +326,8 @@ function toScene(ev) {
 let grab = null;
 stage.addEventListener('pointerdown', e => {
   if (phase === 'roll') {
-    grab = { kind: 'roll', x: toScene(e).x };
+    grab = { kind: 'roll' };
+    if (ball) ball.tx = Math.max(XMIN, Math.min(XMAX, toScene(e).x));
     stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
   } else if (phase === 'deco') {
     const g = e.target.closest && e.target.closest('.dc');
@@ -318,7 +341,7 @@ stage.addEventListener('pointerdown', e => {
 stage.addEventListener('pointermove', e => {
   if (!grab) return;
   const p = toScene(e);
-  if (grab.kind === 'roll') { roll(p.x - grab.x); grab.x = p.x; }
+  if (grab.kind === 'roll') { if (ball) ball.tx = Math.max(XMIN, Math.min(XMAX, p.x)); }
   else {
     const n = nudge[grab.cat] || (nudge[grab.cat] = { dx: 0, dy: 0 });
     n.dx += p.x - grab.x; n.dy += p.y - grab.y;
@@ -327,26 +350,29 @@ stage.addEventListener('pointermove', e => {
   }
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
-  stage.addEventListener(ev, () => { grab = null; }));
+  stage.addEventListener(ev, () => { grab = null; if (ball && !sweeping) ball.tx = ball.x; }));
 
 /* 단추로 굴리기 (스위치로도 쓸 수 있게) */
 let sweeping = false;
 function sweep() {
-  if (phase !== 'roll' || sweeping || !ball) return;
+  if (phase !== 'roll' || !ball) return;
+  /* 이미 굴러가는 중에 또 누르면, 더 멀리까지 굴러가게 이어 줍니다 */
+  const from = sweeping ? ball.tx : ball.x;
+  if (from >= XMAX - 4) ball.dir = -1;
+  if (from <= XMIN + 4) ball.dir = 1;
+  ball.tx = Math.max(XMIN, Math.min(XMAX, from + ball.dir * 300));
+  if (sweeping) return;
   sweeping = true;
-  const dist = 270, t0 = performance.now(), DUR = 900;
-  let prev = 0;
-  if (ball.x >= XMAX - 2) ball.dir = -1;
-  if (ball.x <= XMIN + 2) ball.dir = 1;
-  const dir = ball.dir;
-  (function anim(now) {
-    const p = Math.min(1, (now - t0) / DUR);
-    const e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-    const cur = e * dist;
-    roll((cur - prev) * dir); prev = cur;
-    if (p < 1 && phase === 'roll') requestAnimationFrame(anim);
-    else { sweeping = false; if (ball && (ball.x >= XMAX - 2 || ball.x <= XMIN + 2)) ball.dir = -dir; }
-  })(performance.now());
+  /* 다 굴러갈 때까지 기다렸다가 다음에 누를 수 있게 합니다 */
+  (function wait() {
+    if (phase !== 'roll' || !ball) { sweeping = false; return; }
+    if (Math.abs(ball.tx - ball.x) < 1.5) {
+      sweeping = false;
+      if (ball.x >= XMAX - 4 || ball.x <= XMIN + 4) ball.dir = -ball.dir;
+      return;
+    }
+    requestAnimationFrame(wait);
+  })();
 }
 
 /* =========================================================
@@ -354,6 +380,50 @@ function sweep() {
    ========================================================= */
 let stream = null, shotURL = null;
 const video = $('cam'), shotCv = $('shotCv');
+
+/* 사람만 오려내기 (MediaPipe SelfieSegmentation) */
+let seg = null, segReady = false, segBusy = false, segOn = false, camAt = 0;
+const segMask = document.createElement('canvas');
+const cutCv = document.createElement('canvas');
+function initSeg() {
+  if (seg || typeof SelfieSegmentation !== 'function') return;
+  try {
+    seg = new SelfieSegmentation({
+      locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/' + f });
+    seg.setOptions({ modelSelection: 1 });
+    seg.onResults(r => {
+      const m = r.segmentationMask; if (!m) return;
+      segMask.width = m.width; segMask.height = m.height;
+      const c = segMask.getContext('2d');
+      c.clearRect(0, 0, m.width, m.height);
+      c.drawImage(m, 0, 0);
+      segReady = true; segOn = true;
+    });
+  } catch (e) { seg = null; }
+}
+
+/* 설원 배경에 오려낸 사람을 그립니다 (거울처럼 좌우를 뒤집습니다) */
+function drawPerson(ctx, W, H) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw) return false;
+  const waited = performance.now() - camAt > 4000;
+  if (!(segOn && segReady) && !waited) return false;   /* 아직 사람을 찾는 중 */
+  cutCv.width = W; cutCv.height = H;
+  const c = cutCv.getContext('2d');
+  c.clearRect(0, 0, W, H);
+  const sc = Math.max(W / vw, H / vh);
+  const dx = (W - vw * sc) / 2, dy = (H - vh * sc) / 2;
+  if (segOn && segReady) {
+    c.drawImage(segMask, dx, dy, vw * sc, vh * sc);
+    c.globalCompositeOperation = 'source-in';
+  }
+  c.drawImage(video, dx, dy, vw * sc, vh * sc);
+  c.globalCompositeOperation = 'source-over';
+  ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);
+  ctx.drawImage(cutCv, 0, 0);
+  ctx.restore();
+  return true;
+}
 const imgCache = {};
 function getImg(src) {
   if (imgCache[src]) return imgCache[src];
@@ -421,7 +491,9 @@ async function openPhoto() {
       video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } }, audio: false });
     video.srcObject = stream;
     await video.play();
-    $('camMsg').textContent = '눈사람 옆에 서 보세요!';
+    initSeg();
+    camAt = performance.now();
+    $('camMsg').textContent = '눈사람 왼쪽에 서 보세요!';
     PK.say('눈사람 옆에 서 보세요');
     liveLoop();
   } catch (err) {
@@ -433,9 +505,18 @@ let liveOn = false;
 function liveLoop() {
   if (liveOn) return;
   liveOn = true;
+  let n = 0;
   (function tick() {
     if (phase !== 'photo' || !stream) { liveOn = false; return; }
+    /* 서너 번에 한 번만 사람 모양을 다시 찾습니다 (느려지지 않게) */
+    if (seg && !segBusy && video.videoWidth && (n++ % 3 === 0)) {
+      segBusy = true;
+      try { seg.send({ image: video }).catch(() => {}).finally(() => { segBusy = false; }); }
+      catch (e) { segBusy = false; }
+    }
     drawShot();
+    if (!segReady && performance.now() - camAt < 4000) $('camMsg').textContent = '사람을 찾는 중…';
+    else if ($('camMsg').textContent === '사람을 찾는 중…') $('camMsg').textContent = '눈사람 왼쪽에 서 보세요!';
     requestAnimationFrame(tick);
   })();
 }
@@ -446,27 +527,24 @@ function drawShot(forSave) {
   const cv = forSave ? document.createElement('canvas') : shotCv;
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  if (stream && video.videoWidth) {
-    const vw = video.videoWidth, vh = video.videoHeight;
-    const s = Math.max(W / vw, H / vh);
-    ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);       /* 거울처럼 */
-    ctx.drawImage(video, (W - vw * s) / 2, (H - vh * s) / 2, vw * s, vh * s);
-    ctx.restore();
-  } else {
-    winterBack(ctx, W, H);
-  }
-  /* 아래쪽 눈밭 */
-  ctx.fillStyle = 'rgba(255,255,255,.92)';
-  ctx.beginPath(); ctx.ellipse(W * .5, H * 1.06, W * .75, H * .22, 0, 0, 7); ctx.fill();
-  /* 카메라가 있으면 오른쪽에, 없으면 가운데에 크게 */
-  if (stream && video.videoWidth) paintSnowman(ctx, W * .73, H * .95, fitScale(W * .52, H * .86));
+
+  /* ① 늘 설원 배경 */
+  winterBack(ctx, W, H);
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.beginPath(); ctx.ellipse(W * .5, H * 1.04, W * .8, H * .24, 0, 0, 7); ctx.fill();
+
+  /* ② 오려낸 사람 */
+  const gotPerson = (stream && video.videoWidth) ? drawPerson(ctx, W, H) : false;
+
+  /* ③ 내가 만든 눈사람 */
+  if (gotPerson) paintSnowman(ctx, W * .78, H * .96, fitScale(W * .42, H * .8));
   else paintSnowman(ctx, W * .5, H * .94, fitScale(W * .9, H * .84));
   return cv;
 }
 
 function closeCam() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  video.srcObject = null; liveOn = false;
+  video.srcObject = null; liveOn = false; segReady = false; segOn = false;
 }
 
 function snap() {

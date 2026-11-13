@@ -46,9 +46,9 @@ window.SNOW_DECO = {
     label: '🥕 코',
     spots: () => [{ x: HEAD.x + 16, y: HEAD.y + 8 }],
     items: [
-      { f: 'oc-carrot-a.svg', w: 92, ar: 150 / 74, rot: -90, dx: 12 },
-      { f: 'oc-carrot-b.svg', w: 104, ar: 150 / 177, rot: -136, dx: 14 },
-      { f: 'oc-carrot-c.svg', w: 98, ar: 396 / 285, rot: -118, dx: 12 }
+      { f: 'carrot-1.svg', w: 104, ar: 72 / 170, dx: 26, rot: 6 },
+      { f: 'carrot-2.svg', w: 110, ar: 80 / 170, dx: 28, rot: 8 },
+      { f: 'carrot-3.svg', w: 88,  ar: 78 / 130, dx: 20, rot: 5 }
     ]
   },
 
@@ -97,12 +97,12 @@ window.SNOW_DECO = {
 
   glove: {
     label: '🧤 장갑',
-    spots: () => [{ x: BODY.x - BODY.r - 126, y: ARM_Y - 28, flip: true },
-                  { x: BODY.x + BODY.r + 126, y: ARM_Y - 28 }],
+    spots: () => [{ x: BODY.x - BODY.r - 110, y: ARM_Y - 20, flip: true },
+                  { x: BODY.x + BODY.r + 110, y: ARM_Y - 20 }],
     items: [
-      { f: 'mitten-red.svg',  w: 72, ar: 160 / 130, rot: -14 },
-      { f: 'mitten-blue.svg', w: 72, ar: 160 / 130, rot: -14 },
-      { f: 'oc-mitt.svg',     w: 80, ar: 1, rot: -10 }
+      { f: 'mitten-red.svg',  w: 74, ar: 160 / 130, rot: 62 },
+      { f: 'mitten-blue.svg', w: 74, ar: 160 / 130, rot: 62 },
+      { f: 'oc-mitt.svg',     w: 80, ar: 1, rot: 62 }
     ]
   }
 };
