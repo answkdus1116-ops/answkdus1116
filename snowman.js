@@ -403,18 +403,19 @@ function drawFaceOnHead(ctx, cx, cy, R2) {
   const b = faceBox(), vw = video.videoWidth, vh = video.videoHeight;
   if (!b || !vw) return false;
   const sx = b.x * vw, sy = b.y * vh, sw = b.w * vw, sh = b.h * vh;
+  /* 얼굴이 들어갈 동그라미. 머리보다 작게 잡아 눈덩이 여백을 남깁니다. */
+  const Rf = R2 * .78;
   ctx.save();
-  ctx.beginPath(); ctx.arc(cx, cy, R2 * .97, 0, 7); ctx.clip();
+  ctx.beginPath(); ctx.arc(cx, cy, Rf, 0, 7); ctx.clip();
   ctx.translate(cx, cy); ctx.scale(-1, 1);          /* 거울처럼 */
-  /* 얼굴이 머리에 꽉 차도록 */
-  const k = (R2 * 2.16) / sh;
+  const k = (Rf * 2.12) / sh;
   ctx.drawImage(video, sx, sy, sw, sh, -sw * k / 2, -sh * k / 2, sw * k, sh * k);
   ctx.restore();
-  /* 머리와 자연스럽게 이어지도록 가장자리를 살짝 하얗게 */
-  const g = ctx.createRadialGradient(cx, cy, R2 * .82, cx, cy, R2);
-  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(244,250,255,.9)');
-  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R2, 0, 7); ctx.clip();
-  ctx.fillStyle = g; ctx.fillRect(cx - R2, cy - R2, R2 * 2, R2 * 2); ctx.restore();
+  /* 눈덩이와 자연스럽게 이어지도록 가장자리를 살짝 하얗게 */
+  const g = ctx.createRadialGradient(cx, cy, Rf * .80, cx, cy, Rf);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(244,250,255,.92)');
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, Rf, 0, 7); ctx.clip();
+  ctx.fillStyle = g; ctx.fillRect(cx - Rf, cy - Rf, Rf * 2, Rf * 2); ctx.restore();
   return true;
 }
 
