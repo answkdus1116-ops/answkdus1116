@@ -94,11 +94,13 @@
                 <span>점수:</span>
                 <span id="score-text" class="text-indigo-600 text-2xl font-black">0</span>
             </div>
-            <div class="text-lg font-bold text-slate-600 bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
-                <span id="current-stage-text">1</span> / <span id="total-stage-text">5</span>
-            </div>
+            <button onclick="openPickerModal()" class="text-lg font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-1.5 rounded-full border border-slate-200 transition">
+                <span id="current-stage-text">1</span> / <span id="total-stage-text">36</span>
+                <span class="text-sm text-indigo-600 ml-1">모양 고르기 ▾</span>
+            </button>
             <div class="flex items-center space-x-3">
                 <button onclick="prevStage()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm transition">이전</button>
+                <button onclick="nextStage()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm transition">다음</button>
                 <button onclick="checkCompletion()" class="glow-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-2.5 rounded-xl text-base shadow-lg transition flex items-center gap-2">
                     <span>완성</span>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -177,25 +179,186 @@
         </div>
     </div>
 
+    <!-- 모양 고르기 -->
+    <div id="picker-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[88vh] overflow-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-xl font-bold text-slate-800">✏️ 어떤 모양을 그려 볼까요?</h3>
+                <button onclick="closePickerModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+            </div>
+            <p class="text-xs text-slate-500">쉬운 것부터 차례로 해도 되고, 하고 싶은 모양을 바로 골라도 됩니다. ✓ 는 완성한 모양이에요.</p>
+            <div id="picker-body" class="space-y-5"></div>
+            <button onclick="closePickerModal()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl shadow">닫기</button>
+        </div>
+    </div>
+
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-xl opacity-0 transition-all pointer-events-none z-50">메시지</div>
 
     <script>
+        /* =========================================================
+           따라 그릴 모양들
+           level : 'easy' 쉬움 · 'mid' 보통 · 'hard' 어려움
+           stars : 별 자리 (0~1 비율, y 는 아래로 갈수록 큽니다)
+           lines : 이어야 할 별 번호 짝
+           ========================================================= */
         const STAGES = [
-            { id:1, name:"삼각형", instruction:"삼각형: 별들을 이어 삼각형을 만들어보세요.",
-              stars:[{x:0.5,y:0.2},{x:0.2,y:0.75},{x:0.8,y:0.75}],
-              lines:[[0,1],[1,2],[2,0]] },
-            { id:2, name:"사각형", instruction:"사각형: 네 개의 별을 순서대로 이어 사각형을 완성해보세요.",
-              stars:[{x:0.25,y:0.25},{x:0.75,y:0.25},{x:0.75,y:0.75},{x:0.25,y:0.75}],
-              lines:[[0,1],[1,2],[2,3],[3,0]] },
-            { id:3, name:"집 모양", instruction:"집 모양: 지붕과 벽면의 별들을 이어 예쁜 집을 만들어보세요.",
-              stars:[{x:0.5,y:0.18},{x:0.2,y:0.45},{x:0.8,y:0.45},{x:0.8,y:0.82},{x:0.2,y:0.82}],
-              lines:[[0,1],[0,2],[1,2],[1,4],[2,3],[3,4]] },
-            { id:4, name:"카시오페아 별자리", instruction:"카시오페아: W자 모양의 밤하늘 별자리를 이어보세요.",
-              stars:[{x:0.15,y:0.35},{x:0.32,y:0.72},{x:0.50,y:0.45},{x:0.68,y:0.78},{x:0.85,y:0.25}],
-              lines:[[0,1],[1,2],[2,3],[3,4]] },
-            { id:5, name:"오각 별자리", instruction:"오각 별: 반짝이는 별자리를 완성해보세요.",
-              stars:[{x:0.5,y:0.15},{x:0.2,y:0.85},{x:0.9,y:0.38},{x:0.1,y:0.38},{x:0.8,y:0.85}],
-              lines:[[0,1],[1,2],[2,3],[3,4],[4,0]] }
+          /* ---------- 쉬움 : 선 하나부터 기본 도형까지 ---------- */
+          { id:1, level:'easy', name:"가로선",
+            instruction:"가로선: 왼쪽 별에서 오른쪽 별까지 곧게 이어요.",
+            stars:[{x:0.15,y:0.5},{x:0.85,y:0.5}], lines:[[0,1]] },
+          { id:2, level:'easy', name:"세로선",
+            instruction:"세로선: 위쪽 별에서 아래쪽 별까지 곧게 내려요.",
+            stars:[{x:0.5,y:0.14},{x:0.5,y:0.86}], lines:[[0,1]] },
+          { id:3, level:'easy', name:"비스듬한 선",
+            instruction:"비스듬한 선: 아래 별에서 위 별까지 비스듬히 이어요.",
+            stars:[{x:0.16,y:0.82},{x:0.84,y:0.18}], lines:[[0,1]] },
+          { id:4, level:'easy', name:"ㄱ 모양",
+            instruction:"ㄱ 모양: 가로로 간 다음 아래로 꺾어요.",
+            stars:[{x:0.2,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8}], lines:[[0,1],[1,2]] },
+          { id:5, level:'easy', name:"산 모양",
+            instruction:"산 모양: 위로 올라갔다가 다시 내려와요.",
+            stars:[{x:0.14,y:0.8},{x:0.5,y:0.18},{x:0.86,y:0.8}], lines:[[0,1],[1,2]] },
+          { id:6, level:'easy', name:"골짜기 모양",
+            instruction:"골짜기 모양: 아래로 내려갔다가 다시 올라와요.",
+            stars:[{x:0.14,y:0.2},{x:0.5,y:0.82},{x:0.86,y:0.2}], lines:[[0,1],[1,2]] },
+          { id:7, level:'easy', name:"삼각형",
+            instruction:"삼각형: 별 세 개를 이어 삼각형을 만들어요.",
+            stars:[{x:0.5,y:0.2},{x:0.2,y:0.75},{x:0.8,y:0.75}], lines:[[0,1],[1,2],[2,0]] },
+          { id:8, level:'easy', name:"사각형",
+            instruction:"사각형: 네 개의 별을 차례로 이어 사각형을 만들어요.",
+            stars:[{x:0.25,y:0.25},{x:0.75,y:0.25},{x:0.75,y:0.75},{x:0.25,y:0.75}],
+            lines:[[0,1],[1,2],[2,3],[3,0]] },
+          { id:9, level:'easy', name:"마름모",
+            instruction:"마름모: 위·오른쪽·아래·왼쪽 별을 차례로 이어요.",
+            stars:[{x:0.5,y:0.14},{x:0.84,y:0.5},{x:0.5,y:0.86},{x:0.16,y:0.5}],
+            lines:[[0,1],[1,2],[2,3],[3,0]] },
+          { id:10, level:'easy', name:"사다리꼴",
+            instruction:"사다리꼴: 위는 좁고 아래는 넓은 모양이에요.",
+            stars:[{x:0.32,y:0.26},{x:0.68,y:0.26},{x:0.86,y:0.76},{x:0.14,y:0.76}],
+            lines:[[0,1],[1,2],[2,3],[3,0]] },
+          { id:11, level:'easy', name:"지그재그",
+            instruction:"지그재그: 위아래로 번갈아 가며 이어요.",
+            stars:[{x:0.1,y:0.3},{x:0.3,y:0.72},{x:0.5,y:0.3},{x:0.7,y:0.72},{x:0.9,y:0.3}],
+            lines:[[0,1],[1,2],[2,3],[3,4]] },
+          { id:12, level:'easy', name:"계단",
+            instruction:"계단: 옆으로 갔다가 위로, 또 옆으로 갔다가 위로 올라가요.",
+            stars:[{x:0.14,y:0.84},{x:0.14,y:0.6},{x:0.44,y:0.6},{x:0.44,y:0.36},{x:0.78,y:0.36},{x:0.78,y:0.14}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,5]] },
+          { id:13, level:'easy', name:"열십자",
+            instruction:"열십자: 가운데 별에서 네 방향으로 뻗어요.",
+            stars:[{x:0.5,y:0.5},{x:0.5,y:0.14},{x:0.86,y:0.5},{x:0.5,y:0.86},{x:0.14,y:0.5}],
+            lines:[[0,1],[0,2],[0,3],[0,4]] },
+          { id:14, level:'easy', name:"엑스자",
+            instruction:"엑스자: 가운데 별에서 네 귀퉁이로 뻗어요.",
+            stars:[{x:0.5,y:0.5},{x:0.18,y:0.18},{x:0.82,y:0.18},{x:0.82,y:0.82},{x:0.18,y:0.82}],
+            lines:[[0,1],[0,2],[0,3],[0,4]] },
+
+          /* ---------- 보통 : 생활 속 모양과 별자리 ---------- */
+          { id:15, level:'mid', name:"집 모양",
+            instruction:"집 모양: 지붕과 벽을 이어 집을 만들어요.",
+            stars:[{x:0.5,y:0.18},{x:0.2,y:0.45},{x:0.8,y:0.45},{x:0.8,y:0.82},{x:0.2,y:0.82}],
+            lines:[[0,1],[0,2],[1,2],[1,4],[2,3],[3,4]] },
+          { id:16, level:'mid', name:"화살표",
+            instruction:"화살표: 긴 줄을 긋고 끝에 뾰족한 머리를 달아요.",
+            stars:[{x:0.1,y:0.5},{x:0.9,y:0.5},{x:0.62,y:0.26},{x:0.62,y:0.74}],
+            lines:[[0,1],[1,2],[1,3]] },
+          { id:17, level:'mid', name:"오각 별",
+            instruction:"오각 별: 한 붓 그리기처럼 별 모양을 완성해요.",
+            stars:[{x:0.5,y:0.12},{x:0.2,y:0.86},{x:0.92,y:0.4},{x:0.08,y:0.4},{x:0.8,y:0.86}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,0]] },
+          { id:18, level:'mid', name:"육각형",
+            instruction:"육각형: 여섯 개의 별을 빙 둘러 이어요.",
+            stars:[{x:0.5,y:0.12},{x:0.85,y:0.31},{x:0.85,y:0.69},{x:0.5,y:0.88},{x:0.15,y:0.69},{x:0.15,y:0.31}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]] },
+          { id:19, level:'mid', name:"육각 별",
+            instruction:"육각 별: 삼각형 두 개를 겹쳐 별을 만들어요.",
+            stars:[{x:0.5,y:0.1},{x:0.85,y:0.3},{x:0.85,y:0.7},{x:0.5,y:0.9},{x:0.15,y:0.7},{x:0.15,y:0.3}],
+            lines:[[0,2],[2,4],[4,0],[1,3],[3,5],[5,1]] },
+          { id:20, level:'mid', name:"카시오페아 별자리",
+            instruction:"카시오페아: W 모양의 밤하늘 별자리를 이어요.",
+            stars:[{x:0.15,y:0.35},{x:0.32,y:0.72},{x:0.50,y:0.45},{x:0.68,y:0.78},{x:0.85,y:0.25}],
+            lines:[[0,1],[1,2],[2,3],[3,4]] },
+          { id:21, level:'mid', name:"북두칠성",
+            instruction:"북두칠성: 국자 모양의 일곱 별을 이어요.",
+            stars:[{x:0.12,y:0.48},{x:0.14,y:0.72},{x:0.38,y:0.8},{x:0.4,y:0.54},
+                   {x:0.58,y:0.44},{x:0.74,y:0.34},{x:0.9,y:0.22}],
+            lines:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]] },
+          { id:22, level:'mid', name:"편지 봉투",
+            instruction:"편지 봉투: 네모를 그리고 가운데로 접힌 선을 이어요.",
+            stars:[{x:0.15,y:0.3},{x:0.85,y:0.3},{x:0.85,y:0.76},{x:0.15,y:0.76},{x:0.5,y:0.56}],
+            lines:[[0,1],[1,2],[2,3],[3,0],[0,4],[1,4]] },
+          { id:23, level:'mid', name:"깃발",
+            instruction:"깃발: 긴 막대를 세우고 삼각 깃발을 달아요.",
+            stars:[{x:0.22,y:0.9},{x:0.22,y:0.12},{x:0.78,y:0.26},{x:0.22,y:0.42}],
+            lines:[[0,1],[1,2],[2,3],[3,1]] },
+          { id:24, level:'mid', name:"나비넥타이",
+            instruction:"나비넥타이: 가운데를 중심으로 양쪽에 삼각형을 만들어요.",
+            stars:[{x:0.14,y:0.24},{x:0.14,y:0.76},{x:0.5,y:0.5},{x:0.86,y:0.24},{x:0.86,y:0.76}],
+            lines:[[0,1],[0,2],[1,2],[3,4],[3,2],[4,2]] },
+          { id:25, level:'mid', name:"연",
+            instruction:"연: 마름모를 그리고 가운데 십자선을 이어요.",
+            stars:[{x:0.5,y:0.1},{x:0.82,y:0.44},{x:0.5,y:0.9},{x:0.18,y:0.44}],
+            lines:[[0,1],[1,2],[2,3],[3,0],[0,2],[1,3]] },
+          { id:26, level:'mid', name:"꽃",
+            instruction:"꽃: 네모 두 개를 겹쳐 꽃잎을 만들고 줄기를 내려요.",
+            stars:[{x:0.3,y:0.2},{x:0.7,y:0.2},{x:0.7,y:0.6},{x:0.3,y:0.6},
+                   {x:0.5,y:0.12},{x:0.78,y:0.4},{x:0.5,y:0.68},{x:0.22,y:0.4},
+                   {x:0.5,y:0.96}],
+            lines:[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[6,8]] },
+
+          /* ---------- 어려움 : 별자리와 복잡한 그림 ---------- */
+          { id:27, level:'hard', name:"오리온자리",
+            instruction:"오리온자리: 어깨와 허리띠, 다리를 차례로 이어요.",
+            stars:[{x:0.28,y:0.16},{x:0.74,y:0.18},{x:0.42,y:0.48},{x:0.5,y:0.52},
+                   {x:0.58,y:0.56},{x:0.3,y:0.86},{x:0.72,y:0.88}],
+            lines:[[0,1],[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]] },
+          { id:28, level:'hard', name:"물고기",
+            instruction:"물고기: 몸통을 만들고 꼬리지느러미를 달아요.",
+            stars:[{x:0.12,y:0.5},{x:0.42,y:0.26},{x:0.68,y:0.5},{x:0.42,y:0.74},
+                   {x:0.92,y:0.3},{x:0.92,y:0.7}],
+            lines:[[0,1],[1,2],[2,3],[3,0],[2,4],[4,5],[5,2]] },
+          { id:29, level:'hard', name:"돛단배",
+            instruction:"돛단배: 배와 돛대, 돛을 차례로 이어요.",
+            stars:[{x:0.12,y:0.6},{x:0.5,y:0.6},{x:0.88,y:0.6},{x:0.74,y:0.86},
+                   {x:0.26,y:0.86},{x:0.5,y:0.12},{x:0.8,y:0.5}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,0],[1,5],[5,6],[6,1]] },
+          { id:30, level:'hard', name:"우산",
+            instruction:"우산: 둥근 지붕을 만들고 손잡이를 내려요.",
+            stars:[{x:0.1,y:0.48},{x:0.3,y:0.56},{x:0.5,y:0.48},{x:0.7,y:0.56},{x:0.9,y:0.48},
+                   {x:0.5,y:0.12},{x:0.5,y:0.84},{x:0.66,y:0.88}],
+            lines:[[0,5],[5,4],[0,1],[1,2],[2,3],[3,4],[2,6],[6,7]] },
+          { id:31, level:'hard', name:"나무",
+            instruction:"나무: 뾰족한 잎을 두 층으로 쌓고 기둥을 세워요.",
+            stars:[{x:0.5,y:0.06},{x:0.26,y:0.42},{x:0.74,y:0.42},
+                   {x:0.5,y:0.3},{x:0.13,y:0.72},{x:0.87,y:0.72},
+                   {x:0.45,y:0.72},{x:0.45,y:0.95},{x:0.55,y:0.95},{x:0.55,y:0.72}],
+            lines:[[0,1],[1,2],[2,0],[3,4],[4,5],[5,3],[6,7],[7,8],[8,9]] },
+          { id:32, level:'hard', name:"왕관",
+            instruction:"왕관: 뾰족뾰족한 윗부분과 아래 띠를 이어요.",
+            stars:[{x:0.12,y:0.72},{x:0.26,y:0.28},{x:0.38,y:0.54},{x:0.5,y:0.18},
+                   {x:0.62,y:0.54},{x:0.74,y:0.28},{x:0.88,y:0.72},
+                   {x:0.88,y:0.88},{x:0.12,y:0.88}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,0]] },
+          { id:33, level:'hard', name:"하트",
+            instruction:"하트: 위쪽 두 봉우리를 지나 아래 뾰족한 끝으로 모아요.",
+            stars:[{x:0.5,y:0.88},{x:0.12,y:0.44},{x:0.24,y:0.2},{x:0.42,y:0.28},
+                   {x:0.5,y:0.42},{x:0.58,y:0.28},{x:0.76,y:0.2},{x:0.88,y:0.44}],
+            lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]] },
+          { id:34, level:'hard', name:"고양이 얼굴",
+            instruction:"고양이 얼굴: 뾰족한 귀 두 개와 얼굴을 이어요.",
+            stars:[{x:0.26,y:0.4},{x:0.74,y:0.4},{x:0.84,y:0.66},{x:0.5,y:0.9},{x:0.16,y:0.66},
+                   {x:0.16,y:0.12},{x:0.44,y:0.28},{x:0.84,y:0.12},{x:0.56,y:0.28}],
+            lines:[[0,6],[6,8],[8,1],[1,2],[2,3],[3,4],[4,0],[0,5],[5,6],[1,7],[7,8]] },
+          { id:35, level:'hard', name:"로켓",
+            instruction:"로켓: 뾰족한 머리와 몸통, 날개를 이어요.",
+            stars:[{x:0.5,y:0.06},{x:0.34,y:0.34},{x:0.66,y:0.34},{x:0.34,y:0.76},{x:0.66,y:0.76},
+                   {x:0.14,y:0.9},{x:0.86,y:0.9},{x:0.34,y:0.6},{x:0.66,y:0.6},{x:0.5,y:0.94}],
+            lines:[[0,1],[0,2],[1,7],[7,3],[2,8],[8,4],[3,4],[7,5],[5,3],[8,6],[6,4],[3,9],[9,4]] },
+          { id:36, level:'hard', name:"굴뚝 있는 집",
+            instruction:"굴뚝 있는 집: 집을 만들고 지붕 위에 굴뚝을 세워요.",
+            stars:[{x:0.5,y:0.12},{x:0.18,y:0.42},{x:0.82,y:0.42},{x:0.82,y:0.86},{x:0.18,y:0.86},
+                   {x:0.68,y:0.29},{x:0.68,y:0.08},{x:0.78,y:0.08},{x:0.78,y:0.38}],
+            lines:[[0,1],[0,2],[1,2],[1,4],[2,3],[3,4],[5,6],[6,7],[7,8]] }
         ];
 
         let currentStageIdx = 0, score = 0;
@@ -494,6 +657,7 @@
             isDragging = false; currentDragPos = null;
             document.getElementById('shape-name-text').textContent = STAGES[idx].instruction;
             document.getElementById('current-stage-text').textContent = idx + 1;
+            document.title = STAGES[idx].name + ' - 시지각 선긋기';
             document.getElementById('total-stage-text').textContent = STAGES.length;
             renderAll();
             speakInstruction();
@@ -507,6 +671,43 @@
         }
 
         function prevStage(){ if(currentStageIdx > 0) loadStage(currentStageIdx - 1); }
+        function nextStage(){ if(currentStageIdx < STAGES.length - 1) loadStage(currentStageIdx + 1); }
+
+        /* ---------- 모양 고르기 ---------- */
+        const LEVEL_INFO = [
+            { key:'easy', label:'🟢 쉬움 — 선 하나부터 기본 도형까지', cls:'emerald' },
+            { key:'mid',  label:'🟡 보통 — 생활 속 모양과 별자리',     cls:'amber'   },
+            { key:'hard', label:'🔴 어려움 — 별자리와 복잡한 그림',     cls:'rose'    }
+        ];
+        function buildPicker(){
+            const body = document.getElementById('picker-body');
+            body.innerHTML = LEVEL_INFO.map(lv => {
+                const items = STAGES.map((st, i) => ({ st, i })).filter(o => o.st.level === lv.key);
+                if(!items.length) return '';
+                const done = items.filter(o => completedStages.has(o.i)).length;
+                return '<div>' +
+                    '<div class="flex items-center justify-between mb-2">' +
+                      '<h4 class="font-bold text-sm text-slate-700">' + lv.label + '</h4>' +
+                      '<span class="text-xs text-slate-500">' + done + ' / ' + items.length + ' 완성</span>' +
+                    '</div>' +
+                    '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">' +
+                    items.map(o => {
+                        const on = o.i === currentStageIdx;
+                        const ok = completedStages.has(o.i);
+                        const cls = on ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : ok ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+                        return '<button onclick="pickStage(' + o.i + ')" ' +
+                               'class="border-2 rounded-xl px-3 py-2.5 text-sm font-bold text-left transition ' + cls + '">' +
+                               '<span class="opacity-60 text-xs mr-1">' + (o.i + 1) + '.</span>' +
+                               o.st.name + (ok ? ' ✓' : '') + '</button>';
+                    }).join('') +
+                    '</div></div>';
+            }).join('');
+        }
+        function openPickerModal(){ buildPicker(); document.getElementById('picker-modal').classList.remove('hidden'); }
+        function closePickerModal(){ document.getElementById('picker-modal').classList.add('hidden'); }
+        function pickStage(i){ closePickerModal(); loadStage(i); }
 
         function changeHintLevel(level){
             hintLevel = level;
