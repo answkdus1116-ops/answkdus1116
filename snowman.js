@@ -368,6 +368,56 @@ function sweep() {
 let stream = null, shotURL = null;
 const video = $('cam'), shotCv = $('shotCv');
 
+/* 사진 찍는 방법 : 'side' 나란히 서기 · 'face' 눈사람 되기 */
+let shotMode = 'side';
+
+/* 얼굴 자리 찾기 (MediaPipe FaceMesh) */
+let fm = null, faceLM = null, fmBusy = false, faceAt = 0;
+function initFace() {
+  if (fm || typeof FaceMesh !== 'function') return;
+  try {
+    fm = new FaceMesh({ locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + f });
+    fm.setOptions({ maxNumFaces: 1, refineLandmarks: false,
+                    minDetectionConfidence: .5, minTrackingConfidence: .5 });
+    fm.onResults(r => {
+      faceLM = (r.multiFaceLandmarks && r.multiFaceLandmarks.length) ? r.multiFaceLandmarks[0] : null;
+      if (faceLM) faceAt = performance.now();
+    });
+  } catch (e) { fm = null; }
+}
+
+/* 얼굴이 차지한 네모 (0~1 비율). 이마가 조금 더 보이도록 위를 넉넉히 잡습니다. */
+function faceBox() {
+  if (!faceLM) return null;
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+  for (const p of faceLM) {
+    if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x;
+    if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
+  }
+  const w = x1 - x0, hh = y1 - y0;
+  return { x: x0 - w * .12, y: y0 - hh * .20, w: w * 1.24, h: hh * 1.28 };
+}
+
+/* 눈사람 머리 자리에 내 얼굴을 동그랗게 오려 넣습니다 */
+function drawFaceOnHead(ctx, cx, cy, R2) {
+  const b = faceBox(), vw = video.videoWidth, vh = video.videoHeight;
+  if (!b || !vw) return false;
+  const sx = b.x * vw, sy = b.y * vh, sw = b.w * vw, sh = b.h * vh;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R2 * .97, 0, 7); ctx.clip();
+  ctx.translate(cx, cy); ctx.scale(-1, 1);          /* 거울처럼 */
+  /* 얼굴이 머리에 꽉 차도록 */
+  const k = (R2 * 2.16) / sh;
+  ctx.drawImage(video, sx, sy, sw, sh, -sw * k / 2, -sh * k / 2, sw * k, sh * k);
+  ctx.restore();
+  /* 머리와 자연스럽게 이어지도록 가장자리를 살짝 하얗게 */
+  const g = ctx.createRadialGradient(cx, cy, R2 * .82, cx, cy, R2);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(244,250,255,.9)');
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R2, 0, 7); ctx.clip();
+  ctx.fillStyle = g; ctx.fillRect(cx - R2, cy - R2, R2 * 2, R2 * 2); ctx.restore();
+  return true;
+}
+
 /* 사람만 오려내기 (MediaPipe SelfieSegmentation) */
 let seg = null, segReady = false, segBusy = false, segOn = false, camAt = 0;
 const segMask = document.createElement('canvas');
@@ -463,8 +513,10 @@ const SNOW_H = (BODY.y + BODY.r) - (HEAD.y - HEAD.r);   // 눈사람 키 (꾸미
 function fitScale(w, h) { return Math.min(w / SPAN_W, h / SPAN_H); }
 
 /* 눈사람을 캔버스에 그립니다 (장면 좌표 → 캔버스 좌표) */
-function paintSnowman(ctx, cx, bottomY, scale) {
-  const ps = parts();
+const FACE_CATS = ['eye', 'nose', 'mouth'];
+function paintSnowman(ctx, cx, bottomY, scale, opts) {
+  let ps = parts();
+  if (opts && opts.hideFace) ps = ps.filter(p => p.t !== 'img' || FACE_CATS.indexOf(p.cat) < 0);
   const X = v => cx + (v - BODY.x) * scale;
   const Y = v => bottomY + (v - (BODY.y + BODY.r)) * scale;
   for (const p of ps) {
@@ -589,7 +641,7 @@ async function openPhoto() {
       video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } }, audio: false });
     video.srcObject = stream;
     await video.play();
-    initSeg();
+    initSeg(); initFace();
     camAt = performance.now();
     $('camMsg').textContent = '눈사람 왼쪽에 서 보세요!';
     PK.say('눈사람 옆에 서 보세요');
@@ -606,15 +658,23 @@ function liveLoop() {
   let n = 0;
   (function tick() {
     if (phase !== 'photo' || !stream) { liveOn = false; return; }
-    /* 서너 번에 한 번만 사람 모양을 다시 찾습니다 (느려지지 않게) */
-    if (seg && !segBusy && video.videoWidth && (n++ % 3 === 0)) {
-      segBusy = true;
-      try { seg.send({ image: video }).catch(() => {}).finally(() => { segBusy = false; }); }
-      catch (e) { segBusy = false; }
+    /* 서너 번에 한 번만 다시 찾습니다 (느려지지 않게) */
+    n++;
+    if (video.videoWidth && n % 3 === 0) {
+      if (shotMode === 'face') {
+        if (fm && !fmBusy) {
+          fmBusy = true;
+          try { fm.send({ image: video }).catch(() => {}).finally(() => { fmBusy = false; }); }
+          catch (e) { fmBusy = false; }
+        }
+      } else if (seg && !segBusy) {
+        segBusy = true;
+        try { seg.send({ image: video }).catch(() => {}).finally(() => { segBusy = false; }); }
+        catch (e) { segBusy = false; }
+      }
     }
     drawShot();
-    if (!segReady && performance.now() - camAt < 4000) $('camMsg').textContent = '사람을 찾는 중…';
-    else if ($('camMsg').textContent === '사람을 찾는 중…') $('camMsg').textContent = '눈사람 왼쪽에 서 보세요!';
+    sayCamTip();
     requestAnimationFrame(tick);
   })();
 }
@@ -629,21 +689,44 @@ function drawShot(forSave) {
   /* ① 늘 눈밭 풍경 */
   winterBack(ctx, W, H);
 
-  const groundY = H * .95;
-  if (stream && video.videoWidth) {
-    /* 눈사람은 오른쪽, 사람은 왼쪽. 키를 서로 맞춥니다 */
+  const live = stream && video.videoWidth;
+
+  if (live && shotMode === 'face') {
+    /* 눈사람 되기 : 눈사람을 크게 두고, 머리에 내 얼굴을 넣습니다.
+       배경은 많이 가려져서 눈사람이 화면을 가득 채웁니다. */
+    const sc = fitScale(W * 1.1, H * 1.12);
+    const cx = W * .5, bottomY = H * 1.04;
+    const headX = cx, headY = bottomY + (HEAD.y - (BODY.y + BODY.r)) * sc, headR = HEAD.r * sc;
+    const got = !!faceBox();
+    paintSnowman(ctx, cx, bottomY, sc, { hideFace: got });
+    if (got) drawFaceOnHead(ctx, headX, headY, headR);
+  } else if (live) {
+    /* 나란히 서기 : 눈사람은 오른쪽, 사람은 왼쪽. 키를 서로 맞춥니다 */
     const sc = fitScale(W * .56, H * .86);
-    drawPerson(ctx, W * .29, groundY, SNOW_H * sc);
-    paintSnowman(ctx, W * .71, groundY, sc);
+    drawPerson(ctx, W * .29, H * .95, SNOW_H * sc);
+    paintSnowman(ctx, W * .71, H * .95, sc);
   } else {
-    paintSnowman(ctx, W * .5, groundY, fitScale(W * .92, H * .86));
+    paintSnowman(ctx, W * .5, H * .95, fitScale(W * .92, H * .86));
   }
   return cv;
 }
 
+/* 지금 무엇을 하면 되는지 알려 줍니다 */
+function sayCamTip() {
+  const el = $('camMsg');
+  let t;
+  if (shotMode === 'face') {
+    t = faceBox() ? '좋아요! 고개를 움직여 보세요 😊'
+                  : (performance.now() - camAt < 5000 ? '얼굴을 찾는 중…' : '얼굴이 잘 보이게 앞을 봐 주세요');
+  } else {
+    t = (!segReady && performance.now() - camAt < 4000) ? '사람을 찾는 중…' : '눈사람 왼쪽에 서 보세요!';
+  }
+  if (el.textContent !== t) el.textContent = t;
+}
+
 function closeCam() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  video.srcObject = null; liveOn = false; segReady = false; segOn = false;
+  video.srcObject = null; liveOn = false; segReady = false; segOn = false; faceLM = null;
 }
 
 function snap() {
@@ -701,6 +784,14 @@ $('items').addEventListener('click', e => {
   drawItems(); paintDeco();
 });
 
+$('shotMode').addEventListener('click', e => {
+  const b = e.target.closest('.mode'); if (!b) return;
+  shotMode = b.dataset.m;
+  [...$('shotMode').children].forEach(x => x.classList.toggle('on', x === b));
+  faceLM = null; camAt = performance.now();
+  PK.beep('tap');
+  PK.say(shotMode === 'face' ? '눈사람이 되어 볼까요' : '눈사람 옆에 서 보세요');
+});
 $('btnSnap').addEventListener('click', snap);
 $('btnNoCam').addEventListener('click', () => {
   const W = 760, H = 860, cv = document.createElement('canvas');
