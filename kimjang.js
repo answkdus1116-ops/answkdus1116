@@ -3,7 +3,7 @@
    ① 재료 고르기 (6가지, 사진 카드)
    ② 양념 만들기 : 고춧가루 2번 · 멸치액젓 1번 · 새우젓 1번 넣고,
       숟가락을 그릇 안에서 끌며 여섯 바퀴 저어요 (숟가락은 손을 따라가고, 양념이 같이 끌려 돌아요)
-   ③ 배추에 바르기 : 배춧잎 한 장씩 양념을 묻혀 칠해요 (15장)
+   ③ 배추에 바르기 : 배춧잎 한 장씩 양념을 묻혀 칠해요 (12장)
    ④ 장독대에 담기 : 김치를 장독에 넣고, 뚜껑을 따로 집어 덮어요
    - 실패 화면은 없습니다. 틀리면 다정하게 힌트를 줍니다.
    ========================================================= */
@@ -308,50 +308,54 @@ function bowlGeom() {
   const bw = $('bowlWrap'), r = bw.getBoundingClientRect();
   return { r, cx: r.left + r.width / 2, cy: r.top + r.height * .5, w: r.width, h: r.height };
 }
+/* 숟가락이 움직일 수 있는 곳 : 양념이 담긴 그릇 안쪽 타원 (밖으로 나가면 저어지지 않아요) */
+function stirArea() {
+  const g = bowlGeom();
+  return { cx: g.cx, cy: g.r.top + g.h * .264, rx: g.w * .34, ry: g.h * .075 };
+}
 function startStir() {
   if (S.stage !== 'mix') return;
   S.stirring = true;
   $('bowlWrap').classList.add('stirring');
   $('stirMeter').hidden = false;
-  $('pasteSwirl').style.opacity = '.7';
-  say('숟가락을 잡고 그릇 안에서 천천히 저어요. 여섯 바퀴 빙글빙글');
-  tell('그릇 안에서 천천히 저어요');
+  $('pasteSwirl').style.opacity = '.6';
+  say('숟가락을 잡고 양념 안에서 천천히 저어요. 여섯 바퀴 빙글빙글');
+  tell('양념 안에서 천천히 저어요');
 }
-/* 숟가락 머리를 손가락 위치에 두고, 그릇 가장자리 안에 머무르게 해요 */
+/* 숟가락 머리는 손가락을 따라가되, 양념 타원 밖으로는 나가지 않아요 */
 function placeSpoon(ev) {
-  const g = bowlGeom();
-  let dx = ev.clientX - g.cx, dy = ev.clientY - g.cy;
-  const lim = g.w * .36;                              /* 그릇 안쪽 반경 */
-  const dist = Math.hypot(dx, dy);
-  if (dist > lim) { dx *= lim / dist; dy *= lim / dist; }
-  const x = g.w / 2 + dx, y = g.h * .5 + dy;
+  const A = stirArea(), g = bowlGeom();
+  let dx = ev.clientX - A.cx, dy = ev.clientY - A.cy;
+  const n = Math.hypot(dx / A.rx, dy / A.ry);
+  const inside = n <= 1;
+  if (!inside) { dx /= n; dy /= n; }
   const sp = $('spoonHead');
-  sp.style.left = (x - 14) + 'px';
-  sp.style.top = (y - 130) + 'px';
-  return { x: g.cx + dx, y: g.cy + dy };
+  sp.style.left = (A.cx - g.r.left + dx - 14) + 'px';
+  sp.style.top = (A.cy - g.r.top + dy - 130) + 'px';
+  return { inside, nx: dx / A.rx, ny: dy / A.ry };
 }
 function stirDown(ev) {
   if (S.stage !== 'mix' || !S.stirring) return;
   const p = placeSpoon(ev);
-  S.stirAng = Math.atan2(p.y - bowlGeom().cy, p.x - bowlGeom().cx);
+  S.stirAng = p.inside ? Math.atan2(p.ny, p.nx) : null;
   S.stirAcc = 0;
-  S.stirLast = S.stirAng;
   try { $('bowlWrap').setPointerCapture(ev.pointerId); } catch (err) {}
 }
 function stirMove(ev) {
-  if (!S.stirring || S.stage !== 'mix' || S.stirAng === null) return;
+  if (!S.stirring || S.stage !== 'mix') return;
   const p = placeSpoon(ev);
-  const g = bowlGeom();
-  const a = Math.atan2(p.y - g.cy, p.x - g.cx);
+  if (!p.inside) { S.stirAng = null; return; }        /* 양념 밖 : 세지 않아요 */
+  const a = Math.atan2(p.ny, p.nx);
+  if (S.stirAng === null) { S.stirAng = a; return; }   /* 다시 들어온 순간 */
   let d = a - S.stirAng;
   if (d > Math.PI) d -= 2 * Math.PI;
   if (d < -Math.PI) d += 2 * Math.PI;
   S.stirAng = a;
   S.stirAcc += d;
-  /* 숟가락은 움직이는 방향으로 살짝 기울어요 (손으로 젓는 느낌) */
-  const lean = Math.max(-16, Math.min(16, d * 260));
+  /* 숟가락은 움직이는 쪽으로 살짝 기울어요 */
+  const lean = Math.max(-14, Math.min(14, d * 220));
   $('spoonHead').style.transform = 'rotate(' + lean.toFixed(1) + 'deg)';
-  /* 양념은 숟가락이 민 쪽으로 같이 끌려 돌아요 : 따라 도는 각도가 조금씩 늦게 */
+  /* 양념은 숟가락이 민 쪽으로 같이 끌려 돌아요 */
   S.swirl += d * 180 / Math.PI * .8;
   $('pasteSwirl').style.transform = 'rotate(' + S.swirl.toFixed(1) + 'deg)';
   if (Math.abs(S.stirAcc) >= 2 * Math.PI * .92) {
@@ -362,7 +366,7 @@ function stirMove(ev) {
     $('stirFill').style.width = (S.stir / STIR_NEED * 100) + '%';
     $('stirNum').textContent = S.stir + '/' + STIR_NEED;
     $('paste').style.opacity = String(.35 + .65 * (S.stir / STIR_NEED));
-    $('pasteSwirl').style.opacity = String(.35 + .35 * (S.stir / STIR_NEED));
+    $('pasteSwirl').style.opacity = String(.3 + .3 * (S.stir / STIR_NEED));
     say(S.stir === STIR_NEED - 1 ? '거의 다 됐어요' : '쓱싹쓱싹');
     tell('쓱싹쓱싹 · ' + S.stir + '/' + STIR_NEED + ' 바퀴');
     if (S.stir >= STIR_NEED) finishMix();
@@ -378,7 +382,7 @@ function finishMix() {
   $('paste').style.opacity = '1';
   $('pasteSwirl').style.opacity = '0';
   tell('빨간 양념장이 만들어졌어요!');
-  say('빨간 양념장이 만들어졌어요');
+  say('양념장이 만들어졌어요');
   setTimeout(enterPaint, 2400);
 }
 
@@ -425,203 +429,277 @@ function setupMix() {
 }
 
 /* =========================================================
-   ③ 배추에 양념 바르기 — 배춧잎 한 장씩
-   - 배추는 잎 15장으로 그려져 있어요 (바깥잎 9, 안쪽잎 6, 속잎 1)
-   - 잎 위에서 양념을 묻힌 붓으로 칠해요. 칠한 잎은 빨갛게 바뀌어요
-   - 양념은 조금씩만 묻어요 (여러 번 묻혀야 해요)
+   ③ 배추에 양념 바르기 — 잎을 한 장씩 꺼내 칠해요
+   - 배추 한 포기는 잎 12장으로 되어 있어요 (바깥잎 7 · 안쪽잎 4 · 속잎 1)
+   - 바깥잎부터 한 장을 꺼내 펼쳐 놓고 양념을 묻혀 칠해요
+   - 칠하기가 끝나면 잎을 더미에 내려놓고, 다음 잎을 꺼내요
    ========================================================= */
-let cvBase = null, cvPaint = null, ctxBase = null, ctxPaint = null, CW = 0, CH = 0;
-let LEAVES = [], CELL_N = 18, cellMember = null, memberTotal = null, paintedMember = null, cellDone = null, leafDone = null;
+const BRUSH = 26;
+const CELL = 14;
+let cvBase = null, cvPaint = null, ctxBase = null, ctxPaint = null, pileCv = null, ctxPile = null;
+let CW = 0, CH = 0, SPECS = [], queue = [], curLeaf = null, pileDone = [], doneN = 0;
+let cellsIn = null, painted = null, cellW = 0, cellH = 0, cellCount = 0, paintedCount = 0;
 
-/* 배추 잎 모양 : 타원 여러 장을 겹쳐 놓았어요. 위에 있는 잎이 우선합니다. */
-function cabbageLeaves(W, H) {
-  const cx = W / 2, cy = H / 2 + H * .02, R = Math.min(W, H) * .44;
-  const L = [];
-  const add = (ring, ex, ey, rx, ry, ang) => {
-    const p = new Path2D();
-    p.ellipse(ex, ey, rx, ry, ang, 0, Math.PI * 2);
-    L.push({ p, ring, ex, ey, rx, ry, ang, idx: L.length });
-  };
-  for (let i = 0; i < 9; i++) {
-    const a = i * 2 * Math.PI / 9 - Math.PI / 2;
-    add(0, cx + Math.cos(a) * R * .6, cy + Math.sin(a) * R * .6, R * .62, R * .34, a);
+/* 잎 배치 : 가운데에서 바깥쪽으로 방사형 */
+function leafSpecs(W, H) {
+  const cx = W / 2, cy = H * .52, R = Math.min(W, H) * .44;
+  const sp = [];
+  for (let i = 0; i < 7; i++) {
+    const a = i * 2 * Math.PI / 7 - Math.PI / 2 + .09 * Math.sin(i * 2.7);
+    sp.push({ ring: 0, a: a, r0: .06 * R, L: 1.02 * R, wr: .42, seed: i * 1.7 + .3, cx: cx, cy: cy });
   }
-  for (let i = 0; i < 6; i++) {
-    const a = i * 2 * Math.PI / 6 - Math.PI / 2 + .3;
-    add(1, cx + Math.cos(a) * R * .32, cy + Math.sin(a) * R * .32, R * .46, R * .28, a);
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 - Math.PI / 2 + Math.PI / 4 + .22;
+    sp.push({ ring: 1, a: a, r0: .06 * R, L: .8 * R, wr: .40, seed: i * 2.3 + 1.1, cx: cx, cy: cy });
   }
-  add(2, cx, cy, R * .26, R * .22, 0);
-  return L;
+  sp.push({ ring: 2, a: -Math.PI / 2 + .35, r0: .03 * R, L: .46 * R, wr: .44, seed: 4.2, cx: cx, cy: cy });
+  return sp;
 }
-/* 잎 한 장 그리기 : 절임배추는 노란빛, 칠한 잎은 빨간빛 */
-function drawLeaf(ctx, lf, red) {
-  const hue = 58 + (lf.idx % 4) * 3;
-  ctx.fillStyle = red ? '#c8261b' : 'hsl(' + hue + ',62%,' + (lf.ring === 2 ? 86 : 80 - (lf.idx % 3) * 2) + '%)';
-  ctx.fill(lf.p);
-  ctx.strokeStyle = red ? 'rgba(255,220,190,.55)' : 'rgba(255,255,255,.75)';
-  ctx.lineWidth = Math.max(2, lf.rx * .04);
-  ctx.beginPath();
-  const x1 = lf.ex - Math.cos(lf.ang) * lf.rx * .72, y1 = lf.ey - Math.sin(lf.ang) * lf.rx * .72;
-  const x2 = lf.ex + Math.cos(lf.ang) * lf.rx * .72, y2 = lf.ey + Math.sin(lf.ang) * lf.rx * .72;
-  ctx.moveTo(x1, y1); ctx.quadraticCurveTo(lf.ex, lf.ey - lf.ry * .3, x2, y2);
-  ctx.stroke();
-  ctx.strokeStyle = red ? 'rgba(90,10,6,.35)' : 'rgba(120,150,60,.35)';
-  ctx.lineWidth = 1.5; ctx.stroke(lf.p);
+/* 잎 윤곽 (기준 길이 1, 위쪽을 향함). 가장자리는 살짝 물결치게 */
+function outlineLocal(wr, seed) {
+  const N = 30, left = [], right = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, y = -t;
+    let w = wr * Math.pow(Math.sin(Math.PI * Math.pow(t, .75)), .9);
+    w *= 1 + .045 * Math.sin(t * 19 + seed) + .02 * Math.sin(t * 41 + seed * 2);
+    w *= 1 - .12 * t;
+    left.push([-w, y]); right.push([w, y]);
+  }
+  return left.concat(right.reverse());
 }
-function drawBase() {
-  ctxBase.clearRect(0, 0, CW, CH);
-  /* 바깥잎부터, 속잎은 마지막 */
-  LEAVES.forEach(lf => drawLeaf(ctxBase, lf, leafDone[lf.idx]));
+function toCanvas(pts, ox, oy, s, rot) {
+  const c = Math.cos(rot), sn = Math.sin(rot);
+  return pts.map(function (q) { return [ox + (q[0] * c - q[1] * sn) * s, oy + (q[0] * sn + q[1] * c) * s]; });
 }
-/* 칸이 어느 잎에 속하는지 미리 계산 (위에 있는 잎 우선) */
-function buildMembership() {
-  const n = CELL_N, cw = CW / n, ch = CH / n;
-  cellMember = new Int16Array(n * n).fill(-1);
-  memberTotal = new Int16Array(LEAVES.length);
-  paintedMember = new Int16Array(LEAVES.length);
-  cellDone = new Uint8Array(n * n);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const x = (i + .5) * cw, y = (j + .5) * ch;
-    for (let k = LEAVES.length - 1; k >= 0; k--) {
-      if (ctxBase.isPointInPath(LEAVES[k].p, x, y)) { cellMember[j * n + i] = k; memberTotal[k]++; break; }
+function pathOf(pts) {
+  const p = new Path2D();
+  pts.forEach(function (q, i) { if (i) p.lineTo(q[0], q[1]); else p.moveTo(q[0], q[1]); });
+  p.closePath();
+  return p;
+}
+/* 잎 한 장 그리기. mode : 'pile'(배추 포기 안) · 'single'(펼쳐 놓은 잎) */
+function drawLeaf(ctx, sp, mode, W, H, red) {
+  let ox, oy, s, rot, tipX, tipY;
+  if (mode === 'pile') {
+    ox = sp.cx + Math.cos(sp.a) * sp.r0; oy = sp.cy + Math.sin(sp.a) * sp.r0;
+    s = sp.L; rot = sp.a + Math.PI / 2;
+    tipX = ox + Math.cos(sp.a) * sp.L; tipY = oy + Math.sin(sp.a) * sp.L;
+  } else {
+    ox = W / 2; oy = H * .93; s = H * .8; rot = 0;
+    tipX = ox; tipY = oy - s;
+  }
+  const pts = toCanvas(outlineLocal(sp.wr, sp.seed), ox, oy, s, rot);
+  const path = pathOf(pts);
+  /* 색 : 절임배추(노란 잎) 또는 김치(붉은 잎). 너무 쨍하지 않게 */
+  const g = ctx.createLinearGradient(ox, oy, tipX, tipY);
+  if (red) {
+    g.addColorStop(0, '#efc8a0'); g.addColorStop(.5, '#c6714a'); g.addColorStop(1, '#8e4a32');
+  } else {
+    g.addColorStop(0, '#fffdf2'); g.addColorStop(.45, '#f3eba6'); g.addColorStop(1, '#c4d26e');
+  }
+  ctx.fillStyle = g;
+  ctx.fill(path);
+  /* 주름 */
+  ctx.save(); ctx.clip(path);
+  ctx.strokeStyle = red ? 'rgba(90,40,25,.22)' : 'rgba(110,130,50,.2)';
+  ctx.lineWidth = Math.max(1, s * .004);
+  for (let k = 0; k < 6; k++) {
+    const sk = (k - 2.5) / 3;
+    const wl = [];
+    for (let i = 0; i <= 20; i++) {
+      const t = .12 + .8 * i / 20;
+      const w = sp.wr * Math.pow(Math.sin(Math.PI * Math.pow(t, .75)), .9) * .8;
+      wl.push([sk * w + .025 * Math.sin(t * 9 + k + sp.seed), -t]);
     }
+    const c2 = toCanvas(wl, ox, oy, s, rot);
+    ctx.beginPath();
+    c2.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
+    ctx.stroke();
   }
+  ctx.restore();
+  /* 가운데 심(줄기) : 하얀 굵은 줄 */
+  const mid = toCanvas([[0, 0], [0, -.9]], ox, oy, s, rot);
+  ctx.strokeStyle = red ? 'rgba(255,226,196,.7)' : 'rgba(255,255,250,.92)';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(2, s * .035);
+  ctx.beginPath(); ctx.moveTo(mid[0][0], mid[0][1]); ctx.lineTo(mid[1][0], mid[1][1]); ctx.stroke();
+  /* 가장자리 선 */
+  ctx.strokeStyle = red ? 'rgba(80,30,18,.5)' : 'rgba(120,150,60,.4)';
+  ctx.lineWidth = Math.max(1, s * .005);
+  ctx.stroke(path);
+  return path;
 }
-function leafAt(x, y) {
-  for (let k = LEAVES.length - 1; k >= 0; k--) if (ctxBase.isPointInPath(LEAVES[k].p, x, y)) return k;
-  return -1;
+/* 배추 한 포기 (더미 · 완성 그림) */
+function drawCabbage(ctx, W, H, doneArr) {
+  ctx.clearRect(0, 0, W, H);
+  const sps = leafSpecs(W, H);
+  sps.forEach(function (sp, i) { drawLeaf(ctx, sp, 'pile', W, H, !!(doneArr && doneArr[i])); });
+}
+function drawPile() {
+  ctxPile.clearRect(0, 0, pileCv.width, pileCv.height);
+  drawCabbage(ctxPile, pileCv.width, pileCv.height, pileDone);
 }
 
 function paintInit() {
   const r = $('cabWrap').getBoundingClientRect();
   CW = Math.round(r.width); CH = Math.round(r.height);
-  cvBase = $('cabBase'); cvPaint = $('paintCv');
+  cvBase = $('cabBase'); cvPaint = $('paintCv'); pileCv = $('pileCv');
   cvBase.width = CW; cvBase.height = CH;
   cvPaint.width = CW; cvPaint.height = CH;
   ctxBase = cvBase.getContext('2d');
   ctxPaint = cvPaint.getContext('2d');
-  LEAVES = cabbageLeaves(CW, CH);
-  leafDone = new Array(LEAVES.length).fill(false);
-  buildMembership();
-  drawBase();
+  ctxPile = pileCv.getContext('2d');
+  SPECS = leafSpecs(CW, CH);
+  pileDone = new Array(SPECS.length).fill(false);
+  queue = SPECS.map(function (_, i) { return i; });
+  doneN = 0; curLeaf = null;
+  cellW = Math.ceil(CW / CELL); cellH = Math.ceil(CH / CELL);
   ctxPaint.clearRect(0, 0, CW, CH);
+  ctxBase.clearRect(0, 0, CW, CH);
+  drawPile();
+}
+/* 잎 한 장을 꺼내 펼쳐 놓아요 */
+function pullLeaf() {
+  if (queue.length === 0) { finishCabbage(); return; }
+  const idx = queue.shift();
+  const sp = SPECS[idx];
+  ctxBase.clearRect(0, 0, CW, CH);
+  const path = drawLeaf(ctxBase, sp, 'single', CW, CH, false);
+  /* 이 잎 안에 있는 칸만 셉니다 */
+  cellsIn = new Uint8Array(cellW * cellH);
+  painted = new Uint8Array(cellW * cellH);
+  cellCount = 0; paintedCount = 0;
+  for (let j = 0; j < cellH; j++) for (let i = 0; i < cellW; i++) {
+    const x = (i + .5) * CELL, y = (j + .5) * CELL;
+    if (ctxBase.isPointInPath(path, x, y)) { cellsIn[j * cellW + i] = 1; cellCount++; }
+  }
+  curLeaf = { idx: idx, path: path, sp: sp };
+  ctxPaint.clearRect(0, 0, CW, CH);
+  S.painting = false;
+  updatePaint();
+  say('잎 한 장을 꺼냈어요. 양념을 묻혀서 잎 위에 칠해요');
+  tell('잎 위에 쓱쓱 칠해요');
 }
 function enterPaint() {
   show('paint');
-  S.load = 0; S.painting = false; S.busy = false; S.leaf = -1;
+  S.load = 0; S.painting = false; S.busy = false;
   $('pasteTool').classList.add('on');
-  requestAnimationFrame(() => { paintInit(); updatePaint(); });
-  say('양념 그릇을 눌러 붓에 묻히고, 배춧잎 한 장씩 칠해요');
+  requestAnimationFrame(function () { paintInit(); pullLeaf(); });
+  say('양념 그릇을 눌러 붓에 묻히고, 바깥 잎부터 한 장씩 칠해요');
   tell('양념을 묻히고 잎 한 장씩 칠해요');
 }
-function doneLeaves() { return leafDone.filter(Boolean).length; }
 function updatePaint() {
-  let tot = 0, got = 0;
-  for (let k = 0; k < LEAVES.length; k++) { tot += memberTotal[k]; got += Math.min(paintedMember[k], memberTotal[k]); }
-  const p = tot ? got / tot : 0;
-  $('paintFill').style.width = Math.min(100, p / .9 * 100) + '%';
-  $('paintNum').textContent = Math.round(p * 100) + '%';
+  const cur = curLeaf && cellCount ? paintedCount / cellCount : 0;
+  const total = Math.min(1, (doneN + cur) / SPECS.length);
+  $('paintFill').style.width = (total * 100) + '%';
+  $('paintNum').textContent = Math.round(total * 100) + '%';
   $('loadFill').style.width = (S.load / DIP_LOAD * 100) + '%';
-  $('leafNum').textContent = '잎 ' + doneLeaves() + '/' + LEAVES.length;
+  $('leafNum').textContent = '잎 ' + doneN + '/' + SPECS.length + ' · 남은 잎 ' + (queue.length + (curLeaf ? 1 : 0)) + '장';
 }
 function dip() {
   if (S.stage !== 'paint') return;
   S.load = DIP_LOAD;
   PK.beep('pick'); PK.buzz([20]);
   $('pasteTool').classList.add('on');
-  say('양념을 묻혔어요. 배춧잎에 칠해요');
+  say('양념을 묻혔어요. 잎에 칠해요');
   tell('잎 위에서 쓱쓱 칠해요');
   updatePaint();
 }
-/* 칸을 칠했다고 표시 (잎 소속인 칸만 세요) */
-function markCells(x, y, rad, leaf) {
-  const n = CELL_N, cw = CW / n, ch = CH / n;
-  const i0 = Math.max(0, Math.floor((x - rad) / cw)), i1 = Math.min(n - 1, Math.floor((x + rad) / cw));
-  const j0 = Math.max(0, Math.floor((y - rad) / ch)), j1 = Math.min(n - 1, Math.floor((y + rad) / ch));
+/* 칠한 칸 표시 (이 잎 안의 칸만) */
+function markCells(x, y, rad) {
+  const i0 = Math.max(0, Math.floor((x - rad) / CELL)), i1 = Math.min(cellW - 1, Math.floor((x + rad) / CELL));
+  const j0 = Math.max(0, Math.floor((y - rad) / CELL)), j1 = Math.min(cellH - 1, Math.floor((y + rad) / CELL));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-    const k = j * n + i;
-    if (cellMember[k] !== leaf || cellDone[k]) continue;
-    const cx = (i + .5) * cw, cy = (j + .5) * ch;
-    if (Math.hypot(cx - x, cy - y) <= rad + Math.max(cw, ch) * .4) {
-      cellDone[k] = 1; paintedMember[leaf]++;
-    }
+    const k = j * cellW + i;
+    if (!cellsIn[k] || painted[k]) continue;
+    const cx = (i + .5) * CELL, cy = (j + .5) * CELL;
+    if (Math.hypot(cx - x, cy - y) <= rad) { painted[k] = 1; paintedCount++; }
   }
 }
-const BRUSH = 30;
-/* 붓으로 한 칸 문지르기 : 잎 모양 밖으로는 안 나가게 가두어 칠해요 */
+/* 양념 질감 : 얼룩처럼 고르지 않게, 연한 빨강으로 */
+function pasteStroke(x, y, px, py) {
+  ctxPaint.save();
+  ctxPaint.clip(curLeaf.path);
+  ctxPaint.lineCap = 'round';
+  ctxPaint.strokeStyle = 'rgba(170,70,46,.2)'; ctxPaint.lineWidth = BRUSH * 2;
+  ctxPaint.beginPath(); ctxPaint.moveTo(px, py); ctxPaint.lineTo(x, y); ctxPaint.stroke();
+  ctxPaint.strokeStyle = 'rgba(120,40,26,.1)'; ctxPaint.lineWidth = BRUSH * .9;
+  ctxPaint.beginPath(); ctxPaint.moveTo(px + 3, py - 2); ctxPaint.lineTo(x + 2, y - 3); ctxPaint.stroke();
+  for (let k = 0; k < 4; k++) {
+    const t = Math.random(), rx = (Math.random() - .5) * BRUSH * 1.6, ry = (Math.random() - .5) * BRUSH * 1.6;
+    ctxPaint.fillStyle = Math.random() < .5 ? 'rgba(120,40,26,.12)' : 'rgba(210,110,70,.12)';
+    ctxPaint.beginPath();
+    ctxPaint.arc(px + (x - px) * t + rx, py + (y - py) * t + ry, 2 + Math.random() * 5, 0, 7);
+    ctxPaint.fill();
+  }
+  ctxPaint.restore();
+}
 function brushTo(x, y, px, py) {
-  const leaf = S.leaf;
-  if (leaf < 0) return;
+  if (!curLeaf) return;
   const dist = Math.hypot(x - px, y - py);
   if (dist < 1) return;
-  ctxPaint.save();
-  ctxPaint.clip(LEAVES[leaf].p);
-  ctxPaint.lineCap = 'round'; ctxPaint.lineJoin = 'round';
-  ctxPaint.strokeStyle = 'rgba(200,38,27,.5)'; ctxPaint.lineWidth = BRUSH * 2;
-  ctxPaint.beginPath(); ctxPaint.moveTo(px, py); ctxPaint.lineTo(x, y); ctxPaint.stroke();
-  ctxPaint.strokeStyle = 'rgba(232,70,40,.3)'; ctxPaint.lineWidth = BRUSH * 1.1;
-  ctxPaint.beginPath(); ctxPaint.moveTo(px + 3, py - 2); ctxPaint.lineTo(x + 3, y - 2); ctxPaint.stroke();
-  ctxPaint.restore();
-  const steps = Math.max(1, Math.ceil(dist / 12));
-  for (let s = 0; s <= steps; s++) markCells(px + (x - px) * s / steps, py + (y - py) * s / steps, BRUSH * .7, leaf);
+  pasteStroke(x, y, px, py);
+  const steps = Math.max(1, Math.ceil(dist / 10));
+  for (let s = 0; s <= steps; s++) markCells(px + (x - px) * s / steps, py + (y - py) * s / steps, BRUSH * .75);
   S.load = Math.max(0, S.load - dist / 160);
-  checkLeaf(leaf);
+  checkDone();
 }
-function dab(x, y, leaf) {
-  if (leaf < 0) return;
-  ctxPaint.save();
-  ctxPaint.clip(LEAVES[leaf].p);
-  ctxPaint.fillStyle = 'rgba(200,38,27,.5)';
-  ctxPaint.beginPath(); ctxPaint.arc(x, y, BRUSH, 0, 7); ctxPaint.fill();
-  ctxPaint.restore();
-  markCells(x, y, BRUSH * .7, leaf);
+function dab(x, y) {
+  if (!curLeaf) return;
+  pasteStroke(x, y, x, y);
+  markCells(x, y, BRUSH * .75);
   S.load = Math.max(0, S.load - .3);
   PK.beep('tap');
-  checkLeaf(leaf);
+  checkDone();
 }
-/* 잎 한 장이 충분히 빨개지면 그 잎을 완성합니다 */
-function checkLeaf(k) {
-  if (leafDone[k]) return;
-  const got = paintedMember[k] / Math.max(1, memberTotal[k]);
-  if (got >= LEAF_DONE) {
-    leafDone[k] = true;
-    ctxPaint.save(); ctxPaint.beginPath(); ctxPaint.restore();
-    drawBase();
-    PK.beep('good'); PK.buzz([25]);
-    const n = doneLeaves();
-    say(n === LEAVES.length ? '모든 잎이 빨갛게 물들었어요' : n + '장 물들었어요. ' + praise());
-    tell('잎 ' + n + '/' + LEAVES.length + ' 완성');
-    updatePaint();
-    if (n === LEAVES.length) finishCabbage();
-  }
+/* 잎 한 장을 다 칠했는지 */
+function checkDone() {
+  if (!curLeaf || cellCount === 0) return;
+  if (paintedCount / cellCount < .8) { updatePaint(); return; }
+  const idx = curLeaf.idx, sp = curLeaf.sp;
+  curLeaf = null;
+  S.painting = false;
+  /* 붉게 물든 잎을 잠깐 보여 준 뒤 더미에 내려놓아요 */
+  ctxBase.clearRect(0, 0, CW, CH);
+  drawLeaf(ctxBase, sp, 'single', CW, CH, true);
+  ctxPaint.clearRect(0, 0, CW, CH);
+  doneN++;
+  pileDone[idx] = true;
+  PK.beep('good'); PK.buzz([25]);
+  const left = queue.length;
+  say(left === 0 ? '마지막 잎까지 다 칠했어요' : '한 장 끝! 다음 잎을 꺼내요');
+  tell('잎 ' + doneN + '/' + SPECS.length + ' 완성');
+  updatePaint();
+  setTimeout(function () { drawPile(); pullLeaf(); }, 1100);
 }
 function finishCabbage() {
   if (S.stage !== 'paint' || S.busy) return;
   S.busy = true;
-  S.painting = false;
   $('pasteTool').classList.remove('on');
-  /* 포기김치 : 배추 한 포기가 양념에 절여진 모습 (도형으로 그린 그림) */
+  /* 완성된 포기김치 : 배추 한 포기가 양념에 절여진 그림 */
+  const fin = document.createElement('canvas');
+  fin.width = 480; fin.height = 480;
+  const fctx = fin.getContext('2d');
+  drawCabbage(fctx, 480, 480, pileDone.map(function () { return true; }));
+  S.finalSrc = fin.toDataURL('image/png');
   ctxBase.clearRect(0, 0, CW, CH);
-  LEAVES.forEach(lf => drawLeaf(ctxBase, lf, true));
-  ctxPaint.clearRect(0, 0, CW, CH);
-  S.finalSrc = cvBase.toDataURL('image/png');
   PK.beep('win');
   tell('포기김치가 완성되었어요!');
   say('배추 한 포기가 양념에 잘 절여졌어요. 포기김치 완성!');
-  setTimeout(() => PK.cheer('🥬', '포기김치 완성!', 1300), 400);
+  setTimeout(function () { PK.cheer('🥬', '포기김치 완성!', 1300); }, 400);
   setTimeout(enterStore, 2100);
 }
 
 /* 칠하는 손가락 */
 function setupPaint() {
   const wrap = $('cabWrap');
-  const pos = e => { const r = wrap.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-  wrap.addEventListener('pointerdown', e => {
-    if (S.stage !== 'paint' || S.busy) return;
+  const pos = function (e) { const r = wrap.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  wrap.addEventListener('pointerdown', function (e) {
+    if (S.stage !== 'paint' || S.busy || !curLeaf) return;
     const p = pos(e);
-    const leaf = leafAt(p.x, p.y);
-    if (leaf < 0) { say('배춧잎 위를 칠해요'); tell('배춧잎 위를 칠해요'); PK.beep('hint'); return; }
-    if (leafDone[leaf]) { say('이 잎은 이미 빨개졌어요. 다른 잎을 칠해요'); tell('아직 빨갛지 않은 잎을 칠해요'); return; }
+    if (!ctxBase.isPointInPath(curLeaf.path, p.x, p.y)) {
+      say('잎 위를 칠해요'); tell('펼쳐 놓은 잎 위를 칠해요'); PK.beep('hint'); return;
+    }
     if (S.load <= 0) {
       $('pasteTool').classList.remove('shake'); void $('pasteTool').offsetWidth; $('pasteTool').classList.add('shake');
       PK.beep('hint');
@@ -629,15 +707,14 @@ function setupPaint() {
       tell('양념 그릇을 눌러 다시 묻혀요');
       return;
     }
-    S.leaf = leaf;
     S.painting = true;
     S.lastX = p.x; S.lastY = p.y;
     try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
-    dab(p.x, p.y, leaf);
+    dab(p.x, p.y);
     updatePaint();
   });
-  wrap.addEventListener('pointermove', e => {
-    if (!S.painting || S.stage !== 'paint') return;
+  wrap.addEventListener('pointermove', function (e) {
+    if (!S.painting || S.stage !== 'paint' || !curLeaf) return;
     if (S.load <= 0) {
       S.painting = false;
       say('양념이 떨어졌어요. 양념 그릇을 눌러 다시 묻혀요');
@@ -651,7 +728,7 @@ function setupPaint() {
     if (Math.random() < .15) PK.beep('tap');
     updatePaint();
   });
-  const end = () => { S.painting = false; S.leaf = -1; updatePaint(); };
+  const end = function () { S.painting = false; };
   wrap.addEventListener('pointerup', end);
   wrap.addEventListener('pointercancel', end);
   $('pasteTool').addEventListener('click', dip);

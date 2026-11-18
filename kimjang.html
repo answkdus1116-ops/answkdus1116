@@ -58,12 +58,12 @@
   #bowlWrap{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:clamp(250px,52vw,420px);touch-action:none;}
   #bowlWrap svg.bowl{width:100%;height:auto;display:block;}
   #bowlWrap.stirring{cursor:grab;}
-  #bowlIn{position:absolute;left:14%;right:14%;top:17%;height:32%;pointer-events:none;overflow:hidden;border-radius:50%;}
-  #paste{position:absolute;left:14%;right:14%;top:17%;height:32%;border-radius:50%;
-         background:radial-gradient(ellipse at 45% 40%,#ff6a4d 0,#c8261b 55%,#8e1a13 100%);
+  #bowlIn{position:absolute;left:14%;right:14%;top:18.2%;height:16.4%;pointer-events:none;overflow:hidden;border-radius:50%;}
+  #paste{position:absolute;left:14%;right:14%;top:18.2%;height:16.4%;border-radius:50%;
+         background:radial-gradient(ellipse at 45% 40%,#d2583e 0,#a8341f 60%,#7a2416 100%);
          opacity:0;transition:opacity .4s;pointer-events:none;}
   /* 저을 때 양념이 같이 끌려 도는 줄무늬 */
-  #pasteSwirl{position:absolute;left:14%;right:14%;top:17%;height:32%;border-radius:50%;pointer-events:none;
+  #pasteSwirl{position:absolute;left:14%;right:14%;top:18.2%;height:16.4%;border-radius:50%;pointer-events:none;
               background:repeating-conic-gradient(from 0deg,rgba(110,18,10,.45) 0 9deg,rgba(255,120,90,.0) 9deg 26deg);
               opacity:0;transition:opacity .4s;}
   #spoonHead{position:absolute;left:0;top:0;width:42px;height:154px;pointer-events:none;opacity:0;transition:opacity .3s;
@@ -81,7 +81,7 @@
   /* ---------- 배추 칠하기 ---------- */
   #cabWrap{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);
            width:clamp(240px,62vw,420px);aspect-ratio:1;border-radius:26px;overflow:hidden;
-           box-shadow:0 14px 26px rgba(120,70,30,.3);touch-action:none;background:#f5e6c8;}
+           box-shadow:0 14px 26px rgba(120,70,30,.3);touch-action:none;background:#efdcb4;}
   #cabBase,#paintCv{position:absolute;inset:0;width:100%;height:100%;display:block;}
   #paintCv{pointer-events:none;}
   #leafNum{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);background:rgba(255,255,255,.9);
@@ -234,7 +234,8 @@
         <canvas id="cabBase"></canvas>
         <canvas id="paintCv"></canvas>
       </div>
-      <div id="leafNum">잎 0/16</div>
+      <canvas id="pileCv" width="160" height="160" style="position:absolute;left:84%;top:20%;transform:translate(-50%,-50%);width:clamp(90px,18vw,130px);height:auto;aspect-ratio:1;border-radius:50%;background:#fbf1dc;box-shadow:0 6px 14px rgba(120,70,30,.25);"></canvas>
+      <div id="leafNum">잎 0/12</div>
       <div id="pasteTool">
         <img src="kim/bowl-paste.svg" alt="양념 그릇">
         <div id="loadBar"><div id="loadFill"></div></div>
