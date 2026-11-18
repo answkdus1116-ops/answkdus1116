@@ -3,7 +3,7 @@
    ① 재료 고르기 (6가지, 사진 카드)
    ② 양념 만들기 : 고춧가루 2번 · 멸치액젓 1번 · 새우젓 1번 넣고,
       숟가락을 그릇 안에서 끌며 여섯 바퀴 저어요 (숟가락은 손을 따라가고, 양념이 같이 끌려 돌아요)
-   ③ 배추에 바르기 : 배춧잎 한 장씩 양념을 묻혀 칠해요 (12장)
+   ③ 배추에 바르기 : 배춧잎 한 장씩 양념을 묻혀 칠해요 (2장)
    ④ 장독대에 담기 : 김치를 장독에 넣고, 뚜껑을 따로 집어 덮어요
    - 실패 화면은 없습니다. 틀리면 다정하게 힌트를 줍니다.
    ========================================================= */
@@ -48,7 +48,7 @@ function musicStop() { clearInterval(musicTimer); musicTimer = null; }
 const S = {
   stage: 'intro', need: [], picked: 0,
   poured: { chili: 0, fish: 0, shr: 0 }, pours: 0, sel: null,
-  stir: 0, stirAng: null, stirAcc: 0, stirring: false, stirLast: null, swirl: 0,
+  stir: 0, stirAng: null, stirAcc: 0, stirring: false, stirLast: null,
   load: 0, painting: false, lastX: 0, lastY: 0, leaf: -1,
   busy: false, lidSel: false, kimSel: false, finalSrc: ''
 };
@@ -246,12 +246,10 @@ const GRAIN_COLOR = { chili: '#d6351f', fish: '#c27a2a', shr: '#f0a090' };
 
 function enterMix() {
   show('mix');
-  S.pours = 0; S.stir = 0; S.stirring = false; S.sel = null; S.stirAng = null; S.swirl = 0;
+  S.pours = 0; S.stir = 0; S.stirring = false; S.sel = null; S.stirAng = null;
   Object.keys(S.poured).forEach(k => S.poured[k] = 0);
   $('bowlIn').innerHTML = '';
   $('paste').style.opacity = '0';
-  $('pasteSwirl').style.opacity = '0';
-  $('pasteSwirl').style.transform = '';
   $('bowlWrap').classList.remove('stirring');
   $('stirMeter').hidden = true;
   $('stirFill').style.width = '0%'; $('stirNum').textContent = '0/' + STIR_NEED;
@@ -318,7 +316,6 @@ function startStir() {
   S.stirring = true;
   $('bowlWrap').classList.add('stirring');
   $('stirMeter').hidden = false;
-  $('pasteSwirl').style.opacity = '.6';
   say('숟가락을 잡고 양념 안에서 천천히 저어요. 여섯 바퀴 빙글빙글');
   tell('양념 안에서 천천히 저어요');
 }
@@ -356,8 +353,6 @@ function stirMove(ev) {
   const lean = Math.max(-14, Math.min(14, d * 220));
   $('spoonHead').style.transform = 'rotate(' + lean.toFixed(1) + 'deg)';
   /* 양념은 숟가락이 민 쪽으로 같이 끌려 돌아요 */
-  S.swirl += d * 180 / Math.PI * .8;
-  $('pasteSwirl').style.transform = 'rotate(' + S.swirl.toFixed(1) + 'deg)';
   if (Math.abs(S.stirAcc) >= 2 * Math.PI * .92) {
     S.stirAcc = 0;
     S.stir++;
@@ -366,7 +361,6 @@ function stirMove(ev) {
     $('stirFill').style.width = (S.stir / STIR_NEED * 100) + '%';
     $('stirNum').textContent = S.stir + '/' + STIR_NEED;
     $('paste').style.opacity = String(.35 + .65 * (S.stir / STIR_NEED));
-    $('pasteSwirl').style.opacity = String(.3 + .3 * (S.stir / STIR_NEED));
     say(S.stir === STIR_NEED - 1 ? '거의 다 됐어요' : '쓱싹쓱싹');
     tell('쓱싹쓱싹 · ' + S.stir + '/' + STIR_NEED + ' 바퀴');
     if (S.stir >= STIR_NEED) finishMix();
@@ -380,7 +374,6 @@ function finishMix() {
   PK.beep('win');
   bubbles(3, 360);
   $('paste').style.opacity = '1';
-  $('pasteSwirl').style.opacity = '0';
   tell('빨간 양념장이 만들어졌어요!');
   say('양념장이 만들어졌어요');
   setTimeout(enterPaint, 2400);
@@ -438,6 +431,8 @@ const BRUSH = 26;
 const CELL = 14;
 let cvBase = null, cvPaint = null, ctxBase = null, ctxPaint = null, pileCv = null, ctxPile = null;
 let CW = 0, CH = 0, SPECS = [], queue = [], curLeaf = null, pileDone = [], doneN = 0;
+/* 칠하는 잎 : 바깥쪽 잎 두 장만 직접 칠해요 (배추 그림은 잎 12장 그대로) */
+const PAINT_IDX = [0, 4];
 let cellsIn = null, painted = null, cellW = 0, cellH = 0, cellCount = 0, paintedCount = 0;
 
 /* 잎 배치 : 가운데에서 바깥쪽으로 방사형 */
@@ -551,7 +546,7 @@ function paintInit() {
   ctxPile = pileCv.getContext('2d');
   SPECS = leafSpecs(CW, CH);
   pileDone = new Array(SPECS.length).fill(false);
-  queue = SPECS.map(function (_, i) { return i; });
+  queue = PAINT_IDX.slice();
   doneN = 0; curLeaf = null;
   cellW = Math.ceil(CW / CELL); cellH = Math.ceil(CH / CELL);
   ctxPaint.clearRect(0, 0, CW, CH);
@@ -590,11 +585,11 @@ function enterPaint() {
 }
 function updatePaint() {
   const cur = curLeaf && cellCount ? paintedCount / cellCount : 0;
-  const total = Math.min(1, (doneN + cur) / SPECS.length);
+  const total = Math.min(1, (doneN + cur) / PAINT_IDX.length);
   $('paintFill').style.width = (total * 100) + '%';
   $('paintNum').textContent = Math.round(total * 100) + '%';
   $('loadFill').style.width = (S.load / DIP_LOAD * 100) + '%';
-  $('leafNum').textContent = '잎 ' + doneN + '/' + SPECS.length + ' · 남은 잎 ' + (queue.length + (curLeaf ? 1 : 0)) + '장';
+  $('leafNum').textContent = '잎 ' + doneN + '/' + PAINT_IDX.length + ' · 남은 잎 ' + (queue.length + (curLeaf ? 1 : 0)) + '장';
 }
 function dip() {
   if (S.stage !== 'paint') return;
@@ -668,7 +663,7 @@ function checkDone() {
   PK.beep('good'); PK.buzz([25]);
   const left = queue.length;
   say(left === 0 ? '마지막 잎까지 다 칠했어요' : '한 장 끝! 다음 잎을 꺼내요');
-  tell('잎 ' + doneN + '/' + SPECS.length + ' 완성');
+  tell('잎 ' + doneN + '/' + PAINT_IDX.length + ' 완성');
   updatePaint();
   setTimeout(function () { drawPile(); pullLeaf(); }, 1100);
 }
