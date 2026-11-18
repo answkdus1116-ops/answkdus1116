@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4b26b">
+<title>맛있는 김장 체험</title>
+<script src="guard.js"></script>
+<link rel="stylesheet" href="playkit.css">
+<script src="playkit.js"></script>
+<style>
+  body{background:#fff3e2;}
+  .pk-stage{padding:0;gap:0;}
+
+  /* ---------- 무대 ---------- */
+  #stage{position:relative;flex:1;min-height:0;width:100%;overflow:hidden;}
+  #bg{position:absolute;inset:0;width:100%;height:100%;}
+  .layer{position:absolute;inset:0;}
+  #leaves{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .leaf{position:absolute;top:-40px;width:22px;height:14px;border-radius:70% 0;opacity:.85;
+        animation:fall linear infinite;}
+  @keyframes fall{from{transform:translate(0,0) rotate(0)}to{transform:translate(70px,118vh) rotate(420deg)}}
+
+  /* 고르는 재료 (터치 영역을 넉넉하게: padding) */
+  .item{position:absolute;transform:translate(-50%,-50%);padding:22px 24px 26px;border-radius:28px;
+        cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .item img{display:block;width:clamp(82px,19vw,136px);height:auto;pointer-events:none;
+            filter:drop-shadow(0 8px 8px rgba(120,70,30,.28)) saturate(.95);}
+  .item .tag{position:absolute;left:50%;bottom:0;transform:translateX(-50%);white-space:nowrap;
+             font-size:clamp(15px,2.6vw,21px);background:#fff;border-radius:999px;padding:2px 12px;
+             box-shadow:0 3px 8px rgba(120,70,30,.2);color:var(--pk-ink);}
+  .item.on{outline:5px dashed #ffb03b;outline-offset:6px;}
+  .item.gone{opacity:0;transform:translate(-50%,-50%) scale(.2);transition:transform .6s,opacity .6s;pointer-events:none;}
+  .item.dragging{transition:none;z-index:40;}
+  .item.back{transition:left .35s,top .35s;}
+
+  /* 장바구니 (재료를 담는 곳) */
+  #basket{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);width:clamp(170px,38vw,280px);
+          text-align:center;pointer-events:none;}
+  #basket svg{width:100%;height:auto;display:block;}
+  #basketCount{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+               font-size:clamp(20px,3.4vw,30px);color:#6a3a1b;background:rgba(255,255,255,.85);
+               border-radius:999px;padding:2px 14px;}
+  #basketMini{position:absolute;left:50%;bottom:58%;transform:translateX(-50%);display:flex;gap:4px;}
+  #basketMini img{width:34px;height:34px;object-fit:contain;}
+
+  /* 양념 그릇 */
+  #bowlWrap{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:clamp(230px,50vw,400px);
+            cursor:pointer;touch-action:none;}
+  #bowlWrap svg{width:100%;height:auto;display:block;}
+  #bowlIn{position:absolute;left:14%;right:14%;top:18%;height:30%;overflow:visible;pointer-events:none;}
+  #bowlIn img{position:absolute;width:24%;transform:translate(-50%,-50%);animation:drop .6s cubic-bezier(.2,1.5,.4,1);}
+  @keyframes drop{from{transform:translate(-50%,-260%) scale(.5);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  #paste{position:absolute;left:14%;right:14%;top:18%;height:30%;border-radius:50%;
+         background:radial-gradient(ellipse at 45% 40%,#ff5a3c 0,#c8261b 58%,#9b1a14 100%);
+         opacity:0;transition:opacity .9s;pointer-events:none;}
+  #bowlWrap.full #paste{opacity:.96;}
+  #bowlWrap.swirl #bowlIn,#bowlWrap.swirl #paste{animation:spin 1.1s linear 2;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #bowlWrap.swirl{animation:wob .5s ease-in-out 2;}
+  @keyframes wob{50%{transform:translate(-50%,-50%) scale(1.03)}}
+  .seasoning{position:absolute;transform:translate(-50%,-50%);padding:18px;border-radius:24px;cursor:grab;touch-action:none;}
+  .seasoning img{display:block;width:clamp(78px,16vw,118px);pointer-events:none;
+                 filter:drop-shadow(0 8px 8px rgba(120,70,30,.28));}
+
+  /* 배추 */
+  #cabWrap{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+           width:clamp(230px,62vw,400px);aspect-ratio:1;cursor:pointer;touch-action:manipulation;
+           -webkit-tap-highlight-color:transparent;}
+  #cabImg{width:100%;height:100%;display:block;transition:opacity .35s;filter:drop-shadow(0 12px 14px rgba(120,70,30,.3));}
+  #blobs{position:absolute;inset:0;pointer-events:none;}
+  .blob{position:absolute;border-radius:50%;transform:translate(-50%,-50%);
+        background:radial-gradient(circle at 42% 40%,#ff6a4d 0,#c8261b 55%,rgba(200,38,27,0) 72%);
+        animation:pop .35s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes pop{from{transform:translate(-50%,-50%) scale(.2);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .tap-ring{position:absolute;border-radius:50%;border:4px solid #ffb03b;transform:translate(-50%,-50%);
+            pointer-events:none;animation:ring .6s ease-out forwards;}
+  @keyframes ring{from{transform:translate(-50%,-50%) scale(.3);opacity:1}to{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+  #paintMeter{position:absolute;left:50%;top:6%;transform:translateX(-50%);width:min(440px,80%);
+              background:rgba(255,255,255,.92);border:4px solid #e5b26b;border-radius:999px;padding:5px 10px;
+              display:flex;align-items:center;gap:10px;font-size:clamp(16px,2.8vw,22px);color:#6a3a1b;}
+  #paintBar{flex:1;height:18px;background:#f3e4cc;border-radius:999px;overflow:hidden;}
+  #paintFill{height:100%;width:0;background:linear-gradient(90deg,#ff8a3d,#c8261b);transition:width .3s;}
+  #pasteTool{position:absolute;left:14%;bottom:8%;transform:translate(-50%,0);padding:14px;border-radius:22px;
+             background:rgba(255,255,255,.7);cursor:pointer;touch-action:manipulation;}
+  #pasteTool.on{outline:5px dashed #ffb03b;outline-offset:4px;}
+  #pasteTool img{width:clamp(76px,14vw,110px);display:block;pointer-events:none;}
+  #pasteTool .tag{font-size:clamp(14px,2.4vw,19px);text-align:center;color:#6a3a1b;}
+
+  /* 장독대 */
+  #kimchi{position:absolute;left:28%;top:56%;transform:translate(-50%,-50%);width:clamp(140px,34vw,240px);
+          padding:18px;border-radius:30px;cursor:grab;touch-action:none;}
+  #kimchi img{display:block;width:100%;pointer-events:none;filter:drop-shadow(0 10px 12px rgba(120,70,30,.3));}
+  #kimchi.on{outline:5px dashed #ffb03b;outline-offset:6px;}
+  #kimchi.gone{opacity:0;transform:translate(-50%,-50%) scale(.1);transition:transform .8s,opacity .8s;}
+  #kimchi.drag{transition:none;z-index:40;}
+  #jarWrap{position:absolute;left:76%;top:58%;transform:translate(-50%,-50%);width:clamp(160px,30vw,250px);
+           cursor:pointer;touch-action:manipulation;}
+  #jarWrap svg{width:100%;height:auto;display:block;}
+  #jarWrap .lid{transform-box:fill-box;transform-origin:50% 100%;transform:translate(-18px,-58px) rotate(-22deg);
+                transition:transform .9s cubic-bezier(.3,1.4,.5,1);}
+  #jarWrap.closed .lid{transform:none;}
+  #jarWrap.hit{animation:bump .4s;}
+  @keyframes bump{50%{transform:translate(-50%,-50%) scale(1.06)}}
+
+  /* 안내 · 완료 판 */
+  .overlay{position:absolute;inset:0;z-index:20;background:rgba(255,243,226,.94);
+           display:flex;align-items:center;justify-content:center;padding:16px;}
+  .card{background:#fff;border-radius:28px;padding:22px;width:min(640px,100%);
+        box-shadow:0 14px 34px rgba(120,70,30,.22);display:flex;flex-direction:column;gap:14px;text-align:center;}
+  .card h2{margin:0;font-size:clamp(26px,4.6vw,38px);color:#6a3a1b;}
+  .steps{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .step{border:3px solid #f0dcc0;border-radius:20px;padding:12px 8px;background:#fffaf2;
+        font-size:clamp(17px,3vw,24px);color:#6a3a1b;transition:all .35s;}
+  .step .n{font-size:clamp(34px,6vw,52px);display:block;}
+  .step.on{border-color:#ff8a3d;background:#ffe7cc;transform:scale(1.04);}
+  .badge{font-size:clamp(90px,18vw,150px);line-height:1;animation:jump .7s cubic-bezier(.2,1.7,.4,1);}
+  @keyframes jump{from{transform:scale(.3)}to{transform:none}}
+  .stars{font-size:clamp(30px,6vw,46px);letter-spacing:6px;}
+  .card .pk-big{margin-top:4px;}
+  .row2{display:flex;gap:10px;}
+  .row2 .pk-big{font-size:clamp(17px,3.2vw,23px);padding:16px 6px;white-space:nowrap;}
+
+  /* 재료를 옮길 때 붙는 효과 */
+  .puff{position:absolute;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);
+        background:radial-gradient(circle,rgba(255,255,255,.9),rgba(255,255,255,0));
+        animation:puff .6s ease-out forwards;}
+  @keyframes puff{to{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+
+  /* 말이 나올 때 안내 칸 */
+  .pk-top .pk-say{font-size:clamp(17px,3vw,26px);}
+  #pkSay{white-space:normal;line-height:1.25;}
+</style>
+</head>
+<body>
+
+<div class="pk-top">
+  <a class="pk-icon" href="index.html" title="목록으로">←</a>
+  <div class="pk-say" id="pkSay">맛있는 김장을 해 볼까요?</div>
+  <button class="pk-icon" id="btnSet" title="설정">⚙️</button>
+</div>
+
+<div class="pk-stage">
+  <div id="stage">
+
+    <!-- 가을 시골집 마당 -->
+    <svg id="bg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd9a8"/><stop offset=".6" stop-color="#ffefd6"/><stop offset="1" stop-color="#fff6e6"/>
+        </linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f1d8a0"/><stop offset="1" stop-color="#e2c07e"/>
+        </linearGradient>
+      </defs>
+      <rect x="-100" y="-100" width="1200" height="900" fill="url(#sky)"/>
+      <circle cx="840" cy="120" r="64" fill="#ffe9a6" opacity=".9"/>
+      <!-- 먼 산 -->
+      <path d="M-40 380 Q120 300 280 360 T600 340 T1040 360 V460 H-40Z" fill="#f2c79a" opacity=".85"/>
+      <path d="M-40 410 Q160 350 360 400 T760 390 T1040 410 V480 H-40Z" fill="#e9b07c" opacity=".9"/>
+      <!-- 집 -->
+      <rect x="500" y="300" width="380" height="200" fill="#f8e7c9"/>
+      <path d="M470 310 L690 190 L910 310 Z" fill="#b5673f"/>
+      <path d="M490 300 L690 200 L890 300 Z" fill="#cc7a4c" opacity=".6"/>
+      <rect x="590" y="380" width="80" height="120" rx="6" fill="#8a5a33"/>
+      <rect x="720" y="350" width="110" height="80" rx="6" fill="#fff" opacity=".7"/>
+      <path d="M720 350 H830 M775 350 V430" stroke="#b5673f" stroke-width="6"/>
+      <!-- 단풍나무 -->
+      <rect x="110" y="380" width="26" height="190" fill="#7a4f2c"/>
+      <g>
+        <circle cx="120" cy="300" r="120" fill="#e96f3a"/>
+        <circle cx="50" cy="350" r="78" fill="#f2a14b"/>
+        <circle cx="200" cy="350" r="82" fill="#d94a2b"/>
+        <circle cx="120" cy="230" r="80" fill="#f6c35a"/>
+        <circle cx="90" cy="290" r="26" fill="#ffd978" opacity=".7"/>
+      </g>
+      <!-- 장독대 -->
+      <g transform="translate(540 560)">
+        <ellipse cx="0" cy="110" rx="180" ry="18" fill="#c9a46a" opacity=".5"/>
+        <path d="M-150 60 Q-170 0 -160 -40 Q-150 -90 -110 -90 H-40 Q0 -90 10 -40 Q20 0 -10 60 Q-70 80 -150 60Z" fill="#5a3b22"/>
+        <path d="M-150 60 Q-120 40 -60 50" stroke="#8a5c33" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <rect x="-130" y="-120" width="100" height="32" rx="8" fill="#3d2a18"/>
+        <path d="M80 60 Q70 10 80 -20 Q90 -60 130 -60 H170 Q210 -60 220 -20 Q228 10 215 60 Q160 80 80 60Z" fill="#6b4a2a"/>
+        <rect x="110" y="-80" width="140" height="26" rx="8" fill="#3d2a18"/>
+        <path d="M100 30 Q150 40 200 30" stroke="#9c7447" stroke-width="8" fill="none" stroke-linecap="round" opacity=".6"/>
+      </g>
+      <!-- 땅 -->
+      <rect x="-100" y="540" width="1200" height="300" fill="url(#ground)"/>
+      <path d="M-100 560 Q300 530 620 555 T1100 545" stroke="#d6b470" stroke-width="5" fill="none" opacity=".7"/>
+    </svg>
+    <div id="leaves"></div>
+
+    <!-- ① 재료 고르기 -->
+    <div class="layer" id="layer-pick" hidden></div>
+    <div id="basket" hidden>
+      <svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 46 H276 L256 140 Q254 146 246 146 H54 Q46 146 44 140Z" fill="#d9a466" stroke="#a9733b" stroke-width="4"/>
+        <g stroke="#b9854a" stroke-width="5" fill="none" opacity=".8">
+          <path d="M40 70 H260 M42 96 H258 M46 120 H254"/>
+          <path d="M70 52 L80 140 M120 52 L130 140 M170 52 L180 140 M220 52 L230 140"/>
+        </g>
+        <path d="M24 46 Q150 12 276 46" stroke="#a9733b" stroke-width="10" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div id="basketCount">0 / 6</div>
+    </div>
+    <div id="basketMini" hidden></div>
+
+    <!-- ② 양념 만들기 -->
+    <div class="layer" id="layer-mix" hidden>
+      <div id="bowlWrap" title="그릇">
+        <svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="150" cy="206" rx="126" ry="12" fill="#6b4a2a" opacity=".18"/>
+          <path d="M26 56 H274 Q274 186 150 200 Q26 186 26 56Z" fill="#7fb7d8" stroke="#5a9bc2" stroke-width="3"/>
+          <path d="M40 92 Q150 118 260 92" stroke="#ffffff" stroke-width="6" fill="none" opacity=".5" stroke-linecap="round"/>
+          <path d="M60 130 Q150 160 240 130" stroke="#ffffff" stroke-width="4" fill="none" opacity=".3" stroke-linecap="round"/>
+          <ellipse cx="150" cy="56" rx="124" ry="26" fill="#bfe0f2" stroke="#5a9bc2" stroke-width="3"/>
+          <ellipse cx="150" cy="58" rx="108" ry="18" fill="#efe3d0"/>
+        </svg>
+        <div id="bowlIn"></div>
+        <div id="paste"></div>
+      </div>
+      <div class="seasoning" id="s-chili" style="left:18%;top:84%"><img src="kim/powder.svg" alt=""></div>
+      <div class="seasoning" id="s-fish"  style="left:50%;top:86%"><img src="kim/fishsauce.svg" alt=""></div>
+      <div class="seasoning" id="s-shr"   style="left:82%;top:84%"><img src="kim/saltedshrimp.svg" alt=""></div>
+    </div>
+
+    <!-- ③ 배추에 양념 바르기 -->
+    <div class="layer" id="layer-paint" hidden>
+      <div id="paintMeter"><span>빨갛게</span><div id="paintBar"><div id="paintFill"></div></div><span id="paintNum">0/8</span></div>
+      <div id="cabWrap">
+        <img id="cabImg" src="kim/cabbage-salted.svg" alt="절임배추">
+        <div id="blobs"></div>
+      </div>
+      <div id="pasteTool"><img src="kim/bowl-paste.svg" alt="" id="pasteImg"><div class="tag">양념을 누르고<br>배추를 톡톡</div></div>
+    </div>
+
+    <!-- ④ 장독대에 담기 -->
+    <div class="layer" id="layer-store" hidden>
+      <div id="kimchi"><img src="kim/kimchi.svg" alt="김치"></div>
+      <div id="jarWrap" class="">
+        <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="100" cy="232" rx="72" ry="8" fill="#6b4a2a" opacity=".22"/>
+          <path d="M50 70 Q30 120 36 180 Q40 226 100 228 Q160 226 164 180 Q170 120 150 70Z" fill="#6b4a2a"/>
+          <path d="M60 80 Q48 130 52 180" stroke="#9c7447" stroke-width="10" fill="none" stroke-linecap="round" opacity=".6"/>
+          <rect x="60" y="48" width="80" height="28" rx="6" fill="#4d3420"/>
+          <path d="M42 40 H158 Q164 40 164 48 V56 H36 V48 Q36 40 42 40Z" fill="#3d2a18"/>
+          <g class="lid">
+            <rect x="52" y="22" width="96" height="20" rx="10" fill="#5a3c22"/>
+            <rect x="62" y="12" width="76" height="12" rx="6" fill="#7a5530"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 처음 안내 -->
+    <div class="overlay" id="intro">
+      <div class="card">
+        <h2>🏺 맛있는 김장하기</h2>
+        <div class="steps">
+          <div class="step" id="st1"><span class="n">🥬</span>1. 재료 고르기</div>
+          <div class="step" id="st2"><span class="n">🥣</span>2. 양념 만들기</div>
+          <div class="step" id="st3"><span class="n">🖌️</span>3. 배추에 바르기</div>
+          <div class="step" id="st4"><span class="n">🏺</span>4. 장독대에 담기</div>
+        </div>
+        <button class="pk-big" id="btnStart">▶ 시작하기</button>
+      </div>
+    </div>
+
+    <!-- 끝 -->
+    <div class="overlay" id="done" hidden>
+      <div class="card">
+        <div class="badge">🏅</div>
+        <h2>최고의 김치 요리사!</h2>
+        <div class="stars">⭐⭐⭐</div>
+        <p style="margin:0;font-size:clamp(17px,3vw,22px);color:#6a3a1b">직접 만든 김치가 장독대에 잘 담겼어요.</p>
+        <div class="row2">
+          <button class="pk-big ok" id="btnAgain">🔄 다시 하기</button>
+          <a class="pk-big" href="index.html" style="text-decoration:none;text-align:center;">🏠 목록으로</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="pk-sheet" id="setSheet" hidden>
+  <div class="pk-panel">
+    <h2>⚙️ 설정</h2>
+    <div class="pk-field">
+      <span>소리 / 말 / 음악</span>
+      <div class="pk-opts" id="optSound">
+        <button class="pk-opt" data-v="true">효과음 켜기</button>
+        <button class="pk-opt" data-v="false">효과음 끄기</button>
+      </div>
+      <div class="pk-opts" id="optVoice">
+        <button class="pk-opt" data-v="true">말해 주기</button>
+        <button class="pk-opt" data-v="false">말 안 하기</button>
+      </div>
+      <div class="pk-opts" id="optBgm">
+        <button class="pk-opt" data-v="1">🎵 가을 음악 켜기</button>
+        <button class="pk-opt" data-v="0">음악 끄기</button>
+      </div>
+    </div>
+    <button class="pk-big ok" id="btnClose">시작하기</button>
+    <button class="pk-big" id="btnRestart">🔄 처음부터 다시</button>
+  </div>
+</div>
+
+<script src="kimjang.js"></script>
+</body>
+</html>
