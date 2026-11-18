@@ -30,6 +30,9 @@ saltedshrimp.svg (새우젓) · bowl-paste.svg (양념 그릇)
 | photo/cabbage.jpg | 배추 | https://commons.wikimedia.org/wiki/File:Napa_cabbages.png | CC0 | Bayartai |
 | photo/radish.jpg | 무 | https://commons.wikimedia.org/wiki/File:Mu_(Korean_radish).jpg | CC BY-SA 4.0 | Ityoppyawit |
 | photo/onion.jpg | 파 | https://commons.wikimedia.org/wiki/File:GreenOnions.jpg | CC BY-SA 3.0 | Jonathunder |
+| photo/kimchi-cutout.png | 포기김치(배경 제거 · 480px로 줄임) | https://commons.wikimedia.org/wiki/File:Baechu_kimchi.jpg | CC BY-SA 4.0 | 최광모 |
+
+포기김치 사진은 원본 배경을 지워 쓴 것입니다. 장독은 사진 대신 직접 그렸어요(뚜껑을 따로 두기 위해서입니다).
 
 CC BY-SA 는 출처를 밝히고, 같은 조건으로 나누는 것을 지키면 됩니다.
 

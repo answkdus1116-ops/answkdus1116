@@ -737,7 +737,7 @@ function setupPaint() {
 function enterStore() {
   show('store');
   S.busy = false; S.kimSel = false; S.lidSel = false;
-  $('kimImg').src = S.finalSrc || (K + 'photo/cabbage.jpg');
+  $('kimImg').src = K + 'photo/kimchi-cutout.png';
   const k = $('kimchi');
   k.classList.remove('gone', 'drag', 'on');
   k.style.transition = '';
