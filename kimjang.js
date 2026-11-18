@@ -736,20 +736,17 @@ function setupPaint() {
    ========================================================= */
 function enterStore() {
   show('store');
-  S.busy = false; S.kimSel = false; S.lidSel = false;
-  $('kimImg').src = K + 'photo/kimchi-cutout.png';
+  S.busy = false; S.kimSel = false;
+  $('kimImg').src = S.finalSrc;
   const k = $('kimchi');
   k.classList.remove('gone', 'drag', 'on');
   k.style.transition = '';
   k.style.left = '26%'; k.style.top = '60%';
-  $('jarWrap').classList.remove('closed', 'hit', 'hasKim');
-  const L = $('lid');
-  L.classList.remove('show', 'on', 'drag');
-  L.style.left = '86%'; L.style.top = '18%';
-  L.style.opacity = '0';
+  $('jarWrap').classList.remove('hit', 'hasKim');
   say('완성한 포기김치를 장독 안에 넣어요. 끌어다 놓거나 눌러서 넣어요');
   tell('포기김치를 장독에 넣어요');
 }
+/* 배추 한 포기를 장독 안에 넣어요 (잘라서 넣지 않아요) */
 function kimchiIn() {
   if (S.stage !== 'store' || S.busy) return;
   S.busy = true;
@@ -763,28 +760,17 @@ function kimchiIn() {
     PK.beep('win'); PK.buzz([40, 30, 80]);
     bubbles(2, 260);
   }, 380);
-  setTimeout(() => { j.classList.remove('hit'); S.busy = false; }, 900);
-  setTimeout(() => {
-    say('김치를 장독에 담았어요. 이제 뚜껑을 덮어요');
-    tell('뚜껑을 장독 위로 끌어다 놓아요');
-    const L = $('lid');
-    L.style.opacity = '1';
-    L.classList.add('show');
-  }, 1100);
+  setTimeout(() => j.classList.remove('hit'), 900);
+  setTimeout(finishStore, 1500);
 }
-function lidOn() {
-  if (S.stage !== 'store' || S.busy) return;
+/* 뚜껑은 이미 덮여 있는 장독이라, 넣기만 하면 끝나요 */
+function finishStore() {
   S.busy = true;
-  $('lid').style.opacity = '0';
-  $('jarWrap').classList.add('closed');
-  PK.beep('good'); PK.buzz([30, 30, 60]);
-  setTimeout(() => {
-    PK.confetti(70);
-    PK.cheer('🏺', '맛있는 김장 완성!', 1800);
-    say('뚜껑을 덮었어요. 맛있는 김장 완성!');
-    tell('맛있는 김장 완성!');
-  }, 700);
-  setTimeout(() => show('done'), 2700);
+  PK.confetti(70);
+  PK.cheer('🏺', '맛있는 김장 완성!', 1800);
+  say('배추 한 포기를 장독에 담았어요. 맛있는 김장 완성!');
+  tell('맛있는 김장 완성!');
+  setTimeout(() => show('done'), 2200);
 }
 function setupStore() {
   const k = $('kimchi');
@@ -801,24 +787,9 @@ function setupStore() {
       return false;
     }
   });
-  const L = $('lid');
-  makeMovable(L, {
-    onTap() {
-      if (S.stage !== 'store' || S.busy || !$('jarWrap').classList.contains('hasKim')) return;
-      L.classList.add('on'); S.lidSel = true; PK.beep('tap');
-      say('뚜껑을 골랐어요. 장독을 눌러요');
-      tell('장독을 눌러 뚜껑을 덮어요');
-    },
-    onDrop(ev) {
-      if (S.stage !== 'store' || S.busy || !$('jarWrap').classList.contains('hasKim')) return false;
-      if (near(ev, $('jarWrap'), 50)) { lidOn(); return true; }
-      return false;
-    }
-  });
   $('jarWrap').addEventListener('click', () => {
     if (S.stage !== 'store' || S.busy) return;
-    if (S.kimSel && !$('jarWrap').classList.contains('hasKim')) { S.kimSel = false; k.classList.remove('on'); kimchiIn(); return; }
-    if (S.lidSel) { S.lidSel = false; L.classList.remove('on'); lidOn(); }
+    if (S.kimSel && !$('jarWrap').classList.contains('hasKim')) { S.kimSel = false; k.classList.remove('on'); kimchiIn(); }
   });
 }
 

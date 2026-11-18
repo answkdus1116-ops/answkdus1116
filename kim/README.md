@@ -23,21 +23,20 @@ saltedshrimp.svg (새우젓) · bowl-paste.svg (양념 그릇)
 김치와 무관한 그림이었습니다. 그래서 김장 재료는 직접 그렸습니다.
 
 ## 실제 사진 (위키미디어 공용 · 자유 이용 가능)
-재료 카드(무·파·배추)에만 씁니다.
+재료 카드(무·파·배추)와 장독 그림에 씁니다.
 
 | 파일 | 무엇 | 원본 | 라이선스 | 만든 이 |
 |---|---|---|---|---|
 | photo/cabbage.jpg | 배추 | https://commons.wikimedia.org/wiki/File:Napa_cabbages.png | CC0 | Bayartai |
 | photo/radish.jpg | 무 | https://commons.wikimedia.org/wiki/File:Mu_(Korean_radish).jpg | CC BY-SA 4.0 | Ityoppyawit |
 | photo/onion.jpg | 파 | https://commons.wikimedia.org/wiki/File:GreenOnions.jpg | CC BY-SA 3.0 | Jonathunder |
-| photo/kimchi-cutout.png | 포기김치(배경 제거 · 480px로 줄임) | https://commons.wikimedia.org/wiki/File:Baechu_kimchi.jpg | CC BY-SA 4.0 | 최광모 |
+| photo/jar-cutout.png | 장독(뚜껑 있는 장독 · 배경 제거 · 줄임) | https://commons.wikimedia.org/wiki/File:Onggi_jars_from_Korea,_British_Museum_03.jpg | CC0 | 14GTR |
 
-포기김치 사진은 원본 배경을 지워 쓴 것입니다. 장독은 사진 대신 직접 그렸어요(뚜껑을 따로 두기 위해서입니다).
+장독 사진은 원본 배경을 지워 쓴 것입니다. 완성된 포기김치는 직접 그린 배추 한 포기입니다.
 
 CC BY-SA 는 출처를 밝히고, 같은 조건으로 나누는 것을 지키면 됩니다.
 
 ## 직접 그린 것
-- 장독 : 몸통과 뚜껑을 따로 그렸습니다. 뚜껑은 따로 집어 덮을 수 있어요.
 - 배추 : 잎 12장(바깥 7, 안쪽 4, 속 1)으로 그렸고, 바깥 잎 2장을 한 장씩 직접 칠합니다. 완성된 포기김치도 같은 잎 모양을 빨갛게 그린 것입니다.
 - 고춧가루(powder.svg) · 멸치액젓(fishsauce.svg) · 새우젓(saltedshrimp.svg) · 양념 그릇(bowl-paste.svg)
 - 숟가락 · 장바구니 · 단풍나무 · 가을 마당은 앱 안에 그렸습니다.
