@@ -306,10 +306,10 @@ function bowlGeom() {
   const bw = $('bowlWrap'), r = bw.getBoundingClientRect();
   return { r, cx: r.left + r.width / 2, cy: r.top + r.height * .5, w: r.width, h: r.height };
 }
-/* 숟가락이 움직일 수 있는 곳 : 양념이 담긴 그릇 안쪽 타원 (밖으로 나가면 저어지지 않아요) */
+/* 손가락으로 저을 수 있는 영역 (넓게 잡아요). 숟가락은 항상 양념 타원 안에서만 움직여요 */
 function stirArea() {
   const g = bowlGeom();
-  return { cx: g.cx, cy: g.r.top + g.h * .264, rx: g.w * .34, ry: g.h * .075 };
+  return { cx: g.cx, cy: g.r.top + g.h * .264, rx: g.w * .42, ry: g.h * .2, px: g.w * .34, py: g.h * .075 };
 }
 function startStir() {
   if (S.stage !== 'mix') return;
@@ -319,17 +319,19 @@ function startStir() {
   say('숟가락을 잡고 양념 안에서 천천히 저어요. 여섯 바퀴 빙글빙글');
   tell('양념 안에서 천천히 저어요');
 }
-/* 숟가락 머리는 손가락을 따라가되, 양념 타원 밖으로는 나가지 않아요 */
+/* 손가락 위치를 저을 영역 안의 비율로 바꿔서, 숟가락을 양념 타원 안에 그대로 옮겨요 */
 function placeSpoon(ev) {
   const A = stirArea(), g = bowlGeom();
   let dx = ev.clientX - A.cx, dy = ev.clientY - A.cy;
-  const n = Math.hypot(dx / A.rx, dy / A.ry);
+  let nx = dx / A.rx, ny = dy / A.ry;
+  const n = Math.hypot(nx, ny);
   const inside = n <= 1;
-  if (!inside) { dx /= n; dy /= n; }
+  if (!inside) { nx /= n; ny /= n; }            /* 영역 밖이면 가장자리에 붙여요 (세지 않아요) */
+  const sx = A.cx + nx * A.px, sy = A.cy + ny * A.py;
   const sp = $('spoonHead');
-  sp.style.left = (A.cx - g.r.left + dx - 14) + 'px';
-  sp.style.top = (A.cy - g.r.top + dy - 130) + 'px';
-  return { inside, nx: dx / A.rx, ny: dy / A.ry };
+  sp.style.left = (sx - g.r.left - 14) + 'px';
+  sp.style.top = (sy - g.r.top - 130) + 'px';
+  return { inside, nx, ny };
 }
 function stirDown(ev) {
   if (S.stage !== 'mix' || !S.stirring) return;
@@ -353,7 +355,7 @@ function stirMove(ev) {
   const lean = Math.max(-14, Math.min(14, d * 220));
   $('spoonHead').style.transform = 'rotate(' + lean.toFixed(1) + 'deg)';
   /* 양념은 숟가락이 민 쪽으로 같이 끌려 돌아요 */
-  if (Math.abs(S.stirAcc) >= 2 * Math.PI * .92) {
+  if (Math.abs(S.stirAcc) >= 2 * Math.PI * .85) {
     S.stirAcc = 0;
     S.stir++;
     PK.beep('tap'); PK.buzz([14]);
@@ -557,6 +559,7 @@ function paintInit() {
 function pullLeaf() {
   if (queue.length === 0) { finishCabbage(); return; }
   const idx = queue.shift();
+  S.load = 0; $('pasteTool').classList.remove('on');   /* 배추 한 포기마다 양념을 새로 묻혀요 */
   const sp = SPECS[idx];
   ctxBase.clearRect(0, 0, CW, CH);
   const path = drawLeaf(ctxBase, sp, 'single', CW, CH, false);
@@ -572,15 +575,15 @@ function pullLeaf() {
   ctxPaint.clearRect(0, 0, CW, CH);
   S.painting = false;
   updatePaint();
-  say('잎 한 장을 꺼냈어요. 양념을 묻혀서 잎 위에 칠해요');
-  tell('잎 위에 쓱쓱 칠해요');
+  say('배추 한 포기를 꺼냈어요. 양념을 묻혀서 배추를 칠해요');
+  tell('배추 위에 쓱쓱 칠해요');
 }
 function enterPaint() {
   show('paint');
   S.load = 0; S.painting = false; S.busy = false;
   $('pasteTool').classList.add('on');
   requestAnimationFrame(function () { paintInit(); pullLeaf(); });
-  say('양념 그릇을 눌러 붓에 묻히고, 바깥 잎부터 한 장씩 칠해요');
+  say('양념 그릇을 눌러 양념을 묻히고, 배추 한 포기를 한 번에 칠해요');
   tell('양념을 묻히고 잎 한 장씩 칠해요');
 }
 function updatePaint() {
@@ -589,7 +592,7 @@ function updatePaint() {
   $('paintFill').style.width = (total * 100) + '%';
   $('paintNum').textContent = Math.round(total * 100) + '%';
   $('loadFill').style.width = (S.load / DIP_LOAD * 100) + '%';
-  $('leafNum').textContent = '잎 ' + doneN + '/' + PAINT_IDX.length + ' · 남은 잎 ' + (queue.length + (curLeaf ? 1 : 0)) + '장';
+  $('leafNum').textContent = '배추 ' + doneN + '/' + PAINT_IDX.length + ' · 남은 배추 ' + (queue.length + (curLeaf ? 1 : 0)) + '포기';
 }
 function dip() {
   if (S.stage !== 'paint') return;
@@ -636,14 +639,14 @@ function brushTo(x, y, px, py) {
   pasteStroke(x, y, px, py);
   const steps = Math.max(1, Math.ceil(dist / 10));
   for (let s = 0; s <= steps; s++) markCells(px + (x - px) * s / steps, py + (y - py) * s / steps, BRUSH * .75);
-  S.load = Math.max(0, S.load - dist / 160);
+  S.load = Math.max(0, S.load - dist / 1000);
   checkDone();
 }
 function dab(x, y) {
   if (!curLeaf) return;
   pasteStroke(x, y, x, y);
   markCells(x, y, BRUSH * .75);
-  S.load = Math.max(0, S.load - .3);
+  S.load = Math.max(0, S.load - .05);
   PK.beep('tap');
   checkDone();
 }
@@ -662,8 +665,8 @@ function checkDone() {
   pileDone[idx] = true;
   PK.beep('good'); PK.buzz([25]);
   const left = queue.length;
-  say(left === 0 ? '마지막 잎까지 다 칠했어요' : '한 장 끝! 다음 잎을 꺼내요');
-  tell('잎 ' + doneN + '/' + PAINT_IDX.length + ' 완성');
+  say(left === 0 ? '마지막 배추까지 다 칠했어요' : '한 포기 끝! 다음 배추를 꺼내요');
+  tell('배추 ' + doneN + '/' + PAINT_IDX.length + ' 포기 완성');
   updatePaint();
   setTimeout(function () { drawPile(); pullLeaf(); }, 1100);
 }
