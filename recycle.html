@@ -56,6 +56,18 @@
   #pkSay{white-space:normal;line-height:1.25;}
   .pk-top .pk-say{font-size:clamp(17px,3vw,26px);}
   @media (max-width:520px){ .steps{grid-template-columns:1fr;} }
+
+  /* 세로로 긴 화면(휴대폰)에서는 통을 가로줄로 쌓아요. 예시 사진이 더 크게 보여요 */
+  @media (max-width:640px){
+    #bins{grid-template-columns:1fr;gap:8px;padding:8px 3vw 12px;}
+    .bin{flex-direction:row;align-items:stretch;min-height:0;padding:0;border-width:5px;border-radius:20px;}
+    .bin-head{width:30%;flex-shrink:0;border-radius:14px 0 0 14px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5vw,28px);padding:6px 4px;}
+    .bin-ex{width:70%;grid-template-columns:1fr 1fr;padding:6px;gap:8px;}
+    .bin-ex figcaption{font-size:clamp(13px,3.6vw,17px);font-weight:700;}
+    .bin-ex img{border-radius:12px;}
+    #cardArea{padding:6px 12px 2px;}
+    .pc{width:min(34vh,60vw);}
+  }
 </style>
 </head>
 <body>
