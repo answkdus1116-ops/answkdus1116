@@ -15,7 +15,7 @@
 | photo/shelf.jpg | 매대(진열대) 배경 | https://upload.wikimedia.org/wikipedia/commons/5/5b/Grocery_store_shelves_of_junk_food.jpg | CC BY-SA 2.0 | Cory Doctorow |
 | photo/bg-counter.jpg | 계산대 배경 (슈퍼마켓 계산대 줄) | https://live.staticflickr.com/3705/13101571503_a162a084a7_b.jpg | CC BY 2.0 | goosmurf |
 | photo/cash-won.jpg | 만 원권 지폐 | https://live.staticflickr.com/65535/49792087706_735a974a42_b.jpg | CC BY 2.0 | James St. John |
-| photo/reader.jpg | 버스 교통카드 리더기 (잘라 씀) | https://commons.wikimedia.org/wiki/File:TTC_new_low-floor_fare_and_transfer_machine.jpg | CC BY-SA 4.0 | PollardKay |
+| photo/reader.jpg | 버스 교통카드 리더기 (퍼스 버스, 원본 그대로) | https://commons.wikimedia.org/wiki/File:Transperth_Bus_Validator.jpg | CC BY 4.0 | The editor next door |
 | photo/terminal.jpg | 카드 단말기 (잘라 씀) | https://live.staticflickr.com/3756/9607998259_592769dc09_b.jpg | CC BY 2.0 | illustir |
 
 ## 상품 사진

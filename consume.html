@@ -78,15 +78,16 @@
   #bgShop{background-image:url(consume/photo/bg-store.jpg);}
   #awning{width:100%;height:clamp(56px,10vh,92px);background:repeating-linear-gradient(90deg,#ff6b6b 0 60px,#fff 60px 120px);border-bottom:10px solid #d64545;box-sizing:border-box;position:relative;z-index:2;}
   #shopName{white-space:nowrap;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:18px;padding:4px 20px;font-size:clamp(20px,3.6vw,30px);color:#a13b3b;box-shadow:0 4px 0 #d64545;}
-  #shelf{width:100%;flex:1;min-height:0;overflow:auto;padding:12px 3vw 10px;box-sizing:border-box;position:relative;z-index:1;}
+  /* 상품은 스크롤 없이 한 화면에 다 보여요 (3 × 2 칸, 좁은 화면은 2 × 3 칸) */
+  #shelf{width:100%;flex:1;min-height:0;overflow:hidden;padding:12px 3vw 10px;box-sizing:border-box;position:relative;z-index:1;display:flex;flex-direction:column;}
   #shelfBg{position:absolute;inset:0;background:url(consume/photo/shelf.jpg) center/cover;opacity:.5;z-index:0;}
-  #products{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px;}
-  .product{background:#fff;border-radius:18px;border:4px solid #e0b57a;padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 0 #b98a4e,0 10px 12px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;}
+  #products{position:relative;z-index:1;flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:12px;}
+  .product{min-height:0;background:#fff;border-radius:18px;border:4px solid #e0b57a;padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 0 #b98a4e,0 10px 12px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;}
   .product:active{transform:translateY(4px);box-shadow:0 2px 0 #b98a4e;}
-  .product .pimg{width:100%;aspect-ratio:1;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .product .pimg img{width:100%;height:100%;object-fit:contain;display:block;}
-  .product .pimg .emo{font-size:clamp(50px,9vw,80px);}
-  .product .pname{font-size:clamp(17px,3vw,24px);color:#6a3a1b;margin-top:4px;}
+  .product .pimg{position:relative;flex:1;min-height:0;width:100%;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .product .pimg img{position:absolute;inset:0;width:100%;height:100%;padding:6px;box-sizing:border-box;object-fit:contain;display:block;}
+  .product .pimg .emo{font-size:clamp(40px,8vh,80px);}
+  .product .pname{flex:0 0 auto;font-size:clamp(16px,2.6vh,24px);color:#6a3a1b;margin-top:4px;white-space:nowrap;}
   .product.added{animation:added .4s ease;}
   @keyframes added{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
   #cartBar{width:100%;box-sizing:border-box;background:#fff;border-top:5px solid #ffb03b;padding:8px 3vw;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
@@ -107,6 +108,8 @@
   #counter .top .pick img{width:100%;height:100%;object-fit:contain;}
   #counter .top .pick .emo{font-size:clamp(40px,7vw,60px);}
   #cashier{position:absolute;left:14%;top:-120px;font-size:clamp(70px,12vw,110px);filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));}
+  #cashier.got{animation:gotIt .6s ease;}
+  @keyframes gotIt{0%{transform:scale(1)}40%{transform:scale(1.2) rotate(-6deg)}100%{transform:scale(1)}}
   #cashBtns{display:flex;gap:14px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
   #cashBtns .big-btn{min-width:min(42vw,220px);}
   #cashFlyer{position:absolute;z-index:5;width:clamp(150px,24vw,220px);aspect-ratio:2.1;background:url(consume/photo/cash-won.jpg) center/cover;border-radius:6px;box-shadow:0 6px 10px rgba(0,0,0,.3);transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
@@ -129,7 +132,7 @@
   .row2 .pk-big,.row2 a.pk-big{font-size:clamp(17px,3.2vw,23px);padding:16px 6px;white-space:nowrap;text-decoration:none;text-align:center;}
   #pkSay{white-space:normal;line-height:1.25;}
   .pk-top .pk-say{font-size:clamp(17px,3vw,26px);}
-  @media (max-width:520px){ .steps{grid-template-columns:1fr;} #products{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:520px){ .steps{grid-template-columns:1fr;} #products{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));} }
 </style>
 </head>
 <body>

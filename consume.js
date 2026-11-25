@@ -67,6 +67,7 @@ function startGame() {
   $('cardFlyer').style.opacity = '0';
   $('cashFlyer').style.opacity = '0';
   $('cardSlot').classList.remove('beep');
+  $('cashier').classList.remove('got');
   renderCart();
   show('sBus');
   $('busHint').hidden = true;
@@ -249,37 +250,49 @@ function goCheckout() {
   say('계산대예요. 현금이나 카드로 계산해요');
 }
 
-/* 날아가는 물건 한 개 (돈이나 카드) */
-function flyTo(el, startLeft, startTop, target) {
+/* 날아가는 물건 한 개 (돈이나 카드)
+   target 쪽으로 날아가요. endScale 로 작아지면 안으로 들어가는 것처럼 보여요 */
+function flyTo(el, startLeft, startTop, target, endScale) {
+  /* 이전 움직임을 지우고 시작 위치를 먼저 잡아요 (전환 없이) */
+  el.style.transition = 'none';
   el.style.left = startLeft; el.style.top = startTop;
   el.style.opacity = '1';
   el.style.transform = 'translate(0,0)';
   const from = el.getBoundingClientRect();
   const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
   const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
-  later(() => { el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.7)'; }, 50);
+  el.getBoundingClientRect();
+  el.style.transition = '';
+  later(() => { el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + endScale + ')'; }, 50);
 }
 
+/* 현금 : 계산직원에게 건네요 */
 function payCash() {
   if (busy) return;
   busy = true;
   PK.beep('tap');
-  say('현금을 건네요');
+  say('현금을 계산직원에게 건네요');
   const f = $('cashFlyer');
-  flyTo(f, '8%', '36%', $('picked').getBoundingClientRect());
-  later(() => { f.style.opacity = '0'; PK.beep('good'); say('현금으로 계산했어요'); }, 1000);
+  flyTo(f, '8%', '36%', $('cashier').getBoundingClientRect(), .6);
+  later(() => {
+    f.style.opacity = '0';
+    $('cashier').classList.add('got');
+    PK.beep('good');
+    say('계산직원이 받았어요. 현금으로 계산했어요');
+  }, 1000);
   later(() => { finish(); }, 1800);
 }
 
+/* 카드 : 카드리더기에 꽂아요 */
 function payCard() {
   if (busy) return;
   busy = true;
   PK.beep('tap');
-  say('카드를 넣어요');
+  say('카드를 카드리더기에 꽂아요');
   const f = $('cardFlyer');
-  flyTo(f, '6%', '40%', $('cardSlot').getBoundingClientRect());
+  flyTo(f, '6%', '40%', $('cardSlot').getBoundingClientRect(), .25);
+  later(() => { f.style.opacity = '0'; }, 850);
   later(() => {
-    f.style.opacity = '0';
     $('cardSlot').classList.add('beep');
     PK.beep('good'); PK.buzz([30]);
   }, 900);
