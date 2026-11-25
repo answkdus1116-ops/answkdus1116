@@ -290,7 +290,10 @@ function payCard() {
   PK.beep('tap');
   say('카드를 카드리더기에 꽂아요');
   const f = $('cardFlyer');
-  flyTo(f, '6%', '40%', $('cardSlot').getBoundingClientRect(), .25);
+  /* 카드는 단말기 위쪽 카드 삽입구(그림에서 위에서 약 13% 내려온 곳)로 들어가요 */
+  const sr = $('cardSlot').getBoundingClientRect();
+  const slot = { left: sr.left + sr.width / 2 - 2, top: sr.top + sr.height * 0.133 - 2, width: 4, height: 4 };
+  flyTo(f, '6%', '40%', slot, .25);
   later(() => { f.style.opacity = '0'; }, 850);
   later(() => {
     $('cardSlot').classList.add('beep');

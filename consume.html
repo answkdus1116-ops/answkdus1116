@@ -107,13 +107,13 @@
   #counter .top .pick{width:clamp(70px,12vw,100px);aspect-ratio:1;background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
   #counter .top .pick img{width:100%;height:100%;object-fit:contain;}
   #counter .top .pick .emo{font-size:clamp(40px,7vw,60px);}
-  #cashier{position:absolute;left:14%;top:-120px;font-size:clamp(70px,12vw,110px);filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));}
+  #cashier{position:absolute;left:12%;top:-200px;width:clamp(96px,13vw,124px);height:auto;border-radius:14px;border:4px solid #fff;background:#fff;box-shadow:0 6px 10px rgba(0,0,0,.3);display:block;}
   #cashier.got{animation:gotIt .6s ease;}
   @keyframes gotIt{0%{transform:scale(1)}40%{transform:scale(1.2) rotate(-6deg)}100%{transform:scale(1)}}
   #cashBtns{display:flex;gap:14px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
   #cashBtns .big-btn{min-width:min(42vw,220px);}
   #cashFlyer{position:absolute;z-index:5;width:clamp(150px,24vw,220px);aspect-ratio:2.1;background:url(consume/photo/cash-won.jpg) center/cover;border-radius:6px;box-shadow:0 6px 10px rgba(0,0,0,.3);transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
-  #cardSlot{position:absolute;right:5%;top:-150px;width:clamp(110px,16vw,150px);height:auto;border-radius:12px;box-shadow:0 10px 14px rgba(0,0,0,.35);background:#111;}
+  #cardSlot{position:absolute;right:5%;top:-190px;width:clamp(110px,16vw,150px);height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));}
   #cardSlot.beep{animation:beepOn .5s ease;}
   @keyframes beepOn{0%{box-shadow:0 0 0 0 #7fd3ff}100%{box-shadow:0 0 0 18px rgba(127,211,255,0)}}
   #cardFlyer{position:absolute;z-index:5;width:clamp(120px,20vw,170px);aspect-ratio:1.6;border-radius:14px;background:#f08a1c url(consume/photo/transitcard.jpg) center/cover;box-shadow:0 8px 0 #b46512;transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
@@ -197,8 +197,20 @@
     <section class="scene" id="sCheck" hidden>
       <div class="scene-bg" id="bgCheck"></div>
       <div id="counter">
-        <div id="cashier">🧑‍💼</div>
-        <img id="cardSlot" src="consume/photo/terminal.jpg" alt="카드 단말기">
+        <img id="cashier" src="consume/photo/cashier.jpg" alt="계산직원">
+        <svg id="cardSlot" viewBox="0 0 200 240" role="img" aria-label="카드 단말기">
+          <rect x="8" y="8" width="184" height="224" rx="18" fill="#f4f5f7" stroke="#8d949e" stroke-width="4"/>
+          <circle cx="170" cy="22" r="3.5" fill="#3fa34d"/>
+          <text x="100" y="22" text-anchor="middle" font-size="9" fill="#55606b">카드 삽입</text>
+          <rect x="40" y="26" width="120" height="12" rx="4" fill="#1e1e1e"/>
+          <rect x="34" y="50" width="132" height="58" rx="8" fill="#dcefe0" stroke="#6aa67a" stroke-width="2"/>
+          <text x="100" y="75" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4a66">카드를</text>
+          <text x="100" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4a66">넣어 주세요</text>
+          <rect x="36" y="124" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="54" y="138" text-anchor="middle" font-size="12" fill="#333">1</text><rect x="82" y="124" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="100" y="138" text-anchor="middle" font-size="12" fill="#333">2</text><rect x="128" y="124" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="146" y="138" text-anchor="middle" font-size="12" fill="#333">3</text>
+          <rect x="36" y="149" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="54" y="163" text-anchor="middle" font-size="12" fill="#333">4</text><rect x="82" y="149" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="100" y="163" text-anchor="middle" font-size="12" fill="#333">5</text><rect x="128" y="149" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="146" y="163" text-anchor="middle" font-size="12" fill="#333">6</text>
+          <rect x="36" y="174" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="54" y="188" text-anchor="middle" font-size="12" fill="#333">7</text><rect x="82" y="174" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="100" y="188" text-anchor="middle" font-size="12" fill="#333">8</text><rect x="128" y="174" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="146" y="188" text-anchor="middle" font-size="12" fill="#333">9</text>
+          <rect x="36" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="54" y="213" text-anchor="middle" font-size="10" fill="#333">취소</text><rect x="82" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="100" y="213" text-anchor="middle" font-size="12" fill="#333">0</text><rect x="128" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="146" y="213" text-anchor="middle" font-size="10" fill="#333">확인</text>
+        </svg>
         <div class="top" id="picked"></div>
         <div id="cashBtns">
           <button class="big-btn" id="payCash">💵 현금</button>
