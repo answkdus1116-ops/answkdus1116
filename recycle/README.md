@@ -4,10 +4,10 @@
 
 | 파일 | 무엇 | 원본 | 라이선스 | 만든 이 |
 |---|---|---|---|---|
-| photo/newspaper.jpg | 신문지(종이) | https://live.staticflickr.com/7082/6978066238_cae15c8875_b.jpg | CC BY-SA 2.0 | HowardLake |
+| photo/newspaper.jpg | 신문지(종이) | https://live.staticflickr.com/6054/6277208708_7e6607d601_b.jpg | CC BY-SA 2.0 | NS Newsflash |
 | photo/cardboard.jpg | 골판지 상자(종이) | https://live.staticflickr.com/5560/14762496407_44a9cbff89_b.jpg | CC BY-SA 2.0 | myguys.nova |
 | photo/pet.jpg | 페트병(플라스틱) | https://commons.wikimedia.org/wiki/File:PET_Bottle_Water.jpg | CC BY-SA 4.0 | Ravitave |
-| photo/shampoo.jpg | 샴푸 병(플라스틱) | https://live.staticflickr.com/4152/5017268895_029c928f1d_b.jpg | CC BY 2.0 | Yenzah |
+| photo/shampoo.jpg | 샴푸 병(플라스틱) | https://commons.wikimedia.org/wiki/File:Green_shampoo_bottle.jpg | CC BY-SA 4.0 | Mezoneni |
 | photo/can.jpg | 콜라 캔(캔) | https://live.staticflickr.com/2482/4023275760_b5b27be109_b.jpg | CC BY 2.0 | Elsie esq. |
 | photo/can2.jpg | 음료 캔 묶음(캔) | https://live.staticflickr.com/7262/7037245869_bc385cf3ee_b.jpg | CC BY 2.0 | frankieleon |
 
