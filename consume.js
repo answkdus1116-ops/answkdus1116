@@ -46,7 +46,7 @@ function thumb(p) {
 }
 
 function show(id) {
-  ['sBus', 'sRide', 'sShop', 'sCheck'].forEach(s => { $(s).hidden = (s !== id); });
+  ['sBus', 'sBoard', 'sRide', 'sShop', 'sCheck'].forEach(s => { $(s).hidden = (s !== id); });
 }
 
 /* ---------- 1. 버스 정류장 : 교통카드를 리더기에 끌어다 대요 ---------- */
@@ -55,14 +55,14 @@ function resetCard() {
   t.classList.remove('drag', 'back', 'in-reader');
   t.style.transform = '';
   t.style.opacity = '';
-  $('reader').classList.remove('hot', 'ok');
+  $('readerPhoto').classList.remove('hot', 'ok');
 }
 
 function startGame() {
   clearTimers();
   cart = []; busy = false; busArrived = false; tDrag = null;
   $('done').hidden = true;
-  $('bus').classList.remove('in');
+  $('bus').classList.remove('in', 'leave');
   resetCard();
   $('cardFlyer').style.opacity = '0';
   $('cashFlyer').style.opacity = '0';
@@ -70,14 +70,30 @@ function startGame() {
   renderCart();
   show('sBus');
   $('busHint').hidden = true;
-  say('버스가 왔어요. 교통카드를 끌어서 리더기에 대요');
+  say('버스가 왔어요. 버스를 눌러서 타요');
   later(() => { $('bus').classList.add('in'); }, 300);
   later(() => { busArrived = true; $('busHint').hidden = false; }, 1800);
+  $('bus').onclick = boardBus;
+}
+
+/* 버스를 눌러 타요 : 버스가 옆으로 가고, 버스 안 장면이 나와요 */
+function boardBus() {
+  if (busy || !busArrived) return;
+  busy = true;
+  PK.beep('tap'); PK.buzz([20]);
+  say('버스에 타요');
+  $('bus').classList.add('leave');
+  later(() => {
+    show('sBoard');
+    resetCard();
+    busy = false;
+    say('교통카드를 리더기에 끌어다 대요');
+  }, 900);
 }
 
 /* 리더기 위에 있는지 (조금 넓게 봐요) */
 function overReader(x, y) {
-  const r = $('reader').getBoundingClientRect();
+  const r = $('readerPhoto').getBoundingClientRect();
   const m = 30;
   return x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
 }
@@ -85,7 +101,7 @@ function overReader(x, y) {
 function setupCard() {
   const t = $('tcard');
   t.addEventListener('pointerdown', e => {
-    if (busy || !busArrived) return;
+    if (busy || $('sBoard').hidden) return;
     e.preventDefault();
     tDrag = { x0: e.clientX, y0: e.clientY, moved: false, dx: 0, dy: 0 };
     try { t.setPointerCapture(e.pointerId); } catch (err) {}
@@ -101,7 +117,7 @@ function setupCard() {
     }
     if (tDrag.moved) {
       t.style.transform = 'translate(' + tDrag.dx + 'px,' + tDrag.dy + 'px) rotate(' + (tDrag.dx / 30) + 'deg)';
-      $('reader').classList.toggle('hot', overReader(e.clientX, e.clientY));
+      $('readerPhoto').classList.toggle('hot', overReader(e.clientX, e.clientY));
     }
   });
   const end = (e, cancel) => {
@@ -109,7 +125,7 @@ function setupCard() {
     const d = tDrag;
     tDrag = null;
     t.classList.remove('drag');
-    $('reader').classList.remove('hot');
+    $('readerPhoto').classList.remove('hot');
     if (!d.moved) {
       /* 누르기만 했어요 : 안내 */
       PK.beep('hint');
@@ -125,8 +141,8 @@ function setupCard() {
   t.addEventListener('pointerup', e => end(e, false));
   t.addEventListener('pointercancel', e => end(e, true));
   /* 리더기를 직접 눌러도 찍혀요 (카드를 먼저 누른 뒤) */
-  $('reader').addEventListener('click', () => {
-    if (busy || !busArrived) return;
+  $('readerPhoto').addEventListener('click', () => {
+    if (busy || $('sBoard').hidden) return;
     say('교통카드를 끌어서 여기에 대요');
   });
 }
@@ -135,7 +151,7 @@ function setupCard() {
 function tapReader() {
   if (busy) return;
   busy = true;
-  const t = $('tcard'), r = $('reader');
+  const t = $('tcard'), r = $('readerPhoto');
   const tr = t.getBoundingClientRect(), rr = r.getBoundingClientRect();
   const dx = (rr.left + rr.width / 2) - (tr.left + tr.width / 2);
   const dy = (rr.top + rr.height / 2) - (tr.top + tr.height / 2);
