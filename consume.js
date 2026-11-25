@@ -64,8 +64,7 @@ function startGame() {
   $('done').hidden = true;
   $('bus').classList.remove('in', 'leave');
   resetCard();
-  $('cardFlyer').style.opacity = '0';
-  $('cashFlyer').style.opacity = '0';
+  resetPayItems();
   $('cardSlot').classList.remove('beep');
   $('cashier').classList.remove('got');
   renderCart();
@@ -250,57 +249,115 @@ function goCheckout() {
   say('계산대예요. 현금이나 카드로 계산해요');
 }
 
-/* 날아가는 물건 한 개 (돈이나 카드)
-   target 쪽으로 날아가요. endScale 로 작아지면 안으로 들어가는 것처럼 보여요 */
-function flyTo(el, startLeft, startTop, target, endScale) {
-  /* 이전 움직임을 지우고 시작 위치를 먼저 잡아요 (전환 없이) */
-  el.style.transition = 'none';
-  el.style.left = startLeft; el.style.top = startTop;
-  el.style.opacity = '1';
-  el.style.transform = 'translate(0,0)';
+/* ---------- 4-2. 계산 : 현금 · 카드 사진을 끌어다 주거나, 누르면 알아서 가요 ---------- */
+const PAY = {
+  cash: { item: 'cashItem', target: 'cashier', say: '현금을 계산원에게 줘요', ok: '계산원이 받았어요. 현금으로 계산했어요', wrong: '현금은 계산원에게 끌어다 줘요' },
+  card: { item: 'cardItem', target: 'cardSlot', say: '카드를 카드 단말기에 꽂아요', ok: '카드로 결제했어요', wrong: '카드는 카드 단말기에 끌어다 줘요' }
+};
+
+/* 목표 위치 : 카드는 단말기 위쪽 카드 삽입구로 들어가요 (그림에서 위에서 약 13% 내려온 곳) */
+function payTargetRect(kind) {
+  const r = $(PAY[kind].target).getBoundingClientRect();
+  if (kind === 'card') return { left: r.left + r.width / 2 - 2, top: r.top + r.height * 0.133 - 2, width: 4, height: 4 };
+  return r;
+}
+
+/* 끌고 있는 물건이 어느 목표 위에 있는지 (조금 넓게 봐요) */
+function payHit(x, y) {
+  for (const kind of ["cash", "card"]) {
+    const r = $(PAY[kind].target).getBoundingClientRect(), m = 24;
+    if (x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m) return kind;
+  }
+  return null;
+}
+
+function setHot(kind) {
+  $('cashier').classList.toggle('hot', kind === 'cash');
+  $('cardSlot').classList.toggle('hot', kind === 'card');
+}
+
+function resetPayItems() {
+  ['cashItem', 'cardItem'].forEach(id => {
+    const el = $(id);
+    el.classList.remove('dragging', 'back', 'gone');
+    el.style.transform = ''; el.style.transition = '';
+  });
+  setHot(null);
+  $('cashier').classList.remove('got');
+}
+
+function setupPay() {
+  ['cash', 'card'].forEach(bindPayItem);
+}
+
+function bindPayItem(kind) {
+  const el = $(PAY[kind].item);
+  let d = null;
+  el.addEventListener('pointerdown', e => {
+    if (busy || $("sCheck").hidden) return;
+    e.preventDefault();
+    d = { x0: e.clientX, y0: e.clientY, moved: false, dx: 0, dy: 0 };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  el.addEventListener('pointermove', e => {
+    if (!d) return;
+    d.dx = e.clientX - d.x0; d.dy = e.clientY - d.y0;
+    if (!d.moved && Math.hypot(d.dx, d.dy) > 10) {
+      d.moved = true;
+      el.classList.add('dragging'); el.classList.remove('back');
+    }
+    if (d.moved) {
+      el.style.transform = 'translate(' + d.dx + 'px,' + d.dy + 'px) rotate(' + (d.dx / 30) + 'deg)';
+      setHot(payHit(e.clientX, e.clientY));
+    }
+  });
+  const end = (e, cancel) => {
+    if (!d) return;
+    const dd = d; d = null;
+    el.classList.remove('dragging');
+    setHot(null);
+    if (!dd.moved) { payWith(kind); return; }          /* 누르기만 했어요 : 알아서 가요 */
+    if (!cancel) {
+      const hit = payHit(e.clientX, e.clientY);
+      if (hit === kind) { payWith(kind); return; }
+      PK.beep('hint');
+      say(hit ? PAY[kind].wrong : '계산원이나 카드 단말기 위에 끌어다 줘요');
+    }
+    el.classList.add('back'); el.style.transform = '';
+  };
+  el.addEventListener('pointerup', e => end(e, false));
+  el.addEventListener('pointercancel', e => end(e, true));
+  /* 키보드 : 선택한 뒤 엔터 · 스페이스 */
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); payWith(kind); }
+  });
+}
+
+/* 물건이 목표로 날아가요. 현금은 계산원이 받고, 카드는 단말기에 쏙 들어가요 */
+function payWith(kind) {
+  if (busy || $("sCheck").hidden) return;
+  busy = true;
+  const el = $(PAY[kind].item);
+  PK.beep('tap');
+  say(PAY[kind].say);
+  el.classList.remove('dragging', 'back');
+  el.style.transition = 'none'; el.style.transform = '';
   const from = el.getBoundingClientRect();
-  const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
-  const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
   el.getBoundingClientRect();
   el.style.transition = '';
-  later(() => { el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + endScale + ')'; }, 50);
-}
-
-/* 현금 : 계산직원에게 건네요 */
-function payCash() {
-  if (busy) return;
-  busy = true;
-  PK.beep('tap');
-  say('현금을 계산직원에게 건네요');
-  const f = $('cashFlyer');
-  flyTo(f, '8%', '36%', $('cashier').getBoundingClientRect(), .6);
-  later(() => {
-    f.style.opacity = '0';
-    $('cashier').classList.add('got');
-    PK.beep('good');
-    say('계산직원이 받았어요. 현금으로 계산했어요');
-  }, 1000);
-  later(() => { finish(); }, 1800);
-}
-
-/* 카드 : 카드리더기에 꽂아요 */
-function payCard() {
-  if (busy) return;
-  busy = true;
-  PK.beep('tap');
-  say('카드를 카드리더기에 꽂아요');
-  const f = $('cardFlyer');
-  /* 카드는 단말기 위쪽 카드 삽입구(그림에서 위에서 약 13% 내려온 곳)로 들어가요 */
-  const sr = $('cardSlot').getBoundingClientRect();
-  const slot = { left: sr.left + sr.width / 2 - 2, top: sr.top + sr.height * 0.133 - 2, width: 4, height: 4 };
-  flyTo(f, '6%', '40%', slot, .25);
-  later(() => { f.style.opacity = '0'; }, 850);
-  later(() => {
-    $('cardSlot').classList.add('beep');
-    PK.beep('good'); PK.buzz([30]);
-  }, 900);
-  later(() => { PK.beep('win'); say('카드로 결제했어요'); }, 1100);
-  later(() => { finish(); }, 2000);
+  const t = payTargetRect(kind);
+  const dx = (t.left + t.width / 2) - (from.left + from.width / 2);
+  const dy = (t.top + t.height / 2) - (from.top + from.height / 2);
+  const scale = kind === 'card' ? .25 : .6;
+  later(() => { el.classList.add('gone'); el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')'; }, 30);
+  if (kind === 'cash') {
+    later(() => { $('cashier').classList.add('got'); PK.beep('good'); say(PAY.cash.ok); }, 1000);
+    later(() => { finish(); }, 1800);
+  } else {
+    later(() => { $('cardSlot').classList.add('beep'); PK.beep('good'); PK.buzz([30]); }, 900);
+    later(() => { PK.beep('win'); say(PAY.card.ok); }, 1100);
+    later(() => { finish(); }, 2000);
+  }
 }
 
 function finish() {
@@ -313,8 +370,7 @@ function finish() {
 /* 연결 */
 setupCard();
 $('toCheckout').addEventListener('click', goCheckout);
-$('payCash').addEventListener('click', payCash);
-$('payCard').addEventListener('click', payCard);
+setupPay();
 
 /* 설정 */
 PK.bindOpts([['optSound', 'sound'], ['optVoice', 'voice']], cfg, 'consume');

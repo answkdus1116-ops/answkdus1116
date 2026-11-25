@@ -110,13 +110,22 @@
   #cashier{position:absolute;left:12%;top:-200px;width:clamp(96px,13vw,124px);height:auto;border-radius:14px;border:4px solid #fff;background:#fff;box-shadow:0 6px 10px rgba(0,0,0,.3);display:block;}
   #cashier.got{animation:gotIt .6s ease;}
   @keyframes gotIt{0%{transform:scale(1)}40%{transform:scale(1.2) rotate(-6deg)}100%{transform:scale(1)}}
-  #cashBtns{display:flex;gap:14px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
-  #cashBtns .big-btn{min-width:min(42vw,220px);}
-  #cashFlyer{position:absolute;z-index:5;width:clamp(150px,24vw,220px);aspect-ratio:2.1;background:url(consume/photo/cash-won.jpg) center/cover;border-radius:6px;box-shadow:0 6px 10px rgba(0,0,0,.3);transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
+  /* 계산 : 현금 · 카드 사진을 끌어다 주거나, 누르면 알아서 가요 */
+  #payItems{display:flex;gap:clamp(12px,3vw,30px);justify-content:center;align-items:flex-end;margin-top:12px;flex-wrap:wrap;}
+  .payItem{position:relative;z-index:6;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .payItem img{display:block;height:auto;border-radius:10px;box-shadow:0 6px 10px rgba(0,0,0,.35);pointer-events:none;background:#fff;}
+  #cashItem img{width:clamp(130px,20vw,190px);}
+  #cardItem img{width:clamp(110px,16vw,150px);border-radius:12px;}
+  .payItem span{font-size:clamp(18px,3vw,24px);color:#fff;background:#2f7fc1;padding:2px 14px;border-radius:999px;}
+  .payItem.dragging{cursor:grabbing;z-index:30;}
+  .payItem.back{transition:transform .35s cubic-bezier(.3,1.3,.5,1);}
+  .payItem.gone{transition:transform .9s ease-in,opacity .6s;opacity:0;pointer-events:none;}
+  #cashier.hot{box-shadow:0 0 0 6px #ffb03b,0 6px 10px rgba(0,0,0,.3);}
+  #cardSlot.hot{filter:drop-shadow(0 0 10px #ffb03b) drop-shadow(0 10px 14px rgba(0,0,0,.35));}
+  #payHint{margin-top:10px;align-self:center;width:max-content;max-width:100%;}
   #cardSlot{position:absolute;right:5%;top:-190px;width:clamp(110px,16vw,150px);height:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));}
   #cardSlot.beep{animation:beepOn .5s ease;}
   @keyframes beepOn{0%{box-shadow:0 0 0 0 #7fd3ff}100%{box-shadow:0 0 0 18px rgba(127,211,255,0)}}
-  #cardFlyer{position:absolute;z-index:5;width:clamp(120px,20vw,170px);aspect-ratio:1.6;border-radius:14px;background:#f08a1c url(consume/photo/transitcard.jpg) center/cover;box-shadow:0 8px 0 #b46512;transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
 
   /* ---------- 끝 ---------- */
   .overlay{position:absolute;inset:0;z-index:20;background:rgba(233,245,252,.94);display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -212,13 +221,12 @@
           <rect x="36" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="54" y="213" text-anchor="middle" font-size="10" fill="#333">취소</text><rect x="82" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="100" y="213" text-anchor="middle" font-size="12" fill="#333">0</text><rect x="128" y="199" width="36" height="20" rx="5" fill="#fff" stroke="#b8bec6" stroke-width="1.5"/><text x="146" y="213" text-anchor="middle" font-size="10" fill="#333">확인</text>
         </svg>
         <div class="top" id="picked"></div>
-        <div id="cashBtns">
-          <button class="big-btn" id="payCash">💵 현금</button>
-          <button class="big-btn blue" id="payCard">💳 카드</button>
+        <div id="payItems">
+          <div class="payItem" id="cashItem" role="button" tabindex="0" aria-label="현금: 계산원에게 끌어다 주거나 누르세요"><img src="consume/photo/cash-won.jpg" alt="만 원권 지폐"><span>💵 현금</span></div>
+          <div class="payItem" id="cardItem" role="button" tabindex="0" aria-label="카드: 카드 단말기에 끌어다 꽂거나 누르세요"><img src="consume/photo/transitcard.jpg" alt="교통카드"><span>💳 카드</span></div>
         </div>
+        <div class="hint-line" id="payHint">현금은 계산원에게, 카드는 카드 단말기에 끌어다 줘요</div>
       </div>
-      <div id="cashFlyer"></div>
-      <div id="cardFlyer"></div>
     </section>
 
     <!-- 처음 안내 -->

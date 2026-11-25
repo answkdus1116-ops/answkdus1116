@@ -16,7 +16,7 @@
 | photo/bg-counter.jpg | 계산대 배경 (슈퍼마켓 계산대 줄) | https://live.staticflickr.com/3705/13101571503_a162a084a7_b.jpg | CC BY 2.0 | goosmurf |
 | photo/cash-won.jpg | 만 원권 지폐 | https://live.staticflickr.com/65535/49792087706_735a974a42_b.jpg | CC BY 2.0 | James St. John |
 | photo/reader.jpg | 교통카드 올려놓는 곳 (서울 지하철 교통카드 충전기, 잘라 씀) | https://commons.wikimedia.org/wiki/File:Ticket_Vending_and_Card_Reload_Machine_-_Seoul_Metropolitan_Subway_20240713.jpg | CC BY 4.0 | LandAndTree |
-| photo/cashier.jpg | 계산원 (코스트코 코리아 계산대 사진에서 잘라 씀) | https://commons.wikimedia.org/wiki/File:Costco_in_Korea_-_20211029.jpg | CC BY-SA 4.0 | Sikander Iqbal |
+| photo/cashier.jpg | 계산대 직원 (앞을 보는 직원, 코스트코 코리아 계산대 사진에서 잘라 씀) | https://commons.wikimedia.org/wiki/File:Costco_in_Korea_-_20211029.jpg | CC BY-SA 4.0 | Sikander Iqbal |
 
 ## 상품 사진
 
