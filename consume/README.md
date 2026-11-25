@@ -1,7 +1,22 @@
 # 소비 놀이 — 사진 출처
 
-모든 사진은 자유 이용 라이선스(CC BY · CC BY-SA)의 사진입니다. 출처를 밝히고 사용합니다.
-버스·교통카드·현금·카드·상점·계산대 그림은 이모티콘입니다.
+모든 사진은 자유 이용 라이선스(CC0 · CC BY · CC BY-SA)의 사진입니다. 출처를 밝히고 사용합니다.
+교통카드 리더기·계산대의 카드 단말기, 버스·상점 장면의 나머지 그림은 이모티콘과 도형입니다.
+
+## 장면 배경과 물건 사진
+
+| 파일 | 무엇 | 원본 | 라이선스 | 만든 이 |
+|---|---|---|---|---|
+| photo/bus.jpg | 버스 | https://live.staticflickr.com/5082/5292561271_bb5feded7c_b.jpg | CC BY 2.0 | JLaw45 |
+| photo/bg-busstop.jpg | 버스 정류장 배경 | https://live.staticflickr.com/65535/49912034616_6feaf7ef4a_b.jpg | CC BY 2.0 | Henry Söderlund |
+| photo/bg-ride.jpg | 버스 안 배경 | https://live.staticflickr.com/1248/5165040764_777e930874_b.jpg | CC BY 2.0 | oksidor |
+| photo/transitcard.jpg | 교통카드 (잘라 씀) | https://live.staticflickr.com/2442/3588511973_a35d51b968_b.jpg | CC BY 2.0 | kalleboo |
+| photo/bg-store.jpg | 상점 안 배경 | https://live.staticflickr.com/7180/6846334354_0a794c036c_b.jpg | CC BY 2.0 | Yuya Tamai |
+| photo/shelf.jpg | 매대(진열대) 배경 | https://upload.wikimedia.org/wikipedia/commons/5/5b/Grocery_store_shelves_of_junk_food.jpg | CC BY-SA 2.0 | Cory Doctorow |
+| photo/bg-counter.jpg | 계산대 배경 | https://commons.wikimedia.org/wiki/File:AEON_Supermarket_interior_and_self-checkout_counters_at_KL_Midtown_(261114).jpg | CC BY-SA 4.0 | *angys* |
+| photo/cash-won.jpg | 만 원권 지폐 | https://live.staticflickr.com/65535/49792087706_735a974a42_b.jpg | CC BY 2.0 | James St. John |
+
+## 상품 사진
 
 | 파일 | 무엇 | 원본 | 라이선스 | 만든 이 |
 |---|---|---|---|---|

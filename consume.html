@@ -13,8 +13,13 @@
   body{background:#e9f5fc;}
   .pk-stage{padding:0;gap:0;}
   #stage{position:relative;flex:1;min-height:0;width:100%;overflow:hidden;}
-  .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;}
+  .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;overflow:hidden;}
   .scene[hidden]{display:none;}
+  /* 배경 사진 (사진이 없으면 아래 색이 보여요) */
+  .scene-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;}
+  .scene-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.15),rgba(255,255,255,.05));}
+  .scene > *:not(.scene-bg){position:relative;z-index:1;}
+  .scene > .abs{position:absolute;z-index:1;}
 
   /* ---------- 공통 : 큰 버튼 · 말풍선 ---------- */
   .big-btn{font-family:inherit;font-size:clamp(20px,4vw,30px);border:0;border-radius:24px;padding:14px 22px;background:#ffb03b;color:#fff;box-shadow:0 7px 0 #d78a1e;cursor:pointer;}
@@ -23,50 +28,60 @@
   .big-btn.blue:active{box-shadow:0 3px 0 #1f5c91;}
   .big-btn.green{background:#3fa34d;box-shadow:0 7px 0 #2b7535;}
   .big-btn.green:active{box-shadow:0 3px 0 #2b7535;}
-  .hint-line{font-size:clamp(18px,3.4vw,26px);color:#1d4a66;background:rgba(255,255,255,.9);border-radius:999px;padding:6px 18px;margin-top:8px;}
+  .hint-line{font-size:clamp(18px,3.4vw,26px);color:#1d4a66;background:rgba(255,255,255,.92);border-radius:999px;padding:6px 18px;box-shadow:0 4px 10px rgba(0,0,0,.18);}
   .pulse{animation:pulse 1.2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
-  /* ---------- 1. 버스 정류장 ---------- */
-  #sBus{background:linear-gradient(#bfe5ff,#e9f7ff 60%,#c9d6c2 60%,#c9d6c2 74%,#5b6470 74%);}
+  /* ---------- 1. 버스 정류장 : 교통카드를 리더기에 ---------- */
+  #sBus{background:linear-gradient(#bfe5ff,#e9f7ff 58%,#c9d6c2 58%,#c9d6c2 74%,#5b6470 74%);}
+  #bgBus{background-image:url(consume/photo/bg-busstop.jpg);}
   #sBus .sun{position:absolute;right:10%;top:8%;width:clamp(60px,12vw,110px);height:clamp(60px,12vw,110px);border-radius:50%;background:#ffe27a;box-shadow:0 0 40px #ffe27a;}
-  #sBus .stop{position:absolute;left:8%;top:44%;font-size:clamp(60px,12vw,100px);}
-  #sBus .stopSign{position:absolute;left:12%;top:32%;background:#fff;border:6px solid #2f7fc1;border-radius:14px;padding:4px 14px;font-size:clamp(18px,3vw,24px);color:#1d4a66;}
-  #bus{position:absolute;left:0;bottom:30%;width:min(72vw,520px);transform:translateX(-120%);transition:transform 1.4s cubic-bezier(.3,.9,.4,1);text-align:center;}
-  #bus .body{font-size:clamp(120px,22vw,200px);line-height:1;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25));}
+  #sBus .stopSign{position:absolute;left:10%;top:22%;background:#fff;border:6px solid #2f7fc1;border-radius:14px;padding:4px 14px;font-size:clamp(18px,3vw,24px);color:#1d4a66;}
+  #bus{position:absolute;left:0;bottom:30%;width:min(78vw,560px);transform:translateX(-120%);transition:transform 1.4s cubic-bezier(.3,.9,.4,1);z-index:2;}
   #bus.in{transform:translateX(0);}
-  #readerBox{position:absolute;left:50%;transform:translateX(-50%);bottom:6%;display:flex;flex-direction:column;align-items:center;gap:8px;}
-  #reader{width:clamp(130px,22vw,180px);aspect-ratio:1;border-radius:30px;border:0;background:#fff;box-shadow:0 10px 0 #cfd7e0,0 12px 18px rgba(0,0,0,.25);font-size:clamp(60px,10vw,90px);cursor:pointer;}
-  #reader:active{transform:translateY(4px);}
-  #card{position:absolute;left:50%;bottom:20%;margin-left:-50px;font-size:clamp(70px,12vw,100px);transition:transform .7s ease-in,opacity .7s;opacity:0;pointer-events:none;}
-  #card.show{opacity:1;}
+  #bus .body{width:100%;font-size:clamp(120px,22vw,200px);line-height:1;text-align:center;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25));}
+  #bus img.busphoto{width:100%;display:block;border-radius:18px;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25));}
+  /* 교통카드 리더기 : 버스 문 옆 */
+  #reader{position:absolute;right:4%;top:34%;width:clamp(46px,8vw,66px);height:clamp(64px,11vw,92px);background:#2b2b2b;border-radius:12px;border:4px solid #161616;box-shadow:0 6px 0 #0c0c0c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:box-shadow .2s;}
+  #reader .rscreen{width:62%;height:18%;background:#7fd3ff;border-radius:3px;box-shadow:0 0 6px #7fd3ff;}
+  #reader .rdot{width:30%;aspect-ratio:1;border-radius:50%;background:#3fa34d;}
+  #reader.hot{box-shadow:0 0 0 7px #ffb03b,0 6px 0 #0c0c0c;}
+  #reader.ok .rdot{background:#7fd3ff;box-shadow:0 0 10px #7fd3ff;}
+  /* 교통카드 : 끌어서 리더기에 대요 */
+  #tcard{position:absolute;left:50%;bottom:9%;margin-left:calc(clamp(130px,22vw,190px) / -2);width:clamp(130px,22vw,190px);aspect-ratio:1.6;border-radius:14px;background:#f08a1c url(consume/photo/transitcard.jpg) center/cover;box-shadow:0 8px 0 #b46512,0 12px 18px rgba(0,0,0,.25);color:#fff;box-sizing:border-box;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;z-index:3;overflow:hidden;}
+  #tcard.drag{cursor:grabbing;z-index:20;}
+  #tcard.back{transition:transform .35s cubic-bezier(.3,1.3,.5,1);}
+  #tcard.in-reader{transition:transform .4s ease-in,opacity .4s;opacity:0;}
+  #busHint{position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:3%;z-index:4;white-space:nowrap;}
 
-  /* ---------- 2. 버스 타고 가기 ---------- */
-  #sRide{background:linear-gradient(#bfe5ff,#e9f7ff 60%,#c9d6c2 60%,#c9d6c2 74%,#5b6470 74%);overflow:hidden;}
-  #ride{position:absolute;inset:0;}
-  .cloud{position:absolute;top:10%;font-size:clamp(60px,10vw,96px);opacity:.9;animation:drift 6s linear infinite;}
+  /* ---------- 2. 버스가 달려요 ---------- */
+  #sRide{background:linear-gradient(#bfe5ff,#e9f7ff 60%,#c9d6c2 60%,#c9d6c2 74%,#5b6470 74%);}
+  #bgRide{background-image:url(consume/photo/bg-ride.jpg);}
+  .cloud{position:absolute;top:10%;font-size:clamp(60px,10vw,96px);opacity:.9;animation:drift 6s linear infinite;z-index:1;}
   @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-120vw)}}
-  .tree{position:absolute;bottom:26%;font-size:clamp(60px,10vw,100px);animation:passby 2.4s linear infinite;}
+  .tree{position:absolute;bottom:26%;font-size:clamp(60px,10vw,100px);animation:passby 2.4s linear infinite;z-index:1;}
   @keyframes passby{from{transform:translateX(110vw)}to{transform:translateX(-30vw)}}
-  #rideBus{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-size:clamp(120px,22vw,200px);filter:drop-shadow(0 8px 10px rgba(0,0,0,.25));}
-  .road-line{position:absolute;bottom:14%;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,#fff 0 60px,transparent 60px 120px);animation:roadMove .6s linear infinite;}
+  #rideBus{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-size:clamp(120px,22vw,200px);filter:drop-shadow(0 8px 10px rgba(0,0,0,.25));z-index:2;}
+  .road-line{position:absolute;bottom:14%;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,#fff 0 60px,transparent 60px 120px);animation:roadMove .6s linear infinite;z-index:1;}
   @keyframes roadMove{from{background-position:0 0}to{background-position:-120px 0}}
 
-  /* ---------- 3. 상점 ---------- */
-  #sShop{background:#fff6e6;}
-  #awning{width:100%;height:clamp(60px,11vh,100px);background:repeating-linear-gradient(90deg,#ff6b6b 0 60px,#fff 60px 120px);border-bottom:10px solid #d64545;box-sizing:border-box;position:relative;}
+  /* ---------- 3. 상점 : 매대 ---------- */
+  #sShop{background:#f6ead8;}
+  #bgShop{background-image:url(consume/photo/bg-store.jpg);}
+  #awning{width:100%;height:clamp(56px,10vh,92px);background:repeating-linear-gradient(90deg,#ff6b6b 0 60px,#fff 60px 120px);border-bottom:10px solid #d64545;box-sizing:border-box;position:relative;z-index:2;}
   #shopName{white-space:nowrap;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:18px;padding:4px 20px;font-size:clamp(20px,3.6vw,30px);color:#a13b3b;box-shadow:0 4px 0 #d64545;}
-  #shelf{width:100%;flex:1;min-height:0;overflow:auto;padding:12px 3vw 10px;box-sizing:border-box;}
-  #products{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-  .product{background:#fff;border-radius:22px;border:5px solid #ffd9a0;padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 0 #e9bd7a;user-select:none;-webkit-user-select:none;}
-  .product:active{transform:translateY(4px);box-shadow:0 2px 0 #e9bd7a;}
-  .product .pimg{width:100%;aspect-ratio:1;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  #shelf{width:100%;flex:1;min-height:0;overflow:auto;padding:12px 3vw 10px;box-sizing:border-box;position:relative;z-index:1;}
+  #shelfBg{position:absolute;inset:0;background:url(consume/photo/shelf.jpg) center/cover;opacity:.5;z-index:0;}
+  #products{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px;}
+  .product{background:#fff;border-radius:18px;border:4px solid #e0b57a;padding:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 0 #b98a4e,0 10px 12px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;}
+  .product:active{transform:translateY(4px);box-shadow:0 2px 0 #b98a4e;}
+  .product .pimg{width:100%;aspect-ratio:1;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .product .pimg img{width:100%;height:100%;object-fit:contain;display:block;}
   .product .pimg .emo{font-size:clamp(50px,9vw,80px);}
   .product .pname{font-size:clamp(17px,3vw,24px);color:#6a3a1b;margin-top:4px;}
   .product.added{animation:added .4s ease;}
   @keyframes added{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
-  #cartBar{width:100%;box-sizing:border-box;background:#fff;border-top:5px solid #ffb03b;padding:8px 3vw;display:flex;align-items:center;gap:10px;}
+  #cartBar{width:100%;box-sizing:border-box;background:#fff;border-top:5px solid #ffb03b;padding:8px 3vw;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
   #cartIcon{font-size:clamp(34px,6vw,46px);position:relative;}
   #cartCount{position:absolute;right:-10px;top:-8px;background:#d64545;color:#fff;border-radius:999px;font-size:16px;min-width:26px;text-align:center;padding:1px 6px;}
   #cartList{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;align-items:center;}
@@ -76,8 +91,9 @@
   #toCheckout[hidden]{display:none;}
 
   /* ---------- 4. 계산대 ---------- */
-  #sCheck{background:linear-gradient(#fff3e2,#f6e2c4);}
-  #counter{width:92%;margin-top:auto;margin-bottom:4px;background:#8a5a2b;border-radius:24px 24px 0 0;padding:14px 16px 16px;box-sizing:border-box;position:relative;}
+  #sCheck{background:#e9d9bf;}
+  #bgCheck{background-image:url(consume/photo/bg-counter.jpg);}
+  #counter{width:92%;margin-top:auto;margin-bottom:4px;background:#8a5a2b;border-radius:24px 24px 0 0;padding:14px 16px 16px;box-sizing:border-box;position:relative;z-index:2;}
   #counter .top{background:#c08a52;border-radius:16px;padding:10px;min-height:clamp(120px,22vh,190px);display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;justify-content:center;}
   #counter .top .pick{width:clamp(70px,12vw,100px);aspect-ratio:1;background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
   #counter .top .pick img{width:100%;height:100%;object-fit:contain;}
@@ -85,10 +101,11 @@
   #cashier{position:absolute;left:50%;top:-54px;transform:translateX(-50%);font-size:clamp(60px,10vw,90px);}
   #cashBtns{display:flex;gap:14px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
   #cashBtns .big-btn{min-width:min(42vw,220px);}
-  #cashFlyer{position:absolute;font-size:clamp(70px,12vw,100px);transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
+  #cashFlyer{position:absolute;z-index:5;width:clamp(150px,24vw,220px);aspect-ratio:2.1;background:url(consume/photo/cash-won.jpg) center/cover;border-radius:6px;box-shadow:0 6px 10px rgba(0,0,0,.3);transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
   #cardSlot{position:absolute;right:8%;top:-16px;width:clamp(90px,14vw,130px);height:clamp(40px,6vw,56px);background:#2d2d2d;border-radius:10px;box-shadow:0 6px 0 #555;display:flex;align-items:center;justify-content:center;color:#7fd3ff;font-size:clamp(14px,2.4vw,18px);}
   #cardSlot.beep{animation:beepOn .5s ease;}
   @keyframes beepOn{0%{box-shadow:0 0 0 0 #7fd3ff}100%{box-shadow:0 0 0 18px rgba(127,211,255,0)}}
+  #cardFlyer{position:absolute;z-index:5;width:clamp(120px,20vw,170px);aspect-ratio:1.6;border-radius:14px;background:#f08a1c url(consume/photo/transitcard.jpg) center/cover;box-shadow:0 8px 0 #b46512;transition:transform .9s ease-in-out,opacity .6s;opacity:0;pointer-events:none;}
 
   /* ---------- 끝 ---------- */
   .overlay{position:absolute;inset:0;z-index:20;background:rgba(233,245,252,.94);display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -118,36 +135,37 @@
 <div class="pk-stage">
   <div id="stage">
 
-    <!-- 1. 버스 정류장 : 교통카드 찍기 -->
+    <!-- 1. 버스 정류장 : 교통카드를 리더기에 대요 -->
     <section class="scene" id="sBus" hidden>
-      <div class="sun"></div>
-      <div class="stopSign">🚏 버스 정류장</div>
-      <div class="stop">🧍</div>
-      <div id="bus"><div class="body">🚌</div></div>
-      <div id="readerBox">
-        <button id="reader" aria-label="교통카드 찍기">💳</button>
-        <div class="hint-line pulse">교통카드를 찍어요</div>
+      <div class="scene-bg" id="bgBus"></div>
+      <div class="sun abs"></div>
+      <div class="stopSign abs" style="left:8%;top:20%">🚏 버스 정류장</div>
+      <div id="bus">
+        <img class="busphoto" id="busPhoto" src="consume/photo/bus.jpg" alt="" onerror="this.remove();document.getElementById('busEmo').hidden=false;">
+        <div class="body" id="busEmo" hidden>🚌</div>
+        <div id="reader" aria-label="교통카드 리더기"><div class="rscreen"></div><div class="rdot"></div></div>
       </div>
-      <div id="card">💳</div>
+      <div id="tcard" aria-label="교통카드"></div>
+      <div class="hint-line pulse" id="busHint">교통카드를 리더기에 끌어다 대요</div>
     </section>
 
     <!-- 2. 버스가 달려요 -->
     <section class="scene" id="sRide" hidden>
-      <div id="ride">
-        <div class="cloud" style="left:10%">☁️</div>
-        <div class="cloud" style="left:60%;top:4%;animation-duration:9s">☁️</div>
-        <div class="tree" style="animation-delay:0s">🌳</div>
-        <div class="tree" style="animation-delay:1.2s;font-size:clamp(50px,8vw,80px)">🌲</div>
-        <div class="road-line"></div>
-        <div id="rideBus">🚌</div>
-      </div>
-      <div style="position:absolute;bottom:4%;"><div class="hint-line">🚌 부릉부릉 상점으로 가요</div></div>
+      <div class="scene-bg" id="bgRide"></div>
+      <div class="cloud" style="left:10%">☁️</div>
+      <div class="cloud" style="left:60%;top:4%;animation-duration:9s">☁️</div>
+      <div class="tree" style="animation-delay:0s">🌳</div>
+      <div class="tree" style="animation-delay:1.2s;font-size:clamp(50px,8vw,80px)">🌲</div>
+      <div class="road-line"></div>
+      <div id="rideBus">🚌</div>
+      <div class="abs" style="bottom:4%"><div class="hint-line">🚌 부릉부릉 상점으로 가요</div></div>
     </section>
 
-    <!-- 3. 상점 : 상품 고르기 -->
+    <!-- 3. 상점 : 매대에서 고르기 -->
     <section class="scene" id="sShop" hidden>
+      <div class="scene-bg" id="bgShop"></div>
       <div id="awning"><div id="shopName">🏪 우리 동네 가게</div></div>
-      <div id="shelf"><div id="products"></div></div>
+      <div id="shelf"><div id="shelfBg"></div><div id="products"></div></div>
       <div id="cartBar">
         <div id="cartIcon">🛒<span id="cartCount">0</span></div>
         <div id="cartList"></div>
@@ -157,6 +175,7 @@
 
     <!-- 4. 계산대 : 현금 또는 카드 -->
     <section class="scene" id="sCheck" hidden>
+      <div class="scene-bg" id="bgCheck"></div>
       <div id="counter">
         <div id="cashier">🧑‍💼</div>
         <div id="cardSlot">카드를 넣어요</div>
@@ -166,7 +185,8 @@
           <button class="big-btn blue" id="payCard">💳 카드</button>
         </div>
       </div>
-      <div id="cashFlyer">💵</div>
+      <div id="cashFlyer"></div>
+      <div id="cardFlyer"></div>
     </section>
 
     <!-- 처음 안내 -->
