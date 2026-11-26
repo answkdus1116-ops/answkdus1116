@@ -15,7 +15,7 @@
   #sky{width:100%;height:100%;display:block;}
   /* 찾을 글자 : 늘 화면 위에 크게 (외우지 않아도 됩니다) */
   #targetBox{
-    position:absolute;left:50%;top:8px;transform:translateX(-50%);
+    position:absolute;left:0;right:0;margin:0 auto;width:max-content;top:8px;
     display:flex;align-items:center;gap:12px;z-index:3;
     background:#fff;border:5px solid var(--pk-go);border-radius:24px;
     padding:6px 20px;box-shadow:0 8px 20px rgba(60,40,70,.25);
@@ -24,6 +24,21 @@
   #targetCh{font-size:clamp(44px,9vw,84px);line-height:1;color:var(--pk-go-d);}
   #targetBox.pop{animation:pkPop .5s;}
   .balloon{cursor:pointer;}
+  /* 쉬운 모드 : 단서(그림 + 낱말). 찾을 글자가 낱말의 첫 글자예요 */
+  #targetBox{max-width:94vw;box-sizing:border-box;flex-wrap:wrap;justify-content:center;}
+  #clue{display:none;align-items:center;gap:10px;border-left:3px dashed #ffd6a8;padding-left:14px;}
+  #clue.on{display:flex;}
+  #clueEmo{font-size:clamp(40px,7vw,62px);line-height:1;}
+  #clueEmo.many{font-size:clamp(18px,3.4vw,30px);letter-spacing:2px;max-width:150px;line-height:1.1;}
+  #clueWord{font-size:clamp(22px,3.8vw,34px);color:#2b2b2b;font-weight:700;line-height:1.1;}
+  #clueWord .hl{color:var(--pk-go-d);}
+  #clueSub{font-size:clamp(13px,2vw,17px);color:var(--pk-muted);margin-top:2px;white-space:nowrap;}
+  /* 좁은 화면 : 단서를 글자 아래에 줄을 바꿔 보여요 */
+  @media (max-width:520px){
+    #targetBox{flex-direction:column;gap:4px;padding:6px 12px;width:max-content;}
+    #clue{border-left:none;padding-left:0;border-top:3px dashed #ffd6a8;padding-top:6px;}
+    #clueEmo{font-size:40px;}
+  }
 </style>
 </head>
 <body>
@@ -90,6 +105,13 @@
   <div id="targetBox">
     <div class="lbl">이 글자를<br>찾아요</div>
     <div id="targetCh">가</div>
+    <div id="clue">
+      <div id="clueEmo"></div>
+      <div>
+        <div id="clueWord"></div>
+        <div id="clueSub"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -136,6 +158,13 @@
       </div>
     </div>
     <div class="pk-field">
+      <span>쉬운 정도</span>
+      <div class="pk-opts" id="optMode">
+        <button class="pk-opt" data-v="normal">보통 (글자만)</button>
+        <button class="pk-opt" data-v="easy">쉬움 (그림 단서)</button>
+      </div>
+    </div>
+    <div class="pk-field">
       <span>소리 / 말 / 노래</span>
       <div class="pk-opts" id="optSound">
         <button class="pk-opt" data-v="true">소리 켜기</button>
@@ -178,7 +207,34 @@ const SKY = [['#ffd9a8','#fff1de'],['#bfe9ff','#eaf7ff'],['#ff9f6b','#ffd7a8'],[
 const PHASE = ['아침','낮','노을','밤'];
 
 const KEY = 'letter-find';
-const cfg = PK.load(KEY, { set:'ga', count:4, move:1, hint:3, sound:true, voice:true, bgm:true });
+const cfg = PK.load(KEY, { set:'ga', count:4, move:1, hint:3, mode:'normal', sound:true, voice:true, bgm:true });
+
+/* 쉬운 모드의 단서 : 글자 → [그림, 낱말]. 낱말의 첫 글자(또는 첫 소리)가 찾을 글자예요 */
+const CLUES = {
+  ga: { '가':['🎒','가방'], '나':['🌳','나무'], '다':['🦵','다리'], '라':['🍜','라면'], '마':['🧄','마늘'],
+        '바':['🌊','바다'], '사':['🍎','사과'], '아':['👶','아기'], '자':['🚗','자동차'], '차':['🍵','차'],
+        '카':['📷','카메라'], '파':['🍍','파인애플'], '하':['🦛','하마'] },
+  ja: { 'ㄱ':['🐸','개구리'], 'ㄴ':['🦋','나비'], 'ㄷ':['🌙','달'], 'ㄹ':['📻','라디오'], 'ㅁ':['🧢','모자'],
+        'ㅂ':['🍌','바나나'], 'ㅅ':['🦁','사자'], 'ㅇ':['🦆','오리'], 'ㅈ':['🚗','자동차'], 'ㅊ':['🧀','치즈'],
+        'ㅋ':['👃','코'], 'ㅌ':['🐰','토끼'], 'ㅍ':['🍕','피자'], 'ㅎ':['☀️','해'] },
+  mo: { 'ㅏ':['👶','아기'], 'ㅑ':['⚾','야구'], 'ㅓ':['🧑','어른'], 'ㅕ':['🦊','여우'], 'ㅗ':['🦆','오리'],
+        'ㅛ':['🍳','요리'], 'ㅜ':['☂️','우산'], 'ㅠ':['🦄','유니콘'], 'ㅡ':['🖼️','그림'], 'ㅣ':['🦷','이빨'] }
+};
+const NUM_COUNT = {'1':'한','2':'두','3':'세','4':'네','5':'다섯','6':'여섯','7':'일곱','8':'여덟','9':'아홉'};
+function isEasy(){ return cfg.mode === 'easy'; }
+function clueFor(ch){
+  if(cfg.set === 'num') return { emo:'🍎'.repeat(Number(ch)), word:NUM_COUNT[ch] + ' 개', sub:'숫자 ' + ch + ' 만큼' };
+  const t = CLUES[cfg.set] && CLUES[cfg.set][ch];
+  if(!t) return null;
+  const sub = cfg.set === 'ga' ? '‘' + ch + '’로 시작해요' : cfg.set === 'ja' ? ch + ' 소리로 시작해요' : ch + ' 소리가 들어가요';
+  return { emo:t[0], word:t[1], sub:sub };
+}
+/* 쉬운 모드에서는 단서가 있는 글자만 골라요 */
+function easyList(){
+  const all = SETS[cfg.set].list.slice();
+  if(!isEasy() || cfg.set === 'num') return shuffle(all);
+  return shuffle(all.filter(function(c){ return !!CLUES[cfg.set][c]; }));
+}
 
 const balloonsG = document.getElementById('balloons');
 const fxG = document.getElementById('fx');
@@ -286,7 +342,23 @@ function layoutSpots(n){
 }
 
 function speakTarget(){
+  const c = isEasy() ? clueFor(target) : null;
+  if(c){ PK.say(c.word + ', ' + readOf(target) + ' 풍선을 찾아 주세요.'); return; }
   PK.say(readOf(target) + '. ' + readOf(target) + ' 풍선을 찾아 주세요.');
+}
+
+/* 쉬운 모드 : 그림과 낱말을 보여 줘요 (보통 모드에서는 숨겨요) */
+function showClue(){
+  const box = document.getElementById('clue');
+  const c = isEasy() ? clueFor(target) : null;
+  if(!c){ box.classList.remove('on'); return; }
+  const emo = document.getElementById('clueEmo');
+  emo.textContent = c.emo;
+  emo.classList.toggle('many', cfg.set === 'num');
+  const w = document.getElementById('clueWord');
+  w.innerHTML = '<span class="hl">' + c.word.charAt(0) + '</span>' + c.word.slice(1);
+  document.getElementById('clueSub').textContent = c.sub;
+  box.classList.add('on');
 }
 
 function newRound(){
@@ -295,7 +367,7 @@ function newRound(){
   balloons.forEach(function(b){ b.el.remove(); });
   balloons = [];
 
-  const pool = shuffle(SETS[cfg.set].list.slice());
+  const pool = easyList();
   target = pool[0];
   const picks = shuffle(pool.slice(0, cfg.count));
   const spots = layoutSpots(cfg.count);
@@ -304,6 +376,7 @@ function newRound(){
   picks.forEach(function(ch, i){ makeBalloon(ch, spots[i].x, spots[i].y, cols[i % cols.length]); });
 
   targetCh.textContent = target;
+  showClue();
   targetBox.classList.remove('pop'); void targetBox.offsetWidth; targetBox.classList.add('pop');
   face('normal');
   PK.tell('같은 글자 풍선을 눌러요');
@@ -439,7 +512,7 @@ document.getElementById('btnEmpty').addEventListener('click', function(){
   caught = []; stars = 0; saveBasket(); drawBasket();
   starsEl.textContent = 0; paintSky(); sheet.hidden = true; newRound();
 });
-PK.bindOpts([['optSet','set'],['optCount','count'],['optMove','move'],['optHint','hint'],
+PK.bindOpts([['optSet','set'],['optMode','mode'],['optCount','count'],['optMove','move'],['optHint','hint'],
              ['optSound','sound'],['optVoice','voice'],['optBgm','bgm']], cfg, KEY, function(k){
   if(k === 'bgm') applyBgm();
 });
