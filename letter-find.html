@@ -32,6 +32,7 @@
   #clueEmo.many{font-size:clamp(18px,3.4vw,30px);letter-spacing:2px;max-width:150px;line-height:1.1;}
   #clueWord{font-size:clamp(22px,3.8vw,34px);color:#2b2b2b;font-weight:700;line-height:1.1;}
   #clueWord .hl{color:var(--pk-go-d);}
+  #clueWord .cons{display:inline-block;background:var(--pk-go);color:#fff;border-radius:14px;padding:0 10px;margin-right:8px;}
   #clueSub{font-size:clamp(13px,2vw,17px);color:var(--pk-muted);margin-top:2px;white-space:nowrap;}
   /* 좁은 화면 : 단서를 글자 아래에 줄을 바꿔 보여요 */
   @media (max-width:520px){
@@ -356,7 +357,9 @@ function showClue(){
   emo.textContent = c.emo;
   emo.classList.toggle('many', cfg.set === 'num');
   const w = document.getElementById('clueWord');
-  w.innerHTML = '<span class="hl">' + c.word.charAt(0) + '</span>' + c.word.slice(1);
+  /* 자음 : 첫 소리(자음)만 색 칩으로 보여 줘요. 글자 한 개는 자음만 따로 색칠할 수 없어요 */
+  if(cfg.set === 'ja') w.innerHTML = '<span class="cons">' + target + '</span>' + c.word;
+  else w.innerHTML = '<span class="hl">' + c.word.charAt(0) + '</span>' + c.word.slice(1);
   document.getElementById('clueSub').textContent = c.sub;
   box.classList.add('on');
 }
